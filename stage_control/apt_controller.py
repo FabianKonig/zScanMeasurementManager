@@ -8,7 +8,7 @@ import numpy as np
 from math import isclose
 
 
-# Check that both stages are connected to the PC
+# Check that both stages are connected to the PC and are detected
 assert len(apt.list_available_devices()) == 2
 
 
