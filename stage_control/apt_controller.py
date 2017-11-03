@@ -152,14 +152,12 @@ class APT_Controller:
             step_size = direction * max_stage_position / total_steps
             new_position = motor.position + step_size
 
-            # The new position is only allowed to exceed the minimum/maximum positions by 10µm
-
-            assert new_position - max_stage_position < 0.01 and \
-                new_position - min_stage_position > -0.01
-
+            # new_position is only allowed to exceed the minimum/maximum position by 10µm
             if new_position > max_stage_position:
+                assert isclose(new_position, max_stage_position, abs_tol=0.01)
                 new_position = max_stage_position
             elif new_position < min_stage_position:
+                assert isclose(new_position, min_stage_position, abs_tol=0.01)
                 new_position = min_stage_position
 
             expected_new_combined_position += new_position
