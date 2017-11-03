@@ -31,16 +31,23 @@ class APT_Controller:
         self._motors = self.get_motors()
         self.total_travel_distance = None  # The total distance that all stages combined can travel.
                                            # Is set in self.set_stages_maximum_positions()
-        self.combined_position = None      # The current position of both stages combined. 
+        self.combined_position = self._get_combined_position()
+                                           # The current position of both stages combined. 
                                            # Is updated after each movement.
 
 
 
         for motor in self._motors:
             assert motor.get_stage_axis_info()[2] == 1  # assert that unit is millimetres
-            motor.set_velocity_parameters(0, 0.5, 1)
+            motor.set_velocity_parameters(0, 3.5, 2.1)
         
         self.set_stages_maximum_positions()
+        
+        if self.combined_position > 2:  # move the motors quickly close to the home position.
+            for motor in self._motors:
+                motor.move_to(1)
+            self.block_while_moving_then_assert_and_update(2)
+
         self.move_stages_home()
         self.move_to_maximum_positions()
 
@@ -49,7 +56,17 @@ class APT_Controller:
         """ Returns all USB connected motors as an array of apt.Motor instances """
 
         devices = apt.list_available_devices()
-        return np.array([apt.Motor(devices[i, 1]) for i in np.arange(len(devices))])
+        return np.array([apt.Motor(devices[i][1]) for i in np.arange(len(devices))])
+
+
+    def _get_combined_position(self):
+        """ Returns the position of all stages combined """
+
+        combined_position = 0
+        for motor in self._motors:
+            combined_position += motor.position
+
+        return combined_position
 
 
     def set_stages_maximum_positions(self):
@@ -90,7 +107,7 @@ class APT_Controller:
         while(True):
             break_condition = True
             for motor in self._motors:
-                break_condition *= (not motor.is_in_motion())
+                break_condition *= not motor.is_in_motion
             if(break_condition):
                 break
 
@@ -123,24 +140,32 @@ class APT_Controller:
             direction = +1
         elif direction == "backward":
             direction = -1
-        else
+        else:
             raise Exception("Direction must be a string of either 'forward' or 'backward'.")
 
 
         expected_new_combined_position = 0
 
         for motor in self._motors:
-            min_stage_position = motor.get_stage_axis_info()[0] # Das als static wäre gut
+            min_stage_position = motor.get_stage_axis_info()[0]  # Das als static wäre gut
             max_stage_position = motor.get_stage_axis_info()[1]
             step_size = direction * max_stage_position / total_steps
             new_position = motor.position + step_size
+
+            # The new position is only allowed to exceed the minimum/maximum positions by 10µm
+
+            assert new_position - max_stage_position < 0.01 and \
+                new_position - min_stage_position > -0.01
+
+            if new_position > max_stage_position:
+                new_position = max_stage_position
+            elif new_position < min_stage_position:
+                new_position = min_stage_position
+
             expected_new_combined_position += new_position
-
-            assert new_position <= max_stage_position and new_position >= min_stage_position
-
             motor.move_to(new_position)
 
-        block_while_moving_then_assert_and_update(expected_new_combined_position)
+        self.block_while_moving_then_assert_and_update(expected_new_combined_position)
 
 
 
@@ -154,3 +179,11 @@ if __name__ == '__main__':
         total_max_stage_positions += motor.get_stage_axis_info()[1]
 
     assert isclose(total_max_stage_positions, 22+23, abs_tol=0.05)
+
+    total_steps = range(45)
+
+    import time
+    start = time.time() 
+    for i in total_steps:
+        aptc.move_in_steps(len(total_steps), "backward")
+    print((time.time() - start) / 60)
