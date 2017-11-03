@@ -58,11 +58,11 @@ class zScanDataAnalyser:
         self.S = 1  # Transmission of aperture
         self.combined_c_CA = self.c_CA * self.S
 
-        self.T_OA = np.zeros(shape=(total_steps, 2))  # transmission in open aperture path
-        self.T_CA = np.zeros(shape=(total_steps, 2))  # transmission in closed aperture path
+        self.T_OA = np.zeros(shape=(total_steps, 2))  # transmission in open aperture path.
+        self.T_CA = np.zeros(shape=(total_steps, 2))  # transmission in closed aperture path.
 
-        self.total_steps = total_steps            # the total number of measurement stage positions
-        self.current_position_step = 0            # integer indicating next position step
+        self.total_steps = total_steps     # The total number of measurement stage positions.
+        self.current_position_step = 0     # Integer indicating next empty transmission array entry.
 
 
 
@@ -98,7 +98,8 @@ class zScanDataAnalyser:
             instance property self.S and returns it in addition.
         """
         self.S = average_ratio(ca_signal, ref_signal, calib_factor=self.c_CA)
-        self.combined_c_CA = self.c_CA * self.S  # ERROR COMPUTATION?????????????
+        self.combined_c_CA[0] = self.c_CA[0] * self.S[0]
+        self.combined_c_CA[1] = np.sqrt((self.c_CA[0]*self.S[1])**2 + (self.c_CA[1]*self.S[0])**2)
         return self.S
 
 

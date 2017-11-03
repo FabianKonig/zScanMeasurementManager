@@ -23,7 +23,6 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
-    # app.aboutToQuit.connect(app.deleteLater)    # for interactive console
     window = Window()
     window.show()
-    sys.exit(app.exec_())                         # for interactive console: simply use app.exec_()
+    sys.exit(app.exec_())
