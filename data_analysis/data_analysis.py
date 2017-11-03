@@ -98,7 +98,7 @@ class zScanDataAnalyser:
             instance property self.S and returns it in addition.
         """
         self.S = average_ratio(ca_signal, ref_signal, calib_factor=self.c_CA)
-        self.combined_c_CA = self.c_CA * self.S
+        self.combined_c_CA = self.c_CA * self.S  # ERROR COMPUTATION?????????????
         return self.S
 
 

@@ -1,44 +1,36 @@
 if __name__ == '__main__':
-    import nidaqmx as nidaq
+    import nidaqmx
 
 else:
-    from . import nidaqmx as nidaq
+    from . import nidaqmx
 
 import numpy as np
 
 
-# meine Funktionen
-import matplotlib.pyplot as plt
+# Reference photodiode
+pd_ref_channel = "Dev1/ai0"
+pd_oa_channel = "Dev1/ai1"
+pd_ca_channel = "Dev1/ai2"
 
-with nidaqmx.Task() as task:
-    task.ai_channels.add_ai_voltage_chan("Dev1/ai0")
-    task.ai_channels.add_ai_voltage_chan("Dev1/ai1")
-    task.timing.cfg_samp_clk_timing(23127, sample_mode=nidaqmx.constants.AcquisitionType.FINITE, samps_per_chan=50000)
-    a = np.array(task.read(number_of_samples_per_channel=50000))
-
-ratios = np.zeros(shape=(50000, 2))
-for i in range(len(a[0])):
-    if a[0,i] > 0.1*a[0].max():
-        ratios[i] = np.array([i, a[0,i] / a[1,i]])
-
-plt.plot(a[0], alpha=0.5)
-plt.plot(a[1], alpha=.5)
-plt.plot(ratios[:,0], ratios[:,1], marker="x", linestyle="")
-plt.show()
+channels = [pd_ref_channel, pd_oa_channel, pd_ca_channel]
 
 
-mean = 0
-i = 0
-for entry in ratios[:,1]:
-    if entry > 0:
-        mean += entry
-        i += 1
-mean = mean / i
 
-std = 0
-for entry in ratios[:,1]:
-    if entry > 0:
-        std += (entry-mean)**2
-std = np.sqrt(1/(i-1) * std)
+def read_nidaq(self, sampling_rate, num_samples_per_chan):
+    """ Retrieves num_samples_per_chan samples per channel. The rate at which these data are
+        acquired from the NIDAQ is given in units of Hz and cannot exceed 24000Hz.
+        Output: 2-dim numpy array, the first dimension denoting the channel, the second dimension
+                contains num_samples_per_chan measurements.
+    """
+    with nidaqmx.Task() as task:
+        for channel in channels:
+            task.ai_channels.add_ai_voltage_chan(channel)
 
-print(mean, std)
+        task.timing.cfg_samp_clk_timing(
+            sampling_rate,
+            sample_mode = nidaqmx.constants.AcquisitionType.FINITE,
+            samps_per_chan = num_samples_per_chan)
+            
+        signals = np.array(task.read(number_of_samples_per_channel=num_samples_per_chan))
+
+    return signals
