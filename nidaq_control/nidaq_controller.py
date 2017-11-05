@@ -73,7 +73,7 @@ def get_filtered_nidaq_signal(sampling_rate, num_samples_per_chan):
     """
 
     # We want at least 10 useful measurements:
-    while(True)
+    while(True):
         signals = read_nidaq(sampling_rate, num_samples_per_chan)
         signals = filter_nidaq_signal_peaks(signals)
         if signals.shape[1] >= 10:

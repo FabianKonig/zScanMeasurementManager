@@ -83,12 +83,13 @@ class zScanDataAnalyser:
 
             Output
             -------
-            In place assignment to self.c_OA and self.c_OA. They will be 1-dim numpy arrays with
-            the first entry being the average calibration factor and the second entry being its
-            corresponding error.
+            1-dim array with two entries. First entry is the open, second entry the closed aperture
+            calibration factor. Each entry itself is a 1-dim numpy array with the first entry being
+            the average calibration factor and the second entry being its corresponding error.
         """
         self.c_OA = average_ratio(oa_signal, ref_signal)
         self.c_CA = average_ratio(ca_signal, ref_signal)
+        return np.array([self.c_OA, self.c_CA])
 
 
     def extract_aperture_transmission(self, ca_signal, ref_signal):

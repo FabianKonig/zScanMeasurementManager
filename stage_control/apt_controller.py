@@ -49,7 +49,7 @@ class APT_Controller:
             self.block_while_moving_then_assert_and_update(2)
 
         self.move_stages_home()
-        self.move_to_maximum_positions()
+        self.move_stages_to_maximum_positions()
 
 
     def get_motors(self):
@@ -127,7 +127,7 @@ class APT_Controller:
         self.block_while_moving_then_assert_and_update(0)
 
 
-    def move_to_maximum_positions(self):
+    def move_stages_to_maximum_positions(self):
         for motor in self._motors:
             max_position = motor.get_stage_axis_info()[1]
             motor.move_to(max_position)
