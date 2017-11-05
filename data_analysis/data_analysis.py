@@ -51,7 +51,7 @@ class zScanDataAnalyser:
 
             Input:
             -------
-            total_steps: integer, corresponding to the total number of stage positions at which the
+            total_steps: integer, corresponding to the total number of stage positions at which
                          photodiode signals will be measured (optional parameter).
         """
         self.c_OA = None
@@ -67,7 +67,7 @@ class zScanDataAnalyser:
 
 
 
-    def extract_calibration_factors(self, oa_signal, ca_signal, ref_signal):
+    def extract_calibration_factors(self, ref_signal, oa_signal, ca_signal):
         """ If the probe is placed into the beam far displaced from the focal spot, i.e. nonlinear
             effects are highly unlikely, we consider this situation as 100% transmission. As such,
             we want to calibrate the photodiode signals to be "equal".
@@ -89,10 +89,12 @@ class zScanDataAnalyser:
         """
         self.c_OA = average_ratio(oa_signal, ref_signal)
         self.c_CA = average_ratio(ca_signal, ref_signal)
+        self.S = 1
+        self.combined_c_CA = self.c_CA * self.S
         return np.array([self.c_OA, self.c_CA])
 
 
-    def extract_aperture_transmission(self, ca_signal, ref_signal):
+    def extract_aperture_transmission(self, ref_signal, ca_signal):
         """ If the probe is placed into the beam but is far displaced from the focal spot, i.e.
             nonlinear effects are highly unlikely, and the calibration factor self.c_CA between
             closed aperture photodiode and reference photodiode has already been computed,
@@ -101,6 +103,7 @@ class zScanDataAnalyser:
             signal and evaluates the aperture transmission self.S. It stores this value in the
             instance property self.S and returns it in addition.
         """
+        assert self.c_CA is not None and self.c_OA is not None
         self.S = average_ratio(ca_signal, ref_signal, calib_factor=self.c_CA)
         self.combined_c_CA[0] = self.c_CA[0] * self.S[0]
         self.combined_c_CA[1] = np.sqrt((self.c_CA[0]*self.S[1])**2 + (self.c_CA[1]*self.S[0])**2)

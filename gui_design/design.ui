@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>632</width>
-    <height>560</height>
+    <width>565</width>
+    <height>630</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -139,37 +139,8 @@ p, li { white-space: pre-wrap; }
         </widget>
        </item>
        <item>
-        <spacer name="horizontalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>10</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
         <widget class="QWidget" name="widgetCalibrationValues" native="true">
          <layout class="QGridLayout" name="gridLayout">
-          <item row="1" column="3">
-           <spacer name="horizontalSpacer_3">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
           <item row="0" column="2">
            <widget class="QLabel" name="label_cCAValue">
             <property name="text">
@@ -179,6 +150,12 @@ p, li { white-space: pre-wrap; }
           </item>
           <item row="0" column="1">
            <widget class="QLabel" name="label_cCA">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string>c_CA =</string>
             </property>
@@ -189,6 +166,12 @@ p, li { white-space: pre-wrap; }
           </item>
           <item row="2" column="1">
            <widget class="QLabel" name="label_alpha">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;α / m&lt;span style=&quot; vertical-align:super;&quot;&gt;-1&lt;/span&gt; =&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
@@ -199,6 +182,12 @@ p, li { white-space: pre-wrap; }
           </item>
           <item row="1" column="1">
            <widget class="QLabel" name="label_cOA">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="text">
              <string>c_OA =</string>
             </property>
@@ -207,7 +196,7 @@ p, li { white-space: pre-wrap; }
             </property>
            </widget>
           </item>
-          <item row="0" column="4">
+          <item row="0" column="3">
            <widget class="QLabel" name="label_progress">
             <property name="enabled">
              <bool>true</bool>
@@ -260,6 +249,13 @@ p, li { white-space: pre-wrap; }
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout_4">
        <item>
+        <widget class="QPushButton" name="pushButton_MeasureAperture">
+         <property name="text">
+          <string>Measure aperture transmission</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QLabel" name="labelApertureTransmittance">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -268,7 +264,7 @@ p, li { white-space: pre-wrap; }
           </sizepolicy>
          </property>
          <property name="text">
-          <string>Aperture transmittance: S =</string>
+          <string>S =</string>
          </property>
         </widget>
        </item>

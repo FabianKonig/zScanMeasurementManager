@@ -30,6 +30,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
     def defineSignalsSlots(self):
         self.pushButtonCalibrate_PDs.clicked.connect(self.onClick_calibrate_photodiodes)
+        self.pushButton_MeasureAperture.clicked.connect(self.onClick_measure_aperture_transmission)
 
 
 
@@ -37,15 +38,24 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
     def onClick_calibrate_photodiodes(self):
         print("Get Nidaq Signal, I will need some time and want the progress symbol to appear meanwhile.")
         #signals = nidaq_control.get_filtered_nidaq_signal(23517, 25000)
-        signals=np.array([[6,4,1,5], [8,5,2,6], [8,5,1,7]])  # temporary
+        signals = np.array([[12,8,2,10], [8,5,2,6.1], [12,8,2,10]])  # temporary
 
         calib_factors = list(self.data_analyser.extract_calibration_factors(*signals))
-        self.label_cCAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[0]))
-        self.label_cOAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[1]))
-
+        self.label_cOAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[0]))
+        self.label_cCAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[1]))
 
         self.groupBox_Aperture.setEnabled(True)
 
+
+    def onClick_measure_aperture_transmission(self):
+        print("Get Nidaq Signal, I will need some time and want the progress symbol to appear meanwhile.")
+        #signals = nidaq_control.get_filtered_nidaq_signal(23517, 25000)
+        signals = np.array([[12,8,2,10], [8,5,2,6.1], [12*0.8,8*0.8,2*0.8,10*0.8]])  # temporary
+
+        s = list(self.data_analyser.extract_aperture_transmission(signals[0], signals[2]))
+        self.labelApertureTransmittanceValue.setText("{0:.3f} +- {1:.3f}".format(*s))
+
+        self.groupBox_Measurement.setEnabled(True)
 
 
 
