@@ -42,21 +42,22 @@ def average_ratio(data_1, data_2, calib_factor = None):
 
 
 class zScanDataAnalyser:
-    def __init__(self, oa_signal, ca_signal, ref_signal, total_steps):
-        """ Prior to calling this initialisator, the probe has to be inserted into the beam but
-            far displaced from the focal spot, i.e. nonlinear effects are highly unlikely.
-            Additionally, the aperture has to be opened.
+    def __init__(self, total_steps=50):
+        """ Class to extract calibration factors and transmissions from the photodiode signals.
+            The first two functions to be called must be:
+                1. extract_calibration_factors
+                2. extract_aperture_transmission (in this order)
+            Only then is it sensible to call the function "extract_oa_ca_transmissions".
 
             Input:
             -------
-            oa, ca, ref_signal: 1-dim numpy arrays of Nidaq measurements, all of identical length.
             total_steps: integer, corresponding to the total number of stage positions at which the
-                         photodiode signals will be measured.
+                         photodiode signals will be measured (optional parameter).
         """
-        self.c_OA = self.extract_calibration_factor(oa_signal, ref_signal)
-        self.c_CA = self.extract_calibration_factor(ca_signal, ref_signal)
-        self.S = 1  # Transmission of aperture
-        self.combined_c_CA = self.c_CA * self.S
+        self.c_OA = None
+        self.c_CA = None
+        self.S = None  # Transmission of aperture
+        self.combined_c_CA = None  # S*c_CA
 
         self.T_OA = np.zeros(shape=(total_steps, 2))  # transmission in open aperture path.
         self.T_CA = np.zeros(shape=(total_steps, 2))  # transmission in closed aperture path.
@@ -66,26 +67,28 @@ class zScanDataAnalyser:
 
 
 
-    def extract_calibration_factor(self, pd_signal, ref_signal):
+    def extract_calibration_factors(self, oa_signal, ca_signal, ref_signal):
         """ If the probe is placed into the beam far displaced from the focal spot, i.e. nonlinear
             effects are highly unlikely, we consider this situation as 100% transmission. As such,
             we want to calibrate the photodiode signals to be "equal".
-            Hence, for this function to produce a reasonable calibration factor, place the probe
+            Hence, for this function to produce reasonable calibration factors, place the probe
             into the beam but far displaced from the from the focal spot. Additionally, open the
             aperture to 100% transmission (S=1).
             
             Input
             ------
-            pd_signal: 1-dim numpy array. Nidaq measurements of either the closed or open aperture
-            photodiode.
+            oa_signal: 1-dim numpy array. Nidaq measurements of the open aperture photodiode.
+            ca_signal: 1-dim numpy array. Nidaq measurements of the closed aperture photodiode.
             ref_signal: 1-dim numpy array. Nidaq measurements of the reference photodiode.
 
             Output
             -------
-            calibration_factor: 1-dim numpy array. First entry being the average calibration factor,
-            second entry being its corresponding error.
+            In place assignment to self.c_OA and self.c_OA. They will be 1-dim numpy arrays with
+            the first entry being the average calibration factor and the second entry being its
+            corresponding error.
         """
-        return average_ratio(pd_signal, ref_signal)
+        self.c_OA = average_ratio(oa_signal, ref_signal)
+        self.c_CA = average_ratio(ca_signal, ref_signal)
 
 
     def extract_aperture_transmission(self, ca_signal, ref_signal):
@@ -108,6 +111,9 @@ class zScanDataAnalyser:
             closed aperture path. The result is written into the arrays self.T_CA and self.T_OA in
             a 1-dim numpy array [position, transmission, error on transmission].
         """
+        assert self.c_OA is not None and self.c_CA is not None and self.S is not None and \
+            self.combined_c_CA is not None
+
         transmission_oa = average_ratio(oa_signal, ref_signal, self.c_OA)
         transmission_ca = average_ratio(ca_signal, ref_signal, self.combined_c_CA)
         self.T_OA[current_position_step] = np.array([position, *transmission_oa])
