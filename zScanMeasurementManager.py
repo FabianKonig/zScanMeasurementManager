@@ -4,7 +4,7 @@ from PyQt5 import QtWidgets
 import gui_design
 import data_analysis
 import stage_control
-#import nidaq_control
+import nidaq_control
 
 
 class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
@@ -35,8 +35,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
     def onClick_calibrate_photodiodes(self):
         print("Get Nidaq Signal, I will need some time and want the progress symbol to appear meanwhile.")
-        #signals = nidaq_control.get_filtered_nidaq_signal()
-        signals = np.array([[12,8,2,10], [8,5,2,6.1], [12,8,2,10]])  # temporary
+        signals = nidaq_control.get_nidaq_measurement_max_values()
 
         calib_factors = list(self.data_analyser.extract_calibration_factors(*signals))
         self.label_cOAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[0]))
@@ -47,8 +46,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
     def onClick_measure_aperture_transmission(self):
         print("Get Nidaq Signal, I will need some time and want the progress symbol to appear meanwhile.")
-        #signals = nidaq_control.get_filtered_nidaq_signal()
-        signals = np.array([[12,8,2,10], [8,5,2,6.1], [12*0.8,8*0.8,2*0.8,10*0.8]])  # temporary
+        signals = nidaq_control.get_nidaq_measurement_max_values()
 
         s = list(self.data_analyser.extract_aperture_transmission(signals[0], signals[2]))
         self.labelApertureTransmittanceValue.setText("{0:.3f} +- {1:.3f}".format(*s))
@@ -64,8 +62,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         tot_num_of_pos = self.data_analyser.tot_num_of_pos
 
         for pos_index in range(tot_num_of_pos):
-            #signals = get_filtered_nidaq_signal()
-            signals = np.array([[12,8,2,10], [8,5,2,6.1], [12*0.8,8*0.8,2*0.8,10*0.8]])  # temporary
+            signals = nidaq_control.get_nidaq_measurement_max_values()
             self.data_analyser.extract_oa_ca_transmissions(self.stage_controller.combined_position, *signals)
             # Don't move the last time because stages are already at their maximum positions:
             if pos_index < tot_num_of_pos-1:

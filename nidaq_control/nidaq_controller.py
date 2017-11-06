@@ -41,6 +41,29 @@ def read_nidaq(sampling_rate=default_sampling_rate, num_samples_per_chan=default
     return signals
 
 
+def get_nidaq_measurement_max_values(sampling_rate=default_sampling_rate,
+    num_samples_per_chan=default_num_samp_per_chan, number_of_max_values=5):
+    """ I figured out that the best way of obtaining reproducable data from the Nidaq measurments is
+        by acquiring data from it for approx 1 second or longer with maximum sample rate
+        (corresponds to a sample rate of 16000 and number of samples of 25000) and taking the
+        maximum measured value for each channel. This function thus queries the Nidaq signals,
+        stores the maximum value of each channel and repeats this measurement number_of_max_values
+        often.
+        Output: 2-dim numpy array with the first dimension denoting the channel and the second
+        dimension is number_of_max_values entries long, each storing the maximum value of that
+        measurement. The order of the channels is 1: ref, 2: oa, 3: ca.
+    """
+    
+    max_signal_values = np.empty(shape=(len(channels), number_of_max_values))
+
+    for value_index in range(number_of_max_values):
+        signals = read_nidaq(sampling_rate, num_samples_per_chan)
+        for channel_index in range(len(channels))
+            max_signal_values[channel_index, value_index] = signal[channel_index].max()
+
+    return max_signal_values
+
+
 def filter_nidaq_signal_peaks(signals):
     """ The photodiode signals retrieved with the NIDAQ usually consist of many entries which have
         been measured at a moment of time where no optical laser pulse was incident. As such, lot of
