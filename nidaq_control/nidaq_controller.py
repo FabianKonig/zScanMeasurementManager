@@ -7,6 +7,10 @@ else:
 import numpy as np
 
 
+# Settings
+default_sampling_rate = 23517
+default_num_samp_per_chan = 25000
+
 # Reference photodiode
 pd_ref_channel = "Dev1/ai0"
 pd_oa_channel = "Dev1/ai1"
@@ -16,7 +20,7 @@ channels = [pd_ref_channel, pd_oa_channel, pd_ca_channel]
 
 
 
-def read_nidaq(sampling_rate, num_samples_per_chan):
+def read_nidaq(sampling_rate=default_sampling_rate, num_samples_per_chan=default_num_samp_per_chan):
     """ Retrieves num_samples_per_chan samples per channel. The rate at which these data are
         acquired from the NIDAQ is given in units of Hz and cannot exceed 24000Hz.
         Output: 2-dim numpy array, the first dimension denoting the channel, the second dimension
@@ -64,7 +68,8 @@ def filter_nidaq_signal_peaks(signals):
     return signals
 
 
-def get_filtered_nidaq_signal(sampling_rate, num_samples_per_chan):
+def get_filtered_nidaq_signal(sampling_rate=default_sampling_rate,
+    num_samples_per_chan=default_num_samp_per_chan):
     """ Retrieves num_samples_per_chan samples for the channels with a sampling_rate.
         It then filters the measurements and returns them. See the docstrings of the corresponding
         functions.

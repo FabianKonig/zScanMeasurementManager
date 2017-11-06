@@ -42,7 +42,7 @@ def average_ratio(data_1, data_2, calib_factor = None):
 
 
 class zScanDataAnalyser:
-    def __init__(self, total_steps=50):
+    def __init__(self, tot_num_of_pos):
         """ Class to extract calibration factors and transmissions from the photodiode signals.
             The first two functions to be called must be:
                 1. extract_calibration_factors
@@ -51,18 +51,18 @@ class zScanDataAnalyser:
 
             Input:
             -------
-            total_steps: integer, corresponding to the total number of stage positions at which
-                         photodiode signals will be measured (optional parameter).
+            tot_num_of_pos: integer, corresponding to the total number of stage positions at which
+                            photodiode signals will be measured.
         """
         self.c_OA = None
         self.c_CA = None
         self.S = None  # Transmission of aperture
         self.combined_c_CA = None  # S*c_CA
 
-        self.T_OA = np.zeros(shape=(total_steps, 2))  # transmission in open aperture path.
-        self.T_CA = np.zeros(shape=(total_steps, 2))  # transmission in closed aperture path.
+        self.T_OA = np.zeros(shape=(tot_num_of_pos, 3))  # transmission in open aperture path.
+        self.T_CA = np.zeros(shape=(tot_num_of_pos, 3))  # transmission in closed aperture path.
 
-        self.total_steps = total_steps     # The total number of measurement stage positions.
+        self.tot_num_of_pos = tot_num_of_pos   # The total number of measurement stage positions.
         self.current_position_step = 0     # Integer indicating next empty transmission array entry.
 
 
@@ -110,21 +110,29 @@ class zScanDataAnalyser:
         return self.S
 
 
-    def extract_oa_ca_transmissions(self, position, oa_signal, ca_signal, ref_signal):
+    def extract_oa_ca_transmissions(self, position, ref_signal, oa_signal, ca_signal):
         """ At any one probe position, this function evaluates the transmission in both the open and
             closed aperture path. The result is written into the arrays self.T_CA and self.T_OA in
             a 1-dim numpy array [position, transmission, error on transmission].
         """
         assert self.c_OA is not None and self.c_CA is not None and self.S is not None and \
             self.combined_c_CA is not None
+        
+        assert self.current_position_step < self.tot_num_of_pos
 
         transmission_oa = average_ratio(oa_signal, ref_signal, self.c_OA)
         transmission_ca = average_ratio(ca_signal, ref_signal, self.combined_c_CA)
-        self.T_OA[current_position_step] = np.array([position, *transmission_oa])
-        self.T_CA[current_position_step] = np.array([position, *transmission_ca])
+        self.T_OA[self.current_position_step] = np.array([position, *transmission_oa])
+        self.T_CA[self.current_position_step] = np.array([position, *transmission_ca])
 
         self.current_position_step += 1
-        assert self.current_position_step <= total_steps
+
+
+    def reinitialise(self):
+        self.T_OA = np.zeros(shape=(self.tot_num_of_pos, 3))
+        self.T_CA = np.zeros(shape=(self.tot_num_of_pos, 3))
+
+        self.current_position_step = 0  
 
 
 

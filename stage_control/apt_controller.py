@@ -135,7 +135,7 @@ class APT_Controller:
         self.block_while_moving_then_assert_and_update(self.total_travel_distance)
 
 
-    def move_in_steps(self, total_steps, direction):
+    def move_in_steps(self, tot_num_of_pos, direction):
         if direction == "forward":
             direction = +1
         elif direction == "backward":
@@ -143,13 +143,14 @@ class APT_Controller:
         else:
             raise Exception("Direction must be a string of either 'forward' or 'backward'.")
 
-
         expected_new_combined_position = 0
 
         for motor in self._motors:
             min_stage_position = motor.get_stage_axis_info()[0]  # Das als static wäre gut
             max_stage_position = motor.get_stage_axis_info()[1]
-            step_size = direction * max_stage_position / total_steps
+
+            # The first position is always the initial position. Hence "tot_num_of_pos-1"
+            step_size = direction * max_stage_position / (tot_num_of_pos-1)
             new_position = motor.position + step_size
 
             # new_position is only allowed to exceed the minimum/maximum position by 10µm
@@ -165,6 +166,9 @@ class APT_Controller:
 
         self.block_while_moving_then_assert_and_update(expected_new_combined_position)
 
+
+    def reinitialise_stages(self):
+        self.move_stages_to_maximum_positions()
 
 
 
