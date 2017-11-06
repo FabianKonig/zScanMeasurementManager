@@ -8,7 +8,8 @@ import numpy as np
 
 
 # Settings
-default_sampling_rate = 23517
+default_sampling_rate = 15973  # 48000 is maximum, we use 3 channels, thus 16000. We use an uneven
+                               # number to avoid possible ringing effects.
 default_num_samp_per_chan = 25000
 
 # Reference photodiode
@@ -22,7 +23,7 @@ channels = [pd_ref_channel, pd_oa_channel, pd_ca_channel]
 
 def read_nidaq(sampling_rate=default_sampling_rate, num_samples_per_chan=default_num_samp_per_chan):
     """ Retrieves num_samples_per_chan samples per channel. The rate at which these data are
-        acquired from the NIDAQ is given in units of Hz and cannot exceed 24000Hz.
+        acquired from the NIDAQ is given in units of Hz and cannot exceed 48kHz/3channels=16000Hz.
         Output: 2-dim numpy array, the first dimension denoting the channel, the second dimension
                 contains num_samples_per_chan measurements.
     """
@@ -85,3 +86,19 @@ def get_filtered_nidaq_signal(sampling_rate=default_sampling_rate,
             break
 
     return signals
+
+
+
+if __name__ == '__main__':
+    
+    import matplotlib.pyplot as plt
+    signals = read_nidaq()
+    print(signals[0].max(), signals[0].sum(), signals[0].max() / signals[0].sum())
+    print(signals[1].max(), signals[1].sum(), signals[1].max() / signals[1].sum())
+    print(signals[2].max(), signals[2].sum(), signals[2].max() / signals[2].sum())
+
+    plt.plot(signals[0], alpha=0.5, linestyle="", marker="x", label="Ref")
+    plt.plot(signals[1], alpha=0.5, linestyle="", marker="x", label="OA")    
+    plt.plot(signals[2], alpha=0.5, linestyle="", marker="x", label="CA")
+    plt.legend()
+    plt.show()

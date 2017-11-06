@@ -3,14 +3,14 @@ import numpy as np
 from PyQt5 import QtWidgets
 import gui_design
 import data_analysis
-#import stage_control
+import stage_control
 #import nidaq_control
 
 
 class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
     def __init__(self):
         super().__init__()    # call __init__ of QtWidgets.QMainWindow
-        self.data_analyser = data_analysis.zScanDataAnalyser(tot_num_of_pos=2)
+        self.data_analyser = data_analysis.zScanDataAnalyser(tot_num_of_pos=10)
         self.stage_controller = None
 
         self.setupUi(self)    # call setupUI of gui_design.Ui_MainWindow (generated with QtDesigner)
@@ -23,7 +23,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             " Make sure the stages can move unhindered!")
         
         print("self.stage_controller is being initialised, I will freeze")
-        #self.stage_controller = stage_control.APT_Controller()
+        self.stage_controller = stage_control.APT_Controller()
         # Activate pushButtonCalibrate_PDs only after the stage initialisation has completed.
 
 
@@ -66,17 +66,14 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         for pos_index in range(tot_num_of_pos):
             #signals = get_filtered_nidaq_signal()
             signals = np.array([[12,8,2,10], [8,5,2,6.1], [12*0.8,8*0.8,2*0.8,10*0.8]])  # temporary
-            comb_pos = 3  #temporary
-            #self.data_analyser.extract_oa_ca_transmissions(self.stage_controller.combined_position, *signals)
-            self.data_analyser.extract_oa_ca_transmissions(comb_pos, *signals)
+            self.data_analyser.extract_oa_ca_transmissions(self.stage_controller.combined_position, *signals)
             # Don't move the last time because stages are already at their maximum positions:
             if pos_index < tot_num_of_pos-1:
-                pass
-                #self.stage_controller.move_in_steps(tot_num_of_pos, "backward")
+                self.stage_controller.move_in_steps(tot_num_of_pos, "backward")
 
         print(self.data_analyser.T_CA)
 
-        #self.stage_controller.reinitialise_stages()
+        self.stage_controller.reinitialise_stages()
         self.data_analyser.reinitialise()
 
 
