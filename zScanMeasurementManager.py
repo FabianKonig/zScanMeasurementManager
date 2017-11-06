@@ -5,12 +5,13 @@ import gui_design
 import data_analysis
 import stage_control
 import nidaq_control
+import matplotlib.pyplot as plt
 
 
 class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
     def __init__(self):
         super().__init__()    # call __init__ of QtWidgets.QMainWindow
-        self.data_analyser = data_analysis.zScanDataAnalyser(tot_num_of_pos=10)
+        self.data_analyser = data_analysis.zScanDataAnalyser(tot_num_of_pos=40)
         self.stage_controller = None
 
         self.setupUi(self)    # call setupUI of gui_design.Ui_MainWindow (generated with QtDesigner)
@@ -68,7 +69,12 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             if pos_index < tot_num_of_pos-1:
                 self.stage_controller.move_in_steps(tot_num_of_pos, "backward")
 
-        print(self.data_analyser.T_CA)
+        T_CA = self.data_analyser.T_CA
+        T_OA = self.data_analyser.T_OA
+        plt.errorbar(T_CA[:,0], T_CA[:,1], yerr=T_CA[:,2], linestyle="", marker="x", label="CA")
+        plt.errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", label="OA")
+        plt.legend()
+        plt.show()
 
         self.stage_controller.reinitialise_stages()
         self.data_analyser.reinitialise()
