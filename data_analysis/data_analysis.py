@@ -1,6 +1,7 @@
 import numpy as np
 import datetime
 import os
+from scipy.optimize import curve_fit
 
 
 def average_ratio(data_1, data_2, calib_factor = None):
@@ -42,6 +43,16 @@ def average_ratio(data_1, data_2, calib_factor = None):
 
 
 
+def T_OA_func(z, z0, zR, dΨ):
+            x = (z-z0)/zR
+            return 1 - 2*(x**2+3)*dΨ / ((x**2+9) * (x**2+1))
+
+def T_CA_func(z, z0, zR, dΦ, dΨ):
+            x = (z-z0)/zR
+            return T_OA_func(z, dΨ) + 4*x*dΦ / ((x**2+9) * (x**2+1))
+
+
+
 
 class zScanDataAnalyser:
     def __init__(self, tot_num_of_pos):
@@ -67,6 +78,13 @@ class zScanDataAnalyser:
         self.tot_num_of_pos = tot_num_of_pos   # The total number of measurement stage positions.
         self.current_position_step = 0     # Integer indicating next empty transmission array entry.
 
+        self.w0 = 20.0299e-6  #m waist of incident beam in vacuum
+        self.λ = 532e-9  #m in vacuum
+        self.zR = np.pi * self.w0**2 / self.λ * 1e3   #mm Rayleigh length in vacuum
+
+        self.z0 = None   # fitted results
+        self.dΨ = None
+        self.dΦ = None
 
 
     def extract_calibration_factors(self, ref_signal, oa_signal, ca_signal):
@@ -164,21 +182,56 @@ class zScanDataAnalyser:
 
 
     def fit_transmission_data(self):
-        
-        def T_OA_func(z, z0, zR, dΨ):
-            x = z/zR
-            return 1 - 2*(x**2+3)*dΨ / ((x**2+9) * (x**2+1))
 
-        def T_CA_func(z, zR, dΦ, dΨ):
-            x = z/zR
-            return T_OA_func(z, dΨ) + 4*x*dΦ / ((x**2+9) * (x**2+1))
-
-
-    def plot_transmission(self):
+        # abbreviation :-)
         T_OA = self.T_OA
         T_CA = self.T_CA
-        plt.errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", label="OA")
-        plt.errorbar(T_CA[:,0], T_CA[:,1], yerr=T_CA[:,2], linestyle="", marker="x", label="CA")
+
+        # firstly, fit T_OA and use self.zR (Rayleigh length in vacuum)
+        T_OA_fitfunc = lambda z, z0, dΨ: T_OA_func(z, z0, self.zR, dΨ)
+        fit_OA, cov_OA = curve_fit(T_OA_fitfunc, T_OA[:,0], T_OA[:,1], sigma=T_OA[:,3])
+        std_err_OA = np.sqrt(np.diag(cov_dΨ))
+
+        fit_z0 = np.array([fit_OA[0], std_err_OA[0]])
+        fit_dΨ = np.array([fit_OA[1], std_err_OA[1]])
+        del fit_OA, cov_OA, std_err_OA
+
+
+        # Here, we have to check whether the first fit was successful! There might be samples where
+        # no nonlinear absorption occurs. Obviously, the fitting procedure will definitively fail in
+        # those samples.
+
+
+        # now, fit T_CA using the data from the fit to T_OA
+        T_CA_fitfunc = lambda z, dΦ : T_CA_func(z, fit_z0[0], self.zR, dΦ, fit_dΨ)
+        fit_CA, cov_CA = curve_fit(T_CA_fitfunc, T_CA[:,0], T_CA[:,1], sigma=T_CA[:,3])
+        std_err_CA = np.sqrt(np.diag(cov_dΨ))
+
+        fit_dΦ = np.array([fit_CA[0], std_err_CA[0]])
+        del fit_CA, cov_CA, std_err_CA
+
+        # store results in instance variables:
+        self.z0 = fit_z0
+        self.dΨ = fit_dΨ
+        self.dΦ = fit_dΦ
+
+
+
+    def plot_transmission_data(self):
+        T_OA = self.T_OA
+        T_CA = self.T_CA
+        plt.errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", color="black", label="OA")
+        plt.errorbar(T_CA[:,0], T_CA[:,1], yerr=T_CA[:,2], linestyle="", marker="x", color="red", label="CA")
+
+        # Plot the fit functions if fit parameters exist
+        if self.z0 is not None and self.dΨ is not None and self.dΦ is not None:
+            pos_vals = np.linspace(T_OA[0,0]-.5, T_OA[-1,0]+.5, 200)
+            T_OA_vals = T_OA_func(pos_vals, self.z0, self.zR, self.dΨ)
+            T_CA_vals = T_CA_func(pos_vals, self.z0, self.zR, self.dΦ, self.dΨ)
+            
+            plt.plot(pos_vals, T_OA_vals, color="black")
+            plt.plot(pos_vals, T_CA_vals, color="red")
+
         plt.grid()
         plt.legend()
         plt.show()
@@ -186,7 +239,8 @@ class zScanDataAnalyser:
 
     def evaluate_measurement_and_reinitialise(self, note):
         self.store_transmission_data(note)
-        self.plot_transmission()
+        self.fit_transmission_data()
+        self.plot_transmission_data()
         self.reinitialise()
 
 
