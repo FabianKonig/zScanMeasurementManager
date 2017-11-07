@@ -43,10 +43,10 @@ class APT_Controller:
         
         self.set_stages_maximum_positions()
         
-        if self.combined_position > 2:  # move the motors quickly close to the home position.
+        if self.combined_position > 1:  # move the motors quickly close to the home position.
             for motor in self._motors:
-                motor.move_to(1)
-            self.block_while_moving_then_assert_and_update(2)
+                motor.move_to(0.01, blocking=True)
+            self.assert_and_update_position(2)
 
         self.move_stages_home()
         self.move_stages_to_maximum_positions()
@@ -93,10 +93,9 @@ class APT_Controller:
             self.total_travel_distance += motor.get_stage_axis_info()[1]
 
 
-    def block_while_moving_then_assert_and_update(self, expected_new_combined_position):
-        """ Function ensuring that the program halts until the stages are no longer in motion.
-            After movement has completed, the new combined position is checked against the
-            function parameter "expected_new_combined_position". If the check succeeds,
+    def assert_and_update_position(self, expected_new_combined_position):
+        """ To call after any stage movement has completed. New combined position is checked against
+            the function parameter "expected_new_combined_position". If the check succeeds,
             self.combined_position is updated.
 
         Input:
@@ -104,12 +103,12 @@ class APT_Controller:
                                             stage movement is completed.
         """
 
-        while(True):
-            break_condition = True
-            for motor in self._motors:
-                break_condition *= not motor.is_in_motion
-            if(break_condition):
-                break
+        #while(True):
+        #    break_condition = True
+        #    for motor in self._motors:
+        #        break_condition *= not motor.is_in_motion
+        #    if(break_condition):
+        #        break
 
         new_combined_position = 0
         for motor in self._motors:
@@ -122,17 +121,17 @@ class APT_Controller:
 
     def move_stages_home(self):
         for motor in self._motors:
-            motor.move_home()
+            motor.move_home(blocking=True)
 
-        self.block_while_moving_then_assert_and_update(0)
+        self.assert_and_update_position(0)
 
 
     def move_stages_to_maximum_positions(self):
         for motor in self._motors:
             max_position = motor.get_stage_axis_info()[1]
-            motor.move_to(max_position)
+            motor.move_to(max_position, blocking=True)
 
-        self.block_while_moving_then_assert_and_update(self.total_travel_distance)
+        self.assert_and_update_position(self.total_travel_distance)
 
 
     def move_in_steps(self, tot_num_of_pos, direction):
@@ -162,9 +161,9 @@ class APT_Controller:
                 new_position = min_stage_position
 
             expected_new_combined_position += new_position
-            motor.move_to(new_position)
+            motor.move_to(new_position, blocking=True)
 
-        self.block_while_moving_then_assert_and_update(expected_new_combined_position)
+        self.assert_and_update_position(expected_new_combined_position)
 
 
     def reinitialise_stages(self):
