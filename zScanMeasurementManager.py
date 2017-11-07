@@ -75,7 +75,15 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
         for pos_index in range(tot_num_of_pos):
             signals = nidaq_control.get_nidaq_measurement_max_values()
-            self.data_analyser.extract_oa_ca_transmissions(self.stage_controller.combined_position, *signals)
+
+            # Position with respect to beam:
+            # If the physical stage position is zero, it is actually behind the focal spot (this is
+            # because the stages are aligned such that their max position is in front and their zero
+            # position behind the focal spot). Hence, we invert the positions now:
+            position_wrt_beam = self.stage_controller.total_travel_distance -
+                                    self.stage_controller.combined_position
+
+            self.data_analyser.extract_oa_ca_transmissions(position_wrt_beam, *signals)
             # Don't move the last time because stages are already at their maximum positions:
             if pos_index < tot_num_of_pos-1:
                 self.stage_controller.move_in_steps(tot_num_of_pos, "backward")
