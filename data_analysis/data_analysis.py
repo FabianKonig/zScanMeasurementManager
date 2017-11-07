@@ -88,6 +88,8 @@ class zScanDataAnalyser:
         self.fit_dΨ = None
         self.fit_dΦ = None
 
+        self.folder = None   # The folder to store results in
+
 
     def extract_calibration_factors(self, ref_signal, oa_signal, ca_signal):
         """ If the probe is placed into the beam far displaced from the focal spot, i.e. nonlinear
@@ -157,30 +159,29 @@ class zScanDataAnalyser:
         time = "{0:4d}.{1:02d}.{2:02d}  {3:02d}:{4:02d}".format(
             now.year, now.month, now.day, now.hour, now.minute)
         header = note + " \n" + time + "\n\nPosition / mm    T_OA    deltaT_OA    T_CA    deltaT_CA"
-        folder = self.get_folder()
-
+        
         # assert that position entries in T_OA and T_CA are identical
         assert (self.T_OA[:,0] == self.T_CA[:,0]).all()
         transmission_array = np.concatenate((self.T_OA, self.T_CA[:,1:]), axis=1)
 
         try:
-            np.savetxt(folder + "/" + note + ".csv",
-                transmission_array, header=header, fmt="%10.4f")
+            file = os.path.join(self.folder, "data.csv")
+            np.savetxt(file, transmission_array, header=header, fmt="%10.4f")
         except Exception as ex:
             print("Storage of transmission data failed!!!!")
             print(ex)
         
 
-    def get_folder(self):
+    def define_folder(self, note):
         """ 
         """
         now = datetime.date.today()
         today = "{0:4d}_{1:02d}_{2:02d}".format(now.year, now.month, now.day)
-        directory = os.path.join('..', 'Measurements', today)
+        directory = os.path.join('..', 'Measurements', today, note)  # Attention, we should take care about the string "note"!
 
         if not os.path.exists(directory):
             os.makedirs(directory)
-        return directory
+        self.folder = directory
 
 
     def fit_transmission_data(self):
@@ -220,6 +221,10 @@ class zScanDataAnalyser:
 
 
     def plot_transmission_data(self):
+
+        assert self.folder is not None
+        file = os.path.join(self.folder, "plot.pdf")
+
         T_OA = self.T_OA
         T_CA = self.T_CA
         plt.errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", color="black", label="OA")
@@ -236,10 +241,12 @@ class zScanDataAnalyser:
 
         plt.grid()
         plt.legend()
+        plt.savefig(file, dpi=600)
         plt.show()
 
 
     def evaluate_measurement_and_reinitialise(self, note):
+        self.define_folder(note)
         self.store_transmission_data(note)
         self.fit_transmission_data()
         self.plot_transmission_data()
@@ -251,6 +258,7 @@ class zScanDataAnalyser:
         self.T_CA = np.zeros(shape=(self.tot_num_of_pos, 3))
 
         self.current_position_step = 0
+        self.folder = None
 
 
 

@@ -42,13 +42,13 @@ class APT_Controller:
         
         self.set_stages_maximum_positions()
         
-        if self.combined_position > 0.1:  # move the motors quickly close to the home position.
+        if False:#self.combined_position > 0.1:  # move the motors quickly close to the home position.
             for motor in self._motors:
                 motor.move_to(0.01)
             self.combined_position = self._get_combined_position
             self.block_while_moving_then_assert_and_update_position(0.02)
 
-        self.move_stages_home()
+        #self.move_stages_home()
         self.initialise_stages()  # Currently, this just invokes move_stages_to_maximum_positions()
 
 

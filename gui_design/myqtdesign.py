@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file './gui_design/design.ui'
+# Form implementation generated from reading ui file 'design.ui'
 #
 # Created by: PyQt5 UI code generator 5.9
 #
@@ -93,9 +93,6 @@ class Ui_MainWindow(object):
         self.gridLayout = QtWidgets.QGridLayout(self.widgetCalibrationValues)
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
         self.gridLayout.setObjectName("gridLayout")
-        self.label_cCAValue = QtWidgets.QLabel(self.widgetCalibrationValues)
-        self.label_cCAValue.setObjectName("label_cCAValue")
-        self.gridLayout.addWidget(self.label_cCAValue, 0, 2, 1, 1)
         self.label_cCA = QtWidgets.QLabel(self.widgetCalibrationValues)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -129,11 +126,17 @@ class Ui_MainWindow(object):
         self.label_progress.setObjectName("label_progress")
         self.gridLayout.addWidget(self.label_progress, 0, 3, 1, 1)
         self.label_alpha_VALUE = QtWidgets.QLabel(self.widgetCalibrationValues)
+        self.label_alpha_VALUE.setText("")
         self.label_alpha_VALUE.setObjectName("label_alpha_VALUE")
         self.gridLayout.addWidget(self.label_alpha_VALUE, 2, 2, 1, 1)
         self.label_cOAValue = QtWidgets.QLabel(self.widgetCalibrationValues)
+        self.label_cOAValue.setText("")
         self.label_cOAValue.setObjectName("label_cOAValue")
         self.gridLayout.addWidget(self.label_cOAValue, 1, 2, 1, 1)
+        self.label_cCAValue = QtWidgets.QLabel(self.widgetCalibrationValues)
+        self.label_cCAValue.setText("")
+        self.label_cCAValue.setObjectName("label_cCAValue")
+        self.gridLayout.addWidget(self.label_cCAValue, 0, 2, 1, 1)
         self.horizontalLayout_2.addWidget(self.widgetCalibrationValues)
         self.verticalLayout.addWidget(self.groupBox_Calibration)
         self.groupBox_Aperture = QtWidgets.QGroupBox(self.centralwidget)
@@ -158,6 +161,7 @@ class Ui_MainWindow(object):
         self.labelApertureTransmittance.setObjectName("labelApertureTransmittance")
         self.horizontalLayout_4.addWidget(self.labelApertureTransmittance)
         self.labelApertureTransmittanceValue = QtWidgets.QLabel(self.groupBox_Aperture)
+        self.labelApertureTransmittanceValue.setText("")
         self.labelApertureTransmittanceValue.setObjectName("labelApertureTransmittanceValue")
         self.horizontalLayout_4.addWidget(self.labelApertureTransmittanceValue)
         spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
@@ -248,7 +252,6 @@ class Ui_MainWindow(object):
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Refractive index</p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">of sample (optional)</p></body></html>"))
         self.pushButtonCalibrate_PDs.setText(_translate("MainWindow", "Calibrate photodiodes"))
-        self.label_cCAValue.setText(_translate("MainWindow", "pending"))
         self.label_cCA.setText(_translate("MainWindow", "c_CA ="))
         self.label_alpha.setText(_translate("MainWindow", "<html><head/><body><p>α / m<span style=\" vertical-align:super;\">-1</span> =</p></body></html>"))
         self.label_cOA.setText(_translate("MainWindow", "c_OA ="))
@@ -257,12 +260,9 @@ class Ui_MainWindow(object):
 "p, li { white-space: pre-wrap; }\n"
 "</style></head><body style=\" font-family:\'Sans Serif\'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">in Progress...</p></body></html>"))
-        self.label_alpha_VALUE.setText(_translate("MainWindow", "pending"))
-        self.label_cOAValue.setText(_translate("MainWindow", "pending"))
         self.groupBox_Aperture.setTitle(_translate("MainWindow", "2. Align aperture"))
         self.pushButton_MeasureAperture.setText(_translate("MainWindow", "Measure aperture transmission"))
         self.labelApertureTransmittance.setText(_translate("MainWindow", "S ="))
-        self.labelApertureTransmittanceValue.setText(_translate("MainWindow", "pending"))
         self.groupBox_Measurement.setTitle(_translate("MainWindow", "3. Start measurement"))
         self.pushButtonStartStopMeasurement.setText(_translate("MainWindow", "Start measurement"))
         self.label_LiveViewMeasurement.setText(_translate("MainWindow", "<html><head/><body><p align=\"center\">A live view of the measured z-scan curve</p></body></html>"))

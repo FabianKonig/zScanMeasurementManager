@@ -10,7 +10,7 @@ import nidaq_control
 class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
     def __init__(self):
         super().__init__()    # call __init__ of QtWidgets.QMainWindow
-        self.data_analyser = data_analysis.zScanDataAnalyser(tot_num_of_pos=10)
+        self.data_analyser = data_analysis.zScanDataAnalyser(tot_num_of_pos=4)
         self.stage_controller = None
 
         self.setupUi(self)    # call setupUI of gui_design.Ui_MainWindow (generated with QtDesigner)
@@ -41,7 +41,11 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.label_cOAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[0]))
         self.label_cCAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[1]))
 
-        self.groupBox_Aperture.setEnabled(True)
+        if self.labelApertureTransmittanceValue.text() != "":
+            self.labelApertureTransmittanceValue.clear()
+            self.groupBox_Measurement.setEnabled(False)            
+        else:
+            self.groupBox_Aperture.setEnabled(True)
 
 
     def onClick_measure_aperture_transmission(self):

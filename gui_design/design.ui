@@ -141,13 +141,6 @@ p, li { white-space: pre-wrap; }
        <item>
         <widget class="QWidget" name="widgetCalibrationValues" native="true">
          <layout class="QGridLayout" name="gridLayout">
-          <item row="0" column="2">
-           <widget class="QLabel" name="label_cCAValue">
-            <property name="text">
-             <string>pending</string>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="1">
            <widget class="QLabel" name="label_cCA">
             <property name="sizePolicy">
@@ -216,14 +209,21 @@ p, li { white-space: pre-wrap; }
           <item row="2" column="2">
            <widget class="QLabel" name="label_alpha_VALUE">
             <property name="text">
-             <string>pending</string>
+             <string/>
             </property>
            </widget>
           </item>
           <item row="1" column="2">
            <widget class="QLabel" name="label_cOAValue">
             <property name="text">
-             <string>pending</string>
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_cCAValue">
+            <property name="text">
+             <string/>
             </property>
            </widget>
           </item>
@@ -271,7 +271,7 @@ p, li { white-space: pre-wrap; }
        <item>
         <widget class="QLabel" name="labelApertureTransmittanceValue">
          <property name="text">
-          <string>pending</string>
+          <string/>
          </property>
         </widget>
        </item>
