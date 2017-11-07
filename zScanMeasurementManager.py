@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
     def __init__(self):
         super().__init__()    # call __init__ of QtWidgets.QMainWindow
-        self.data_analyser = data_analysis.zScanDataAnalyser(tot_num_of_pos=30)
+        self.data_analyser = data_analysis.zScanDataAnalyser(tot_num_of_pos=10)
         self.stage_controller = None
 
         self.setupUi(self)    # call setupUI of gui_design.Ui_MainWindow (generated with QtDesigner)
@@ -80,7 +80,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             # If the physical stage position is zero, it is actually behind the focal spot (this is
             # because the stages are aligned such that their max position is in front and their zero
             # position behind the focal spot). Hence, we invert the positions now:
-            position_wrt_beam = self.stage_controller.total_travel_distance -
+            position_wrt_beam = self.stage_controller.total_travel_distance - \
                                     self.stage_controller.combined_position
 
             self.data_analyser.extract_oa_ca_transmissions(position_wrt_beam, *signals)

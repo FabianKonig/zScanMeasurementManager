@@ -14,7 +14,6 @@ assert len(apt.list_available_devices()) == 2
 
 
 
-
 class APT_Controller:
     """ Main class to control the stages. This class basically wraps functionality from
         the thorlabs_apt package in functions that are useful for our purposes.
@@ -45,8 +44,8 @@ class APT_Controller:
         
         if self.combined_position > 1:  # move the motors quickly close to the home position.
             for motor in self._motors:
-                motor.move_to(0.01, blocking=True)
-            self.assert_and_update_position(2)
+                motor.move_to(0.01)
+            self.block_while_moving_then_assert_and_update_position(2)
 
         self.move_stages_home()
         self.initialise_stages()  # Currently, this just invokes move_stages_to_maximum_positions()
@@ -93,9 +92,10 @@ class APT_Controller:
             self.total_travel_distance += motor.get_stage_axis_info()[1]
 
 
-    def assert_and_update_position(self, expected_new_combined_position):
-        """ To call after any stage movement has completed. New combined position is checked against
-            the function parameter "expected_new_combined_position". If the check succeeds,
+    def block_while_moving_then_assert_and_update_position(self, expected_new_combined_position):
+        """ Function ensuring that the program halts until the stages are no longer in motion. 
+            After movement has completed, the new combined position is checked against the 
+            function parameter "expected_new_combined_position". If the check succeeds, 
             self.combined_position is updated.
 
         Input:
@@ -103,12 +103,12 @@ class APT_Controller:
                                             stage movement is completed.
         """
 
-        #while(True):
-        #    break_condition = True
-        #    for motor in self._motors:
-        #        break_condition *= not motor.is_in_motion
-        #    if(break_condition):
-        #        break
+        while(True):
+            break_condition = True
+            for motor in self._motors:
+                break_condition *= not motor.is_in_motion
+            if(break_condition):
+                break
 
         new_combined_position = 0
         for motor in self._motors:
@@ -121,17 +121,17 @@ class APT_Controller:
 
     def move_stages_home(self):
         for motor in self._motors:
-            motor.move_home(blocking=True)
+            motor.move_home()
 
-        self.assert_and_update_position(0)
+        self.block_while_moving_then_assert_and_update_position(0)
 
 
     def move_stages_to_maximum_positions(self):
         for motor in self._motors:
             max_position = motor.get_stage_axis_info()[1]
-            motor.move_to(max_position, blocking=True)
+            motor.move_to(max_position)
 
-        self.assert_and_update_position(self.total_travel_distance)
+        self.block_while_moving_then_assert_and_update_position(self.total_travel_distance)
 
 
     def initialise_stages(self):
@@ -166,9 +166,9 @@ class APT_Controller:
                 new_position = min_stage_position
 
             expected_new_combined_position += new_position
-            motor.move_to(new_position, blocking=True)
+            motor.move_to(new_position)
 
-        self.assert_and_update_position(expected_new_combined_position)
+        self.block_while_moving_then_assert_and_update_position(expected_new_combined_position)
 
 
 
