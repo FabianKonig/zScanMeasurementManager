@@ -113,9 +113,12 @@
           </widget>
          </item>
          <item row="2" column="1">
-          <widget class="QLineEdit" name="lineEdit_numPositions">
-           <property name="text">
-            <string>45</string>
+          <widget class="QSpinBox" name="spinBox_numPositions">
+           <property name="maximum">
+            <number>150</number>
+           </property>
+           <property name="value">
+            <number>45</number>
            </property>
           </widget>
          </item>
@@ -158,7 +161,20 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="lineEdit_samplingRate"/>
+        <widget class="QSpinBox" name="spinBox_samplingRate">
+         <property name="minimum">
+          <number>1000</number>
+         </property>
+         <property name="maximum">
+          <number>16000</number>
+         </property>
+         <property name="singleStep">
+          <number>1000</number>
+         </property>
+         <property name="value">
+          <number>15997</number>
+         </property>
+        </widget>
        </item>
        <item>
         <spacer name="horizontalSpacer_2">
@@ -181,7 +197,20 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="lineEdit_samplesPerChannel"/>
+        <widget class="QSpinBox" name="spinBox_samplesPerChannel">
+         <property name="minimum">
+          <number>1000</number>
+         </property>
+         <property name="maximum">
+          <number>100000</number>
+         </property>
+         <property name="singleStep">
+          <number>1000</number>
+         </property>
+         <property name="value">
+          <number>25000</number>
+         </property>
+        </widget>
        </item>
        <item>
         <spacer name="horizontalSpacer_3">
@@ -204,7 +233,11 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="lineEdit_iterations"/>
+        <widget class="QSpinBox" name="spinBox_iterations">
+         <property name="value">
+          <number>3</number>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -219,7 +252,7 @@
     <item>
      <widget class="QGroupBox" name="groupBox_Calibration">
       <property name="enabled">
-       <bool>false</bool>
+       <bool>true</bool>
       </property>
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -244,7 +277,7 @@
             </property>
             <layout class="QHBoxLayout" name="horizontalLayout">
              <item>
-              <widget class="QLabel" name="labelRefractiveIndexText">
+              <widget class="QLabel" name="labelRefrIndex">
                <property name="text">
                 <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
@@ -255,18 +288,21 @@ p, li { white-space: pre-wrap; }
               </widget>
              </item>
              <item>
-              <widget class="QLineEdit" name="lineEditRefractiveIndex">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
+              <widget class="QDoubleSpinBox" name="doubleSpinBox_refrIndex">
+               <property name="decimals">
+                <number>3</number>
                </property>
-               <property name="cursor">
-                <cursorShape>IBeamCursor</cursorShape>
+               <property name="minimum">
+                <double>1.000000000000000</double>
                </property>
-               <property name="text">
-                <string/>
+               <property name="maximum">
+                <double>6.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.100000000000000</double>
+               </property>
+               <property name="value">
+                <double>1.470000000000000</double>
                </property>
               </widget>
              </item>

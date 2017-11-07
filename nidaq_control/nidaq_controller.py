@@ -2,12 +2,6 @@ import nidaqmx
 import numpy as np
 
 
-# Settings
-default_sampling_rate = 15993        # 48000 is maximum, we use 3 channels, thus 16000. We use
-                                     # an uneven number to avoid possible "ringing effects".
-default_num_samp_per_chan = 50000
-default_num_of_max_values = 3        # must be greater than 1
-
 # Reference photodiode
 pd_ref_channel = "Dev1/ai0"
 pd_oa_channel = "Dev1/ai1"
@@ -17,7 +11,7 @@ channels = [pd_ref_channel, pd_oa_channel, pd_ca_channel]
 
 
 
-def read_nidaq(sampling_rate=default_sampling_rate, num_samples_per_chan=default_num_samp_per_chan):
+def read_nidaq(sampling_rate, num_samples_per_chan):
     """ Retrieves num_samples_per_chan samples per channel. The rate at which these data are
         acquired from the NIDAQ is given in units of Hz and cannot exceed 48kHz/3channels=16000Hz.
         Output: 2-dim numpy array, the first dimension denoting the channel, the second dimension
@@ -37,8 +31,7 @@ def read_nidaq(sampling_rate=default_sampling_rate, num_samples_per_chan=default
     return signals
 
 
-def get_nidaq_measurement_max_values(sampling_rate=default_sampling_rate,
-    num_samples_per_chan=default_num_samp_per_chan, number_of_max_values=default_num_of_max_values):
+def get_nidaq_measurement_max_values(sampling_rate, num_samples_per_chan, number_of_max_values):
     """ I figured out that the best way of obtaining reproducable data from the Nidaq measurments is
         by acquiring data from it for approx 1 second or longer with maximum sample rate
         (approx corresponds to a sample rate of 16000 and number of samples of 25000) and taking the
@@ -88,8 +81,7 @@ def filter_nidaq_signal_peaks(signals):
     return signals
 
 
-def get_filtered_nidaq_signal(sampling_rate=default_sampling_rate,
-    num_samples_per_chan=default_num_samp_per_chan):
+def get_filtered_nidaq_signal(sampling_rate, num_samples_per_chan):
     """ Retrieves num_samples_per_chan samples for the channels with a sampling_rate.
         It then filters the measurements and returns them. See the docstrings of the corresponding
         functions.

@@ -34,8 +34,11 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
 
     def onClick_calibrate_photodiodes(self):
-        print("Get Nidaq Signal, I will need some time and want the progress symbol to appear meanwhile.")
-        signals = nidaq_control.get_nidaq_measurement_max_values()
+
+        signals = nidaq_control.get_nidaq_measurement_max_values(
+            self.spinBox_samplingRate.value,
+            self.spinBox_samplesPerChannel.value,
+            self.spinBox_iterations.value)
 
         calib_factors = list(self.data_analyser.extract_calibration_factors(*signals))
         self.label_cOAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[0]))
@@ -49,8 +52,10 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
 
     def onClick_measure_aperture_transmission(self):
-        print("Get Nidaq Signal, I will need some time and want the progress symbol to appear meanwhile.")
-        signals = nidaq_control.get_nidaq_measurement_max_values()
+        signals = nidaq_control.get_nidaq_measurement_max_values(
+            self.spinBox_samplingRate.value,
+            self.spinBox_samplesPerChannel.value,
+            self.spinBox_iterations.value)
 
         s = list(self.data_analyser.extract_aperture_transmission(signals[0], signals[2]))
         self.labelApertureTransmittanceValue.setText("{0:.3f} +- {1:.3f}".format(*s))
@@ -64,7 +69,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
         note = self.notesLineEdit.text()
         # Make sure a note on the measurement has been typed in, otherwise return to the main loop.
-        if note == "Type in a note here (e.g. sample material and concentration)!":
+        if note == "Further notes":
             self.notesLineEdit.setStyleSheet("color: rgb(255,0,0)")
             return None
 
@@ -76,7 +81,10 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         tot_num_of_pos = self.data_analyser.tot_num_of_pos
 
         for pos_index in range(tot_num_of_pos):
-            signals = nidaq_control.get_nidaq_measurement_max_values()
+            signals = nidaq_control.get_nidaq_measurement_max_values(
+                self.spinBox_samplingRate.value,
+                self.spinBox_samplesPerChannel.value,
+                self.spinBox_iterations.value)
 
             # Position with respect to beam:
             # If the physical stage position is zero, it is actually behind the focal spot (this is
