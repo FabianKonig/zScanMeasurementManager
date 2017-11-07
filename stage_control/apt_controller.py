@@ -49,7 +49,7 @@ class APT_Controller:
             self.assert_and_update_position(2)
 
         self.move_stages_home()
-        self.move_stages_to_maximum_positions()
+        self.initialise_stages()  # Currently, this just invokes move_stages_to_maximum_positions()
 
 
     def get_motors(self):
@@ -134,6 +134,11 @@ class APT_Controller:
         self.assert_and_update_position(self.total_travel_distance)
 
 
+    def initialise_stages(self):
+        """ Currently, the stages' initial position is their maximum position. """
+        self.move_stages_to_maximum_positions()
+
+
     def move_in_steps(self, tot_num_of_pos, direction):
         if direction == "forward":
             direction = +1
@@ -164,10 +169,6 @@ class APT_Controller:
             motor.move_to(new_position, blocking=True)
 
         self.assert_and_update_position(expected_new_combined_position)
-
-
-    def reinitialise_stages(self):
-        self.move_stages_to_maximum_positions()
 
 
 

@@ -89,11 +89,8 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
                 self.stage_controller.move_in_steps(tot_num_of_pos, "backward")
 
 
-        self.data_analyser.store_transmission_data(note)
-        self.data_analyser.plot_transmission()
-
-        self.stage_controller.reinitialise_stages()
-        self.data_analyser.reinitialise()
+        self.data_analyser.evaluate_measurement_and_reinitialise(note)
+        self.stage_controller.initialise_stages()
 
 
 

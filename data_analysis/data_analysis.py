@@ -130,15 +130,8 @@ class zScanDataAnalyser:
         self.current_position_step += 1
 
 
-    def reinitialise(self):
-        self.T_OA = np.zeros(shape=(self.tot_num_of_pos, 3))
-        self.T_CA = np.zeros(shape=(self.tot_num_of_pos, 3))
-
-        self.current_position_step = 0
-
-
     def store_transmission_data(self, note):
-        """
+        """ Stores the transmission data in self.T_CA and self.T_OA into a file.
         """
         now = datetime.datetime.today()
         time = "{0:4d}.{1:02d}.{2:02d}  {3:02d}:{4:02d}".format(
@@ -163,15 +156,22 @@ class zScanDataAnalyser:
         """
         now = datetime.date.today()
         today = "{0:4d}_{1:02d}_{2:02d}".format(now.year, now.month, now.day)
-        directory = os.path.join('..', 'Measurements', today)
+        directory = os.path.join('..', '..', 'Measurements', today)
 
         if not os.path.exists(directory):
             os.makedirs(directory)
         return directory
 
 
-    def fit_transmission(self):
-        pass
+    def fit_transmission_data(self):
+        
+        def T_OA_func(z, z0, zR, dΨ):
+            x = z/zR
+            return 1 - 2*(x**2+3)*dΨ / ((x**2+9) * (x**2+1))
+
+        def T_CA_func(z, zR, dΦ, dΨ):
+            x = z/zR
+            return T_OA_func(z, dΨ) + 4*x*dΦ / ((x**2+9) * (x**2+1))
 
 
     def plot_transmission(self):
@@ -182,6 +182,22 @@ class zScanDataAnalyser:
         plt.grid()
         plt.legend()
         plt.show()
+
+
+    def evaluate_measurement_and_reinitialise(self, note):
+        self.store_transmission_data(note)
+        self.plot_transmission()
+        self.reinitialise()
+
+
+    def reinitialise(self):
+        self.T_OA = np.zeros(shape=(self.tot_num_of_pos, 3))
+        self.T_CA = np.zeros(shape=(self.tot_num_of_pos, 3))
+
+        self.current_position_step = 0
+
+
+
 
 
 if __name__ == '__main__':
