@@ -5,7 +5,6 @@ import gui_design
 import data_analysis
 import stage_control
 import nidaq_control
-import matplotlib.pyplot as plt
 
 
 class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):

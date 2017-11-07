@@ -2,6 +2,7 @@ import numpy as np
 import datetime
 import os
 from scipy.optimize import curve_fit
+import matplotlib.pyplot as plt
 
 
 def average_ratio(data_1, data_2, calib_factor = None):
@@ -49,7 +50,7 @@ def T_OA_func(z, z0, zR, dΨ):
 
 def T_CA_func(z, z0, zR, dΦ, dΨ):
             x = (z-z0)/zR
-            return T_OA_func(z, dΨ) + 4*x*dΦ / ((x**2+9) * (x**2+1))
+            return T_OA_func(z, z0, zR, dΨ) + 4*x*dΦ / ((x**2+9) * (x**2+1))
 
 
 
@@ -75,6 +76,7 @@ class zScanDataAnalyser:
         self.T_OA = np.zeros(shape=(tot_num_of_pos, 3))  # transmission in open aperture path.
         self.T_CA = np.zeros(shape=(tot_num_of_pos, 3))  # transmission in closed aperture path.
 
+        assert tot_num_of_pos > 2
         self.tot_num_of_pos = tot_num_of_pos   # The total number of measurement stage positions.
         self.current_position_step = 0     # Integer indicating next empty transmission array entry.
 
@@ -82,9 +84,9 @@ class zScanDataAnalyser:
         self.λ = 532e-9  #m in vacuum
         self.zR = np.pi * self.w0**2 / self.λ * 1e3   #mm Rayleigh length in vacuum
 
-        self.z0 = None   # fitted results
-        self.dΨ = None
-        self.dΦ = None
+        self.fit_z0 = None   # fitted results
+        self.fit_dΨ = None
+        self.fit_dΦ = None
 
 
     def extract_calibration_factors(self, ref_signal, oa_signal, ca_signal):
@@ -157,8 +159,8 @@ class zScanDataAnalyser:
         header = note + " \n" + time + "\n\nPosition / mm    T_OA    deltaT_OA    T_CA    deltaT_CA"
         folder = self.get_folder()
 
-        # assert that position entries are identical
-        assert self.T_OA[:,0] == self.T_CA[:,0]
+        # assert that position entries in T_OA and T_CA are identical
+        assert (self.T_OA[:,0] == self.T_CA[:,0]).all()
         transmission_array = np.concatenate((self.T_OA, self.T_CA[:,1:]), axis=1)
 
         try:
@@ -174,7 +176,7 @@ class zScanDataAnalyser:
         """
         now = datetime.date.today()
         today = "{0:4d}_{1:02d}_{2:02d}".format(now.year, now.month, now.day)
-        directory = os.path.join('..', '..', 'Measurements', today)
+        directory = os.path.join('..', 'Measurements', today)
 
         if not os.path.exists(directory):
             os.makedirs(directory)
@@ -189,8 +191,8 @@ class zScanDataAnalyser:
 
         # firstly, fit T_OA and use self.zR (Rayleigh length in vacuum)
         T_OA_fitfunc = lambda z, z0, dΨ: T_OA_func(z, z0, self.zR, dΨ)
-        fit_OA, cov_OA = curve_fit(T_OA_fitfunc, T_OA[:,0], T_OA[:,1], sigma=T_OA[:,3])
-        std_err_OA = np.sqrt(np.diag(cov_dΨ))
+        fit_OA, cov_OA = curve_fit(T_OA_fitfunc, T_OA[:,0], T_OA[:,1], sigma=T_OA[:,2])
+        std_err_OA = np.sqrt(np.diag(cov_OA))
 
         fit_z0 = np.array([fit_OA[0], std_err_OA[0]])
         fit_dΨ = np.array([fit_OA[1], std_err_OA[1]])
@@ -203,17 +205,17 @@ class zScanDataAnalyser:
 
 
         # now, fit T_CA using the data from the fit to T_OA
-        T_CA_fitfunc = lambda z, dΦ : T_CA_func(z, fit_z0[0], self.zR, dΦ, fit_dΨ)
-        fit_CA, cov_CA = curve_fit(T_CA_fitfunc, T_CA[:,0], T_CA[:,1], sigma=T_CA[:,3])
-        std_err_CA = np.sqrt(np.diag(cov_dΨ))
+        T_CA_fitfunc = lambda z, dΦ : T_CA_func(z, fit_z0[0], self.zR, dΦ, fit_dΨ[0])
+        fit_CA, cov_CA = curve_fit(T_CA_fitfunc, T_CA[:,0], T_CA[:,1], sigma=T_CA[:,2])
+        std_err_CA = np.sqrt(np.diag(cov_CA))
 
         fit_dΦ = np.array([fit_CA[0], std_err_CA[0]])
         del fit_CA, cov_CA, std_err_CA
 
         # store results in instance variables:
-        self.z0 = fit_z0
-        self.dΨ = fit_dΨ
-        self.dΦ = fit_dΦ
+        self.fit_z0 = fit_z0
+        self.fit_dΨ = fit_dΨ
+        self.fit_dΦ = fit_dΦ
 
 
 
@@ -224,10 +226,10 @@ class zScanDataAnalyser:
         plt.errorbar(T_CA[:,0], T_CA[:,1], yerr=T_CA[:,2], linestyle="", marker="x", color="red", label="CA")
 
         # Plot the fit functions if fit parameters exist
-        if self.z0 is not None and self.dΨ is not None and self.dΦ is not None:
+        if self.fit_z0 is not None and self.fit_dΨ is not None and self.fit_dΦ is not None:
             pos_vals = np.linspace(T_OA[0,0]-.5, T_OA[-1,0]+.5, 200)
-            T_OA_vals = T_OA_func(pos_vals, self.z0, self.zR, self.dΨ)
-            T_CA_vals = T_CA_func(pos_vals, self.z0, self.zR, self.dΦ, self.dΨ)
+            T_OA_vals = T_OA_func(pos_vals, self.fit_z0[0], self.zR, self.fit_dΨ[0])
+            T_CA_vals = T_CA_func(pos_vals, self.fit_z0[0], self.zR, self.fit_dΦ[0], self.fit_dΨ[0])
             
             plt.plot(pos_vals, T_OA_vals, color="black")
             plt.plot(pos_vals, T_CA_vals, color="red")
