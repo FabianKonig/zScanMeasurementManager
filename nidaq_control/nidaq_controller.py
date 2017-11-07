@@ -3,9 +3,9 @@ import numpy as np
 
 
 # Settings
-default_sampling_rate = 15973  # 48000 is maximum, we use 3 channels, thus 16000. We use an uneven
-                               # number to avoid possible ringing effects.
-default_num_samp_per_chan = 10000
+default_sampling_rate = 15993  # 48000 is maximum, we use 3 channels, thus 16000. We use an uneven
+                               # number to avoid possible "ringing effects".
+default_num_samp_per_chan = 15000
 
 # Reference photodiode
 pd_ref_channel = "Dev1/ai0"
@@ -37,10 +37,10 @@ def read_nidaq(sampling_rate=default_sampling_rate, num_samples_per_chan=default
 
 
 def get_nidaq_measurement_max_values(sampling_rate=default_sampling_rate,
-    num_samples_per_chan=default_num_samp_per_chan, number_of_max_values=2):
+    num_samples_per_chan=default_num_samp_per_chan, number_of_max_values=3):
     """ I figured out that the best way of obtaining reproducable data from the Nidaq measurments is
         by acquiring data from it for approx 1 second or longer with maximum sample rate
-        (corresponds to a sample rate of 16000 and number of samples of 25000) and taking the
+        (approx corresponds to a sample rate of 16000 and number of samples of 25000) and taking the
         maximum measured value for each channel. This function thus queries the Nidaq signals,
         stores the maximum value of each channel and repeats this measurement number_of_max_values
         often.

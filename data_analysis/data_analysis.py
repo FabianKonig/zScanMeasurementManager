@@ -1,4 +1,6 @@
 import numpy as np
+import datetime
+import os
 
 
 def average_ratio(data_1, data_2, calib_factor = None):
@@ -132,9 +134,54 @@ class zScanDataAnalyser:
         self.T_OA = np.zeros(shape=(self.tot_num_of_pos, 3))
         self.T_CA = np.zeros(shape=(self.tot_num_of_pos, 3))
 
-        self.current_position_step = 0  
+        self.current_position_step = 0
 
 
+    def store_transmission_data(self, note):
+        """
+        """
+        now = datetime.datetime.today()
+        time = "{0:4d}.{1:02d}.{2:02d}  {3:02d}:{4:02d}".format(
+            now.year, now.month, now.day, now.hour, now.minute)
+        header = note + " \n" + time + "\n\nPosition / mm    T_OA    deltaT_OA    T_CA    deltaT_CA"
+        folder = self.get_folder()
+
+        # assert that position entries are identical
+        assert self.T_OA[:,0] == self.T_CA[:,0]
+        transmission_array = np.concatenate((self.T_OA, self.T_CA[:,1:]), axis=1)
+
+        try:
+            np.savetxt(folder + "/" + note + ".csv",
+                transmission_array, header=header, fmt="%10.4f")
+        except Exception as ex:
+            print("Storage of transmission data failed!!!!")
+            print(ex)
+        
+
+    def get_folder(self):
+        """ 
+        """
+        now = datetime.date.today()
+        today = "{0:4d}_{1:02d}_{2:02d}".format(now.year, now.month, now.day)
+        directory = os.path.join('..', 'Measurements', today)
+
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        return directory
+
+
+    def fit_transmission(self):
+        pass
+
+
+    def plot_transmission(self):
+        T_OA = self.T_OA
+        T_CA = self.T_CA
+        plt.errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", label="OA")
+        plt.errorbar(T_CA[:,0], T_CA[:,1], yerr=T_CA[:,2], linestyle="", marker="x", label="CA")
+        plt.grid()
+        plt.legend()
+        plt.show()
 
 
 if __name__ == '__main__':
