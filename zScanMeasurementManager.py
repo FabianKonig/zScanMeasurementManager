@@ -59,8 +59,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
 
     def onClick_start_stop_measurement(self):
-        """
-        Assumption: Stages are located at their initial position!
+        """ Assumption: Stages are located at their initial position!
         """
 
         note = self.notesLineEdit.text()

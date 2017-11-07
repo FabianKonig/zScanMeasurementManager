@@ -4,7 +4,7 @@ import numpy as np
 
 # Settings
 default_sampling_rate = 15993        # 48000 is maximum, we use 3 channels, thus 16000. We use
-                                     #  an uneven number to avoid possible "ringing effects".
+                                     # an uneven number to avoid possible "ringing effects".
 default_num_samp_per_chan = 50000
 default_num_of_max_values = 3        # must be greater than 1
 
