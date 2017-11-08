@@ -14,7 +14,7 @@ channels = [pd_ref_channel, pd_oa_channel, pd_ca_channel]
 
 class NidaqReader:
 
-    def __init__(sampling_rate, num_samples_per_chan, iterations):
+    def __init__(self, sampling_rate, num_samples_per_chan, iterations):
         self.sampling_rate = sampling_rate
         self.num_samples_per_chan = num_samples_per_chan
         self.iterations = iterations
@@ -44,6 +44,52 @@ class NidaqReader:
         return signals
 
 
+    def read_nidaq_one_channel_after_the_other(self):
+        """ Same as read_nidaq, but I figured out that it is better to query each channel separately
+            as otherwise there will be electronic reflections between the channels inside the Nidaq
+            introducing offset  voltages.
+        """
+
+        signals = np.empty(shape=(len(channels), self.num_samples_per_chan))
+        channel_index = 0
+
+        for channel in channels:
+            with nidaqmx.Task() as task:
+                task.ai_channels.add_ai_voltage_chan(
+                    channel, name_to_assign_to_channel="",
+                    terminal_config=nidaqmx.constants.TerminalConfiguration.RSE, min_val=-10.0,
+                    max_val=1.0, units=nidaqmx.constants.VoltageUnits.VOLTS, custom_scale_name="")
+
+                task.timing.cfg_samp_clk_timing(
+                    self.sampling_rate,
+                    sample_mode = nidaqmx.constants.AcquisitionType.FINITE,
+                    samps_per_chan = self.num_samples_per_chan)
+                
+                signals[channel_index] = np.array(
+                    task.read(number_of_samples_per_channel=self.num_samples_per_chan))
+                channel_index += 1
+
+        return signals
+
+    def substract_dark_voltage(self, signals):
+        """ Not entirely true. Can be deleted.
+        Due to electronic reflections, everytime the electronic setup is changed, it is
+            necessary to measure the "dark voltage", i.e. the voltage that the Nidaq measures if
+            the beam is blocked. This voltage is due to reflections from, e.g., the digital
+            oscilloscope. Hence, turn on all devices including the laser, block the beam before it
+            impinges on any photodiode and query the Nidaq. This is the darkvoltage for any channel
+        """
+        DARK_VOLTAGE_REF = 0.0687
+        DARK_VOLTAGE_OA = 0
+        DARK_VOLTAGE_CA = 0
+
+        signals[0,:] = signals[0,:] - DARK_VOLTAGE_REF
+        signals[1,:] = signals[1,:] - DARK_VOLTAGE_OA
+        signals[2,:] = signals[2,:] - DARK_VOLTAGE_CA
+
+        return signals
+
+
     def get_nidaq_measurement_max_values(self):
         """ I figured out that the best way of obtaining reproducable data from the Nidaq
             measurments is by acquiring approx 20000 data from with its maximum sample rate
@@ -60,7 +106,7 @@ class NidaqReader:
         max_signal_values = np.empty(shape=(len(channels), self.iterations))
 
         for value_index in range(self.iterations):
-            signals = self.read_nidaq(self.sampling_rate, self.num_samples_per_chan)
+            signals = self.read_nidaq_one_channel_after_the_other()
             for channel_index in range(len(channels)):
                 max_signal_values[channel_index, value_index] = signals[channel_index].max()
 
@@ -120,13 +166,13 @@ if __name__ == '__main__':
     
     import matplotlib.pyplot as plt
 
-    nr = NidaqReader(83000,83000, 3)
-    signals = nr.get_filtered_nidaq_signal()
-    print(signals[0].max())
-    print(signals[1].max())
-    print(signals[2].max())
-    print((signals[2] / signals[0]).mean(), (signals[2] / signals[0]).std())
+    nr = NidaqReader(250000, 70000, 4)
+    signals = nr.get_nidaq_measurement_max_values()
+    print(signals[0].mean(), signals[0].std())
+    print(signals[1].mean(), signals[1].std())
+    print(signals[2].mean(), signals[2].std())
     print((signals[1] / signals[0]).mean(), (signals[1] / signals[0]).std())
+    print((signals[2] / signals[0]).mean(), (signals[2] / signals[0]).std())
 
     plt.plot(signals[0], alpha=0.5, linestyle="", marker="x", label="Ref")
     plt.plot(signals[1], alpha=0.5, linestyle="", marker="x", label="OA")    

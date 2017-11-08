@@ -152,7 +152,7 @@ class zScanDataAnalyser:
     def furtherNotes(self):
         return self._furtherNotes
 
-    @laserfreq.setter
+    @furtherNotes.setter
     def furtherNotes(self, value):
         self._furtherNotes = value
         self._define_folder()
@@ -238,11 +238,11 @@ class zScanDataAnalyser:
         time = "{0:4d}.{1:02d}.{2:02d}  {3:02d}:{4:02d}".format(
             now.year, now.month, now.day, now.hour, now.minute)
         
-        header = time + " \n" +\
-                 "Sample material: " + self.sample_material + "\n" +\
+        header = time + "\n" + \
+                 "Sample material: " + self.sample_material + "\n" + \
                  "Solvent: " + self.solvent + "\n" + \
-                 "Concetration: " + self.concentration + "mmol/l\n" + \
-                 "Laser freq.: " + self.laserfreq + "Hz\n" + \
+                 "Concentration: " + str(self.concentration) + "mmol/l\n" + \
+                 "Laser freq.: " + str(self.laserfreq) + "Hz\n" + \
                  "Further notes: " + self.furtherNotes + "\n" + \
                  "\n" + \
                  "Position / mm    T_OA    deltaT_OA    T_CA    deltaT_CA"
@@ -252,7 +252,8 @@ class zScanDataAnalyser:
         transmission_array = np.concatenate((self.T_OA, self.T_CA[:,1:]), axis=1)
 
         try:
-            file = os.path.join(self.folder, "transmission_data.csv")
+            file = os.path.join(self.folder, "transmission_data.dat")
+            self.check_and_create_folder()
             np.savetxt(file, transmission_array, header=header, fmt="%10.4f")
         except Exception as ex:
             print("Storage of transmission data failed!!!!")
@@ -305,6 +306,8 @@ class zScanDataAnalyser:
         assert self.folder is not None
         file = os.path.join(self.folder, "plot.pdf")
 
+        self.check_and_create_folder()
+
         T_OA = self.T_OA
         T_CA = self.T_CA
         plt.errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", color="black", label="OA")
@@ -327,7 +330,7 @@ class zScanDataAnalyser:
 
     def evaluate_measurement_and_reinitialise(self):
         self.store_transmission_data()
-        self.fit_transmission_data()
+        #self.fit_transmission_data()
         self.plot_transmission_data()
         self.reinitialise()
 

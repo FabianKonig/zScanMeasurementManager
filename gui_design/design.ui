@@ -112,6 +112,9 @@
          </item>
          <item row="2" column="1">
           <widget class="QSpinBox" name="spinBox_numPositions">
+           <property name="minimum">
+            <number>2</number>
+           </property>
            <property name="maximum">
             <number>150</number>
            </property>
@@ -187,13 +190,13 @@
           <number>1000</number>
          </property>
          <property name="maximum">
-          <number>83333</number>
+          <number>250000</number>
          </property>
          <property name="singleStep">
-          <number>1000</number>
+          <number>10000</number>
          </property>
          <property name="value">
-          <number>83333</number>
+          <number>250000</number>
          </property>
         </widget>
        </item>
@@ -223,13 +226,13 @@
           <number>1000</number>
          </property>
          <property name="maximum">
-          <number>100000</number>
+          <number>500000</number>
          </property>
          <property name="singleStep">
           <number>1000</number>
          </property>
          <property name="value">
-          <number>20000</number>
+          <number>70000</number>
          </property>
         </widget>
        </item>
@@ -255,8 +258,11 @@
        </item>
        <item>
         <widget class="QSpinBox" name="spinBox_iterations">
+         <property name="minimum">
+          <number>2</number>
+         </property>
          <property name="value">
-          <number>3</number>
+          <number>4</number>
          </property>
         </widget>
        </item>

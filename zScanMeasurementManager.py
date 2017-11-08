@@ -7,6 +7,18 @@ import stage_control
 import nidaq_control
 
 
+# The fitting should be exception handled such that a fit that does not succeed will not crash the program.
+# The fitting results should be written into a file.
+# A fit function to convert the reference photodiode signal to the input pulse energy is necessary.
+#  This energy value could then be computed every time calibrate_photodiodes is pressed and it could
+#  be appended to the measurement header in the transmission_data.dat file.
+#  So, make this calibration measurement!
+# The absorption (alpha coefficient) measurement should be taken care of.
+# When the measurement is started, the measurement parameters section should be disabled.
+
+
+
+
 class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
     def __init__(self):
         super().__init__()    # call __init__ of QtWidgets.QMainWindow
@@ -21,6 +33,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             self.doubleSpinBox_concentration.value(),
             self.spinBox_laserfreq.value(),
             self.lineEdit_furtherNotes.text())
+
 
         self.nidaq_reader = nidaq_control.NidaqReader(
             self.spinBox_samplingRate.value(), 
@@ -45,11 +58,11 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.doubleSpinBox_concentration.valueChanged.connect(self.onNotesChange)
         self.spinBox_laserfreq.valueChanged.connect(self.onNotesChange)
         self.spinBox_numPositions.valueChanged.connect(self.onNotesChange)
-        self.lineEdit_furtherNotes.textChanged.conect(self.onNotesChange)
+        self.lineEdit_furtherNotes.textChanged.connect(self.onNotesChange)
 
-        self.spinBox_samplingRate.valueChanged.connect(self.nidaqParamsChange)
-        self.spinBox_samplesPerChannel.valueChanged.connect(self.nidaqParamsChange)
-        self.spinBox_iterations.valueChanged.connect(self.nidaqParamsChange)
+        self.spinBox_samplingRate.valueChanged.connect(self.onNidaqParamsChange)
+        self.spinBox_samplesPerChannel.valueChanged.connect(self.onNidaqParamsChange)
+        self.spinBox_iterations.valueChanged.connect(self.onNidaqParamsChange)
 
 
     def onNotesChange(self):
