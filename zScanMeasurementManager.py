@@ -10,7 +10,7 @@ import nidaq_control
 class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
     def __init__(self):
         super().__init__()    # call __init__ of QtWidgets.QMainWindow
-        self.data_analyser = data_analysis.zScanDataAnalyser(tot_num_of_pos=4)
+        self.data_analyser = data_analysis.zScanDataAnalyser()
         self.stage_controller = None
 
         self.setupUi(self)    # call setupUI of gui_design.Ui_MainWindow (generated with QtDesigner)
@@ -31,10 +31,14 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.pushButtonCalibrate_PDs.clicked.connect(self.onClick_calibrate_photodiodes)
         self.pushButton_MeasureAperture.clicked.connect(self.onClick_measure_aperture_transmission)
         self.pushButtonStartStopMeasurement.clicked.connect(self.onClick_start_stop_measurement)
+        self.lineEdit_sampleMaterialValue.textChanged.connect(self.onSampleMaterialValueChange)
+
+
+    def onSampleMaterialValueChange(self):
+        self.data_analyser.sample_material = self.lineEdit_sampleMaterialValue.text()
 
 
     def onClick_calibrate_photodiodes(self):
-
         signals = nidaq_control.get_nidaq_measurement_max_values(
             self.spinBox_samplingRate.value,
             self.spinBox_samplesPerChannel.value,

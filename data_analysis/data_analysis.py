@@ -56,17 +56,12 @@ def T_CA_func(z, z0, zR, dΦ, dΨ):
 
 
 class zScanDataAnalyser:
-    def __init__(self, tot_num_of_pos):
+    def __init__(self):
         """ Class to extract calibration factors and transmissions from the photodiode signals.
             The first two functions to be called must be:
                 1. extract_calibration_factors
                 2. extract_aperture_transmission (in this order)
             Only then is it sensible to call the function "extract_oa_ca_transmissions".
-
-            Input:
-            -------
-            tot_num_of_pos: integer, corresponding to the total number of stage positions at which
-                            photodiode signals will be measured.
         """
         self.c_OA = None
         self.c_CA = None
@@ -80,6 +75,12 @@ class zScanDataAnalyser:
         self.tot_num_of_pos = tot_num_of_pos   # The total number of measurement stage positions.
         self.current_position_step = 0     # Integer indicating next empty transmission array entry.
 
+        self.sample_material = "default"
+        self.solvent = "default"
+        self.concentration = "default"
+        self.laserfreq = "default"
+        self.folder = self.define_folder()   # The folder to store results in
+
         self.w0 = 20.0299e-6  #m waist of incident beam in vacuum
         self.λ = 532e-9  #m in vacuum
         self.zR = np.pi * self.w0**2 / self.λ * 1e3   #mm Rayleigh length in vacuum
@@ -87,8 +88,6 @@ class zScanDataAnalyser:
         self.fit_z0 = None   # fitted results
         self.fit_dΨ = None
         self.fit_dΦ = None
-
-        self.folder = None   # The folder to store results in
 
 
     def extract_calibration_factors(self, ref_signal, oa_signal, ca_signal):
@@ -172,12 +171,12 @@ class zScanDataAnalyser:
             print(ex)
         
 
-    def define_folder(self, note):
+    def define_folder(self):
         """ 
         """
         now = datetime.date.today()
         today = "{0:4d}_{1:02d}_{2:02d}".format(now.year, now.month, now.day)
-        directory = os.path.join('..', 'Measurements', today, note)  # Attention, we should take care about the string "note"!
+        directory = os.path.join('..', 'Measurements', today, self.material)  # Attention, we should take care about the strings we pass to path.join!
 
         if not os.path.exists(directory):
             os.makedirs(directory)
