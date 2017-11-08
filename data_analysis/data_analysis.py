@@ -45,12 +45,12 @@ def average_ratio(data_1, data_2, calib_factor = None):
 
 
 def T_OA_func(z, z0, zR, dΨ):
-            x = (z-z0)/zR
-            return 1 - 2*(x**2+3)*dΨ / ((x**2+9) * (x**2+1))
+    x = (z-z0)/zR
+    return 1 - 2*(x**2+3)*dΨ / ((x**2+9) * (x**2+1))
 
 def T_CA_func(z, z0, zR, dΦ, dΨ):
-            x = (z-z0)/zR
-            return T_OA_func(z, z0, zR, dΨ) + 4*x*dΦ / ((x**2+9) * (x**2+1))
+    x = (z-z0)/zR
+    return T_OA_func(z, z0, zR, dΨ) + 4*x*dΦ / ((x**2+9) * (x**2+1))
 
 
 
@@ -219,32 +219,44 @@ class zScanDataAnalyser:
         self.current_position_step += 1
 
 
+    def _define_folder(self):
+        now = datetime.date.today()
+        today = "{0:4d}_{1:02d}_{2:02d}".format(now.year, now.month, now.day)
+
+        # Attention, we should take care about the strings we pass to path.join!
+        self.folder = os.path.join(
+            '..', 
+            'Measurements',
+            today,
+            self.sample_material + "_in_" + self.solvent)
+
+
     def store_transmission_data(self):
         """ Stores the transmission data in self.T_CA and self.T_OA into a file.
         """
         now = datetime.datetime.today()
         time = "{0:4d}.{1:02d}.{2:02d}  {3:02d}:{4:02d}".format(
             now.year, now.month, now.day, now.hour, now.minute)
-        header = self.sample_material + " \n" + time + "\n\nPosition / mm    T_OA    deltaT_OA    T_CA    deltaT_CA"
+        
+        header = time + " \n" +\
+                 "Sample material: " + self.sample_material + "\n" +\
+                 "Solvent: " + self.solvent + "\n" + \
+                 "Concetration: " + self.concentration + "mmol/l\n" + \
+                 "Laser freq.: " + self.laserfreq + "Hz\n" + \
+                 "Further notes: " + self.furtherNotes + "\n" + \
+                 "\n" + \
+                 "Position / mm    T_OA    deltaT_OA    T_CA    deltaT_CA"
         
         # assert that position entries in T_OA and T_CA are identical
         assert (self.T_OA[:,0] == self.T_CA[:,0]).all()
         transmission_array = np.concatenate((self.T_OA, self.T_CA[:,1:]), axis=1)
 
         try:
-            file = os.path.join(self.folder, "data.csv")
+            file = os.path.join(self.folder, "transmission_data.csv")
             np.savetxt(file, transmission_array, header=header, fmt="%10.4f")
         except Exception as ex:
             print("Storage of transmission data failed!!!!")
-            print(ex)
-        
-
-    def _define_folder(self):
-        now = datetime.date.today()
-        today = "{0:4d}_{1:02d}_{2:02d}".format(now.year, now.month, now.day)
-
-        # Attention, we should take care about the strings we pass to path.join!
-        self.folder = os.path.join('..', 'Measurements', today, self.sample_material + "_in_" + self.solvent)
+            print(ex)        
 
 
     def check_and_create_folder(self):

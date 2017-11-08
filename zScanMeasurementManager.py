@@ -36,8 +36,6 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
 
     def defineSignalsSlots(self):
-        self.label_progress.setVisible(False)
-
         self.pushButton_calibratePDs.clicked.connect(self.onClick_calibratePhotodiodes)
         self.pushButton_measureAperture.clicked.connect(self.onClick_measureApertureTransmission)
         self.pushButton_startMeasurement.clicked.connect(self.onClick_startMeasurement)
@@ -49,6 +47,10 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.spinBox_numPositions.valueChanged.connect(self.onNotesChange)
         self.lineEdit_furtherNotes.textChanged.conect(self.onNotesChange)
 
+        self.spinBox_samplingRate.valueChanged.connect(self.nidaqParamsChange)
+        self.spinBox_samplesPerChannel.valueChanged.connect(self.nidaqParamsChange)
+        self.spinBox_iterations.valueChanged.connect(self.nidaqParamsChange)
+
 
     def onNotesChange(self):
         self.data_analyser.sample_material = self.lineEdit_sampleMaterial.text()
@@ -58,22 +60,28 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.data_analyser.furtherNotes = self.lineEdit_furtherNotes.text()
 
 
+    def onNidaqParamsChange(self):
+        self.nidaq_reader.sampling_rate = self.spinBox_samplingRate.value()
+        self.nidaq_reader.num_samples_per_chan = self.spinBox_samplesPerChannel.value()
+        self.nidaq_reader.iterations = self.spinBox_iterations.value()
+
+
     def onClick_calibratePhotodiodes(self):
-        signals = nidaq_reader.get_nidaq_measurement_max_values()
+        signals = self.nidaq_reader.get_nidaq_measurement_max_values()
 
         calib_factors = list(self.data_analyser.extract_calibration_factors(*signals))
         self.label_cOAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[0]))
         self.label_cCAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[1]))
 
-        if self.labelApertureTransmittanceValue.text() != "":
-            self.labelApertureTransmittanceValue.clear()
-            self.groupBox_Measurement.setEnabled(False)            
-        else:
+        if self.labelApertureTransmittanceValue.text() == "":
             self.groupBox_Aperture.setEnabled(True)
+        else:
+            self.groupBox_Measurement.setEnabled(False)  # redo the aperture measurement!
+            self.labelApertureTransmittanceValue.clear()
 
 
     def onClick_measureApertureTransmission(self):
-        signals = nidaq_reader.get_nidaq_measurement_max_values()
+        signals = self.nidaq_reader.get_nidaq_measurement_max_values()
 
         s = list(self.data_analyser.extract_aperture_transmission(signals[0], signals[2]))
         self.labelApertureTransmittanceValue.setText("{0:.3f} +- {1:.3f}".format(*s))
@@ -85,21 +93,20 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         """ Assumption: Stages are located at their initial position!
         """
 
-        note = self.notesLineEdit.text()
+        material = self.data_analyser.sample_material
+
         # Make sure a note on the measurement has been typed in, otherwise return to the main loop.
-        if note == "Further notes":
-            self.notesLineEdit.setStyleSheet("color: rgb(255,0,0)")
+        if material == "--": # default String
+            self.lineEdit_sampleMaterial.setStyleSheet("color: rgb(255,0,0)")
             return None
-
         else:
-            self.notesLineEdit.setStyleSheet("color: rgb(0,0,0)")
+            self.lineEdit_sampleMaterial.setStyleSheet("color: rgb(0,0,0)")
 
-
-        print("Will start measurement, will take plenty of time!")
+        # abbreviation
         tot_num_of_pos = self.data_analyser.tot_num_of_pos
 
         for pos_index in range(tot_num_of_pos):
-            signals = nidaq_reader.get_nidaq_measurement_max_values()
+            signals = self.nidaq_reader.get_nidaq_measurement_max_values()
             
             # Position with respect to beam:
             # If the physical stage position is zero, it is actually behind the focal spot (this is
