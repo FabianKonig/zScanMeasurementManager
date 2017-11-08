@@ -3,9 +3,9 @@ import numpy as np
 
 
 # Reference photodiode
-pd_ref_channel = "Dev1/ai0"
-pd_oa_channel = "Dev1/ai1"
-pd_ca_channel = "Dev1/ai2"
+pd_ref_channel = "Dev2/ai0"
+pd_oa_channel = "Dev2/ai1"
+pd_ca_channel = "Dev2/ai2"
 
 channels = [pd_ref_channel, pd_oa_channel, pd_ca_channel]
 
@@ -19,7 +19,10 @@ def read_nidaq(sampling_rate, num_samples_per_chan):
     """
     with nidaqmx.Task() as task:
         for channel in channels:
-            task.ai_channels.add_ai_voltage_chan(channel)
+            task.ai_channels.add_ai_voltage_chan(
+            channel, name_to_assign_to_channel="",
+            terminal_config=nidaqmx.constants.TerminalConfiguration.RSE, min_val=-10.0,
+            max_val=1.0, units=nidaqmx.constants.VoltageUnits.VOLTS, custom_scale_name="")
 
         task.timing.cfg_samp_clk_timing(
             sampling_rate,
@@ -70,7 +73,7 @@ def filter_nidaq_signal_peaks(signals):
         Output:
         2-dim array as input array, with discarded entries removed
     """
-    threshold = 0.5
+    threshold = 0.8
 
     accepted_signals_mask = np.empty(shape=signals.shape[1], dtype=bool)
 
@@ -103,10 +106,12 @@ def get_filtered_nidaq_signal(sampling_rate, num_samples_per_chan):
 if __name__ == '__main__':
     
     import matplotlib.pyplot as plt
-    signals = read_nidaq()
-    print(signals[0].max(), signals[0].sum(), signals[0].max() / signals[0].sum())
-    print(signals[1].max(), signals[1].sum(), signals[1].max() / signals[1].sum())
-    print(signals[2].max(), signals[2].sum(), signals[2].max() / signals[2].sum())
+    signals = get_filtered_nidaq_signal(83000, 83000)
+    print(signals[0].max())
+    print(signals[1].max())
+    print(signals[2].max())
+    print((signals[2] / signals[0]).mean(), (signals[2] / signals[0]).std())
+    print((signals[1] / signals[0]).mean(), (signals[1] / signals[0]).std())
 
     plt.plot(signals[0], alpha=0.5, linestyle="", marker="x", label="Ref")
     plt.plot(signals[1], alpha=0.5, linestyle="", marker="x", label="OA")    

@@ -68,12 +68,11 @@ class zScanDataAnalyser:
         self.S = None  # Transmission of aperture
         self.combined_c_CA = None  # S*c_CA
 
-        self.T_OA = np.zeros(shape=(tot_num_of_pos, 3))  # transmission in open aperture path.
-        self.T_CA = np.zeros(shape=(tot_num_of_pos, 3))  # transmission in closed aperture path.
-
-        assert tot_num_of_pos > 2
-        self.tot_num_of_pos = tot_num_of_pos   # The total number of measurement stage positions.
+        self.tot_num_of_pos = 2           # The total number of measurement stage positions.
         self.current_position_step = 0     # Integer indicating next empty transmission array entry.
+
+        self.T_OA = np.zeros(shape=(self.tot_num_of_pos, 3))  # transmission in open aperture path.
+        self.T_CA = np.zeros(shape=(self.tot_num_of_pos, 3))  # transmission in closed aperture path.
 
         self.sample_material = "default"
         self.solvent = "default"
@@ -91,7 +90,7 @@ class zScanDataAnalyser:
 
 
     def extract_calibration_factors(self, ref_signal, oa_signal, ca_signal):
-        """ If the probe is placed into the beam far displaced from the focal spot, i.e. nonlinear
+        """ If the sample is placed into the beam far displaced from the focal spot, i.e. nonlinear
             effects are highly unlikely, we consider this situation as 100% transmission. As such,
             we want to calibrate the photodiode signals to be "equal".
             Hence, for this function to produce reasonable calibration factors, place the probe
@@ -151,13 +150,13 @@ class zScanDataAnalyser:
         self.current_position_step += 1
 
 
-    def store_transmission_data(self, note):
+    def store_transmission_data(self):
         """ Stores the transmission data in self.T_CA and self.T_OA into a file.
         """
         now = datetime.datetime.today()
         time = "{0:4d}.{1:02d}.{2:02d}  {3:02d}:{4:02d}".format(
             now.year, now.month, now.day, now.hour, now.minute)
-        header = note + " \n" + time + "\n\nPosition / mm    T_OA    deltaT_OA    T_CA    deltaT_CA"
+        header = self.sample_material + " \n" + time + "\n\nPosition / mm    T_OA    deltaT_OA    T_CA    deltaT_CA"
         
         # assert that position entries in T_OA and T_CA are identical
         assert (self.T_OA[:,0] == self.T_CA[:,0]).all()
@@ -176,7 +175,7 @@ class zScanDataAnalyser:
         """
         now = datetime.date.today()
         today = "{0:4d}_{1:02d}_{2:02d}".format(now.year, now.month, now.day)
-        directory = os.path.join('..', 'Measurements', today, self.material)  # Attention, we should take care about the strings we pass to path.join!
+        directory = os.path.join('..', 'Measurements', today, self.sample_material)  # Attention, we should take care about the strings we pass to path.join!
 
         if not os.path.exists(directory):
             os.makedirs(directory)
@@ -244,9 +243,9 @@ class zScanDataAnalyser:
         plt.show()
 
 
-    def evaluate_measurement_and_reinitialise(self, note):
-        self.define_folder(note)
-        self.store_transmission_data(note)
+    def evaluate_measurement_and_reinitialise(self):
+        self.define_folder()
+        self.store_transmission_data()
         self.fit_transmission_data()
         self.plot_transmission_data()
         self.reinitialise()

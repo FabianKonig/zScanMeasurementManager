@@ -39,10 +39,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
 
     def onClick_calibrate_photodiodes(self):
-        signals = nidaq_control.get_nidaq_measurement_max_values(
-            self.spinBox_samplingRate.value,
-            self.spinBox_samplesPerChannel.value,
-            self.spinBox_iterations.value)
+        signals = nidaq_control.get_nidaq_measurement_max_values(83000, 20000,3)
 
         calib_factors = list(self.data_analyser.extract_calibration_factors(*signals))
         self.label_cOAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[0]))
@@ -57,9 +54,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
     def onClick_measure_aperture_transmission(self):
         signals = nidaq_control.get_nidaq_measurement_max_values(
-            self.spinBox_samplingRate.value,
-            self.spinBox_samplesPerChannel.value,
-            self.spinBox_iterations.value)
+            83000,
+            20000,
+            3)
 
         s = list(self.data_analyser.extract_aperture_transmission(signals[0], signals[2]))
         self.labelApertureTransmittanceValue.setText("{0:.3f} +- {1:.3f}".format(*s))
@@ -85,11 +82,8 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         tot_num_of_pos = self.data_analyser.tot_num_of_pos
 
         for pos_index in range(tot_num_of_pos):
-            signals = nidaq_control.get_nidaq_measurement_max_values(
-                self.spinBox_samplingRate.value,
-                self.spinBox_samplesPerChannel.value,
-                self.spinBox_iterations.value)
-
+            signals = nidaq_control.get_nidaq_measurement_max_values(83000, 20000,3)
+            
             # Position with respect to beam:
             # If the physical stage position is zero, it is actually behind the focal spot (this is
             # because the stages are aligned such that their max position is in front and their zero
@@ -102,8 +96,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             if pos_index < tot_num_of_pos-1:
                 self.stage_controller.move_in_steps(tot_num_of_pos, "backward")
 
-
-        self.data_analyser.evaluate_measurement_and_reinitialise(note)
+        self.data_analyser.evaluate_measurement_and_reinitialise()
         self.stage_controller.initialise_stages()
 
 
