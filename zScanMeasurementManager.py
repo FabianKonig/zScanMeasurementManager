@@ -10,36 +10,56 @@ import nidaq_control
 class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
     def __init__(self):
         super().__init__()    # call __init__ of QtWidgets.QMainWindow
-        self.data_analyser = data_analysis.zScanDataAnalyser()
-        self.stage_controller = None
-
         self.setupUi(self)    # call setupUI of gui_design.Ui_MainWindow (generated with QtDesigner)
-        self.label_progress.setVisible(False)
         self.defineSignalsSlots()
 
+
+        self.data_analyser = data_analysis.zScanDataAnalyser(
+            self.spinBox_numPositions.value(),
+            self.lineEdit_sampleMaterial.text(),
+            self.lineEdit_solvent.text(),
+            self.doubleSpinBox_concentration.value(),
+            self.spinBox_laserfreq.value(),
+            self.lineEdit_furtherNotes.text())
+
+        self.nidaq_reader = nidaq_control.NidaqReader(
+            self.spinBox_samplingRate.value(), 
+            self.spinBox_samplesPerChannel.value(), 
+            self.spinBox_iterations.value())
 
         QtWidgets.QMessageBox.information(self, "Stage position initialisation",
             "The stages will now be moved home and subsequently to their initial positions." +
             " Make sure the stages can move unhindered!")
         
-        print("self.stage_controller is being initialised, I will freeze")
         self.stage_controller = stage_control.APT_Controller()
-        # Activate pushButtonCalibrate_PDs only after the stage initialisation has completed.
+
 
 
     def defineSignalsSlots(self):
-        self.pushButtonCalibrate_PDs.clicked.connect(self.onClick_calibrate_photodiodes)
-        self.pushButton_MeasureAperture.clicked.connect(self.onClick_measure_aperture_transmission)
-        self.pushButtonStartStopMeasurement.clicked.connect(self.onClick_start_stop_measurement)
-        self.lineEdit_sampleMaterialValue.textChanged.connect(self.onSampleMaterialValueChange)
+        self.label_progress.setVisible(False)
+
+        self.pushButton_calibratePDs.clicked.connect(self.onClick_calibratePhotodiodes)
+        self.pushButton_measureAperture.clicked.connect(self.onClick_measureApertureTransmission)
+        self.pushButton_startMeasurement.clicked.connect(self.onClick_startMeasurement)
+
+        self.lineEdit_sampleMaterial.textChanged.connect(self.onNotesChange)
+        self.lineEdit_solvent.textChanged.connect(self.onNotesChange)
+        self.doubleSpinBox_concentration.valueChanged.connect(self.onNotesChange)
+        self.spinBox_laserfreq.valueChanged.connect(self.onNotesChange)
+        self.spinBox_numPositions.valueChanged.connect(self.onNotesChange)
+        self.lineEdit_furtherNotes.textChanged.conect(self.onNotesChange)
 
 
-    def onSampleMaterialValueChange(self):
-        self.data_analyser.sample_material = self.lineEdit_sampleMaterialValue.text()
+    def onNotesChange(self):
+        self.data_analyser.sample_material = self.lineEdit_sampleMaterial.text()
+        self.data_analyser.solvent = self.lineEdit_solvent.text()
+        self.data_analyser.concentration = self.doubleSpinBox_concentration.value()
+        self.data_analyser.tot_num_of_pos = self.spinBox_numPositions.value()
+        self.data_analyser.furtherNotes = self.lineEdit_furtherNotes.text()
 
 
-    def onClick_calibrate_photodiodes(self):
-        signals = nidaq_control.get_nidaq_measurement_max_values(83000, 20000,3)
+    def onClick_calibratePhotodiodes(self):
+        signals = nidaq_reader.get_nidaq_measurement_max_values()
 
         calib_factors = list(self.data_analyser.extract_calibration_factors(*signals))
         self.label_cOAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[0]))
@@ -52,11 +72,8 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             self.groupBox_Aperture.setEnabled(True)
 
 
-    def onClick_measure_aperture_transmission(self):
-        signals = nidaq_control.get_nidaq_measurement_max_values(
-            83000,
-            20000,
-            3)
+    def onClick_measureApertureTransmission(self):
+        signals = nidaq_reader.get_nidaq_measurement_max_values()
 
         s = list(self.data_analyser.extract_aperture_transmission(signals[0], signals[2]))
         self.labelApertureTransmittanceValue.setText("{0:.3f} +- {1:.3f}".format(*s))
@@ -64,7 +81,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.groupBox_Measurement.setEnabled(True)
 
 
-    def onClick_start_stop_measurement(self):
+    def onClick_startMeasurement(self):
         """ Assumption: Stages are located at their initial position!
         """
 
@@ -82,7 +99,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         tot_num_of_pos = self.data_analyser.tot_num_of_pos
 
         for pos_index in range(tot_num_of_pos):
-            signals = nidaq_control.get_nidaq_measurement_max_values(83000, 20000,3)
+            signals = nidaq_reader.get_nidaq_measurement_max_values()
             
             # Position with respect to beam:
             # If the physical stage position is zero, it is actually behind the focal spot (this is

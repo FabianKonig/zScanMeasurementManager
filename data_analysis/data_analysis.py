@@ -56,37 +56,106 @@ def T_CA_func(z, z0, zR, dΦ, dΨ):
 
 
 class zScanDataAnalyser:
-    def __init__(self):
+
+    def __init__(self, tot_num_of_pos, sample_material, solvent, concentration, laserfreq,
+        furtherNotes):
         """ Class to extract calibration factors and transmissions from the photodiode signals.
             The first two functions to be called must be:
                 1. extract_calibration_factors
                 2. extract_aperture_transmission (in this order)
             Only then is it sensible to call the function "extract_oa_ca_transmissions".
+
+            Input:
+            tot_num_of_pos  Integer denoting the total number of positions at which the photodiode
+                            signals will be measured.
+            sample_material String
+            solvent         String
+            concentration   Float
+            laserfreq       Integer
+            furtherNotes    String
         """
         self.c_OA = None
         self.c_CA = None
-        self.S = None  # Transmission of aperture
-        self.combined_c_CA = None  # S*c_CA
+        self.S = None                         # Transmission of aperture
+        self.combined_c_CA = None             # S*c_CA
 
-        self.tot_num_of_pos = 2           # The total number of measurement stage positions.
+        self._tot_num_of_pos = tot_num_of_pos  # The total number of measurement stage positions.
         self.current_position_step = 0     # Integer indicating next empty transmission array entry.
 
         self.T_OA = np.zeros(shape=(self.tot_num_of_pos, 3))  # transmission in open aperture path.
         self.T_CA = np.zeros(shape=(self.tot_num_of_pos, 3))  # transmission in closed aperture path.
 
-        self.sample_material = "default"
-        self.solvent = "default"
-        self.concentration = "default"
-        self.laserfreq = "default"
-        self.folder = self.define_folder()   # The folder to store results in
+        self._sample_material = sample_material
+        self._solvent = solvent
+        self._concentration = concentration
+        self._laserfreq = laserfreq
+        self._furtherNotes = furtherNotes
+        self._folder = self._define_folder()
 
         self.w0 = 20.0299e-6  #m waist of incident beam in vacuum
-        self.λ = 532e-9  #m in vacuum
+        self.λ = 532e-9       #m in vacuum
         self.zR = np.pi * self.w0**2 / self.λ * 1e3   #mm Rayleigh length in vacuum
 
-        self.fit_z0 = None   # fitted results
+        self.fit_z0 = None    # fitted results
         self.fit_dΨ = None
         self.fit_dΦ = None
+
+
+    @property
+    def tot_num_of_pos(self):
+        return self._tot_num_of_pos
+
+    @tot_num_of_pos.setter
+    def tot_num_of_pos(self, value):
+        assert value <=18333
+        self._tot_num_of_pos = value
+        self.T_OA = np.zeros(shape=(self._tot_num_of_pos, 3))
+        self.T_CA = np.zeros(shape=(self._tot_num_of_pos, 3))
+
+    @property
+    def sample_material(self):
+        return self._sample_material
+
+    @sample_material.setter
+    def sample_material(self, value):
+        self._sample_material = value
+        self._define_folder()
+
+    @property
+    def solvent(self):
+        return self._solvent
+
+    @solvent.setter
+    def solvent(self, value):
+        self._solvent = value
+        self._define_folder()
+
+    @property
+    def concentration(self):
+        return self._concentration
+
+    @concentration.setter
+    def concentration(self, value):
+        self._concentration = value
+        self._define_folder()
+
+    @property
+    def laserfreq(self):
+        return self._laserfreq
+
+    @laserfreq.setter
+    def laserfreq(self, value):
+        self._laserfreq = value
+        self._define_folder()
+
+    @property
+    def furtherNotes(self):
+        return self._furtherNotes
+
+    @laserfreq.setter
+    def furtherNotes(self, value):
+        self._furtherNotes = value
+        self._define_folder()
 
 
     def extract_calibration_factors(self, ref_signal, oa_signal, ca_signal):
@@ -170,16 +239,17 @@ class zScanDataAnalyser:
             print(ex)
         
 
-    def define_folder(self):
-        """ 
-        """
+    def _define_folder(self):
         now = datetime.date.today()
         today = "{0:4d}_{1:02d}_{2:02d}".format(now.year, now.month, now.day)
-        directory = os.path.join('..', 'Measurements', today, self.sample_material)  # Attention, we should take care about the strings we pass to path.join!
 
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        self.folder = directory
+        # Attention, we should take care about the strings we pass to path.join!
+        self.folder = os.path.join('..', 'Measurements', today, self.sample_material + "_in_" + self.solvent)
+
+
+    def check_and_create_folder(self):
+        if not os.path.exists(self.folder):
+            os.makedirs(self.folder)
 
 
     def fit_transmission_data(self):
@@ -244,7 +314,6 @@ class zScanDataAnalyser:
 
 
     def evaluate_measurement_and_reinitialise(self):
-        self.define_folder()
         self.store_transmission_data()
         self.fit_transmission_data()
         self.plot_transmission_data()
