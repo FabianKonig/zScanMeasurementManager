@@ -107,7 +107,6 @@ class zScanDataAnalyser:
 
     @tot_num_of_pos.setter
     def tot_num_of_pos(self, value):
-        assert value <=18333
         self._tot_num_of_pos = value
         self.T_OA = np.zeros(shape=(self._tot_num_of_pos, 3))
         self.T_CA = np.zeros(shape=(self._tot_num_of_pos, 3))
@@ -224,11 +223,24 @@ class zScanDataAnalyser:
         today = "{0:4d}_{1:02d}_{2:02d}".format(now.year, now.month, now.day)
 
         # Attention, we should take care about the strings we pass to path.join!
-        self.folder = os.path.join(
+        folder0 = os.path.join(
             '..', 
             'Measurements',
             today,
-            self.sample_material + "_in_" + self.solvent)
+            self.sample_material + "_" + self.solvent)
+
+        folder = folder0
+        for i in xrange(2, 100):
+            if not os.path.exists(folder):
+                self.folder = folder
+                break
+            else:
+                folder = os.path.join(folder0, "_{0}".format(i))
+
+
+    def check_and_create_folder(self):
+        if not os.path.exists(self.folder):
+            os.makedirs(self.folder)
 
 
     def store_transmission_data(self):
@@ -257,48 +269,130 @@ class zScanDataAnalyser:
             np.savetxt(file, transmission_array, header=header, fmt="%10.4f")
         except Exception as ex:
             print("Storage of transmission data failed!!!!")
-            print(ex)        
-
-
-    def check_and_create_folder(self):
-        if not os.path.exists(self.folder):
-            os.makedirs(self.folder)
+            print(ex)
 
 
     def fit_transmission_data(self):
 
-        # abbreviation :-)
-        T_OA = self.T_OA
-        T_CA = self.T_CA
+        def fit_OA_transmission(T_OA, T_CA, zR):
+            T_OA_fitfunc = lambda z, z0, dΨ: T_OA_func(z, z0, zR, dΨ)
+            guess_OA = [22,1]
+
+            fit_OA, cov_OA = curve_fit(
+                T_OA_fitfunc, T_OA[:,0], T_OA[:,1], sigma=T_OA[:,2], p0=guess_OA)
+            std_err_OA = np.sqrt(np.diag(cov_OA))
+
+            fit_z0 = np.array([fit_OA[0], std_err_OA[0]])
+            fit_dΨ = np.array([fit_OA[1], std_err_OA[1]])
+
+            return fit_z0, fit_dΨ
+
+            
+        def fit_CA_transmission(T_OA, T_CA, z0, zR, dΨ):
+            T_CA_fitfunc = lambda z, dΦ: T_CA_func(z, z0, zR, dΦ, dΨ)
+
+            fit_CA, cov_CA = curve_fit(T_CA_fitfunc, T_CA[:,0], T_CA[:,1], sigma=T_CA[:,2])
+            std_err_CA = np.sqrt(np.diag(cov_CA))
+
+            fit_dΦ = np.array([fit_CA[0], std_err_CA[0]])
+            
+            return fit_dΦ
+
+        def fit_CA_transmission_only(T_OA, T_CA, zR):
+            T_CA_fitfunc = lambda z, z0, dΦ: T_CA_func(z, z0, zR, dΦ, 0)-T_OA_func(z, z0, zR, 0)+1
+            guess_CA = [22, 1]
+
+            fit_CA, cov_CA = curve_fit(
+                T_CA_fitfunc, T_CA[:,0], T_CA[:,1], sigma=T_CA[:,2], p0=guess_CA)
+            std_err_CA = np.sqrt(np.diag(cov_CA))
+
+            fit_z0 = np.array([fit_CA[0], std_err_CA[0]])
+            fit_dΦ = np.array([fit_CA[1], std_err_CA[1]])
+
+            return fit_z0, fit_dΦ
+
+
+        assert self.T_OA is not None and self.T_CA is not None
+
 
         # firstly, fit T_OA and use self.zR (Rayleigh length in vacuum)
-        T_OA_fitfunc = lambda z, z0, dΨ: T_OA_func(z, z0, self.zR, dΨ)
-        fit_OA, cov_OA = curve_fit(T_OA_fitfunc, T_OA[:,0], T_OA[:,1], sigma=T_OA[:,2])
-        std_err_OA = np.sqrt(np.diag(cov_OA))
+        try:
+            fit_z0, fit_dΨ = fit_OA_transmission(self.T_OA, self.T_CA, self.zR)
+            assert np.abs(fit_z0[0]-22) < 3 and \
+                fit_z0[1]/fit_z0[0] < 1 and \
+                fit_dΨ[1]/fit_dΨ[0] < 1
 
-        fit_z0 = np.array([fit_OA[0], std_err_OA[0]])
-        fit_dΨ = np.array([fit_OA[1], std_err_OA[1]])
-        del fit_OA, cov_OA, std_err_OA
+            self.fit_z0 = fit_z0
+            self.fit_dΨ = fit_dΨ
+
+        except Exception as ex:
+            print("Fit of open aperture data failed. Will try to only fit closed aperture data.")
+            print(ex)
+            # I assume there is no nonlinear absorption. Hence I will set dΨ manually to zero:
+            self.fit_dΨ = np.array([0,0])
+
+            try:
+                fit_z0, fit_dΦ = fit_CA_transmission_only(self.T_OA, self.T_CA, self.zR)
+                assert np.abs(fit_z0[0]-22) < 3 and \
+                    fit_z0[1]/fit_z0[0] < 1 and \
+                    fit_dΦ[1]/fit_dΦ[0] < 1
+
+                self.fit_z0 = fit_z0
+                self.fit_dΨ = fit_dΨ
+
+                return None
+
+            except Exception as ex:
+                print("The fit of closed aperture data only failed, as well!")
+                print(ex)
+                self.fit_z0 = None
+                self.fit_dΨ = None
+                self.fit_dΦ = None
+
+                return None
 
 
-        # Here, we have to check whether the first fit was successful! There might be samples where
-        # no nonlinear absorption occurs. Obviously, the fitting procedure will definitively fail in
-        # those samples.
+        # now, fit T_CA using the data from the fit of T_OA
+        try:
+            fit_dΦ = fit_CA_transmission(self.T_OA, self.T_CA, fit_z0[0], self.zR, fit_dΨ[0])
+            assert fit_dΦ[1]/fit_dΦ[0] < 1
+
+            self.fit_dΦ = fit_dΦ
+
+        except Exception as ex:
+            print("Fit of closed aperture data failed.")
+            print(ex)
+            self.fit_dΦ = None
+
+        return None
 
 
-        # now, fit T_CA using the data from the fit to T_OA
-        T_CA_fitfunc = lambda z, dΦ : T_CA_func(z, fit_z0[0], self.zR, dΦ, fit_dΨ[0])
-        fit_CA, cov_CA = curve_fit(T_CA_fitfunc, T_CA[:,0], T_CA[:,1], sigma=T_CA[:,2])
-        std_err_CA = np.sqrt(np.diag(cov_CA))
 
-        fit_dΦ = np.array([fit_CA[0], std_err_CA[0]])
-        del fit_CA, cov_CA, std_err_CA
 
-        # store results in instance variables:
-        self.fit_z0 = fit_z0
-        self.fit_dΨ = fit_dΨ
-        self.fit_dΦ = fit_dΦ
+    def store_fit_results(self):
 
+        if self.fit_z0 is None or self.fit_dΨ is None or self.fit_dΦ is None:
+            print("One or more fit parameters are still None. Fit results have not been written " +\
+                "into a file.")
+            return None
+
+        lines = np.array([["z0", self.fit_z0[0], self.fit_z0[1]],
+                          ["dΨ", self.fit_dΨ[0], self.fit_dΨ[1]],
+                          ["dΦ", self.fit_dΦ[0], self.fit_dΦ[1]]])
+
+        now = datetime.datetime.today()
+        time = "{0:4d}.{1:02d}.{2:02d}  {3:02d}:{4:02d}".format(
+            now.year, now.month, now.day, now.hour, now.minute)
+
+        header = "Fit results, " + time
+
+        try:
+            file = os.path.join(self.folder, "fit_results.dat")
+            self.check_and_create_folder()
+            np.savetxt(file, lines, header=header, fmt="%10.4f")
+        except Exception as ex:
+            print("Storage of fit results file failed!!!!")
+            print(ex)
 
 
     def plot_transmission_data(self):
@@ -331,6 +425,7 @@ class zScanDataAnalyser:
     def evaluate_measurement_and_reinitialise(self):
         self.store_transmission_data()
         #self.fit_transmission_data()
+        self.store_fit_results()
         self.plot_transmission_data()
         self.reinitialise()
 
