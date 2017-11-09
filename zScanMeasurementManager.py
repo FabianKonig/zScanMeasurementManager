@@ -7,18 +7,20 @@ import stage_control
 import nidaq_control
 
 
-# - The fitting should be exception handled such that an unsuccessful fit will not crash the program.     DONE. Check it!
+
+# TODO:
+# -----------------------------------
 # - The fitting results should be written into a file.                                                    DONE. Check it!
 # - A fit function to convert the reference photodiode signal to the input pulse energy is necessary.
 #   This energy value could then be computed every time calibrate_photodiodes is pressed and it could
 #   be appended to the measurement header in the transmission_data.dat file.
 #   So, make this calibration measurement!
 # - The absorption (alpha coefficient) measurement should be taken care of.
-# - If a directory exists, a second directory should be created such that the first is not overwritten.   DONE. Check it!
 # - When the measurement is started, the measurement parameters section should be disabled.
 #   At the moment no problem as the GUI freezes anyway.
-
-
+# - The generated plots miss x and y labels.                                                              DONE. Check it!
+# - With the pulse energy and the fit params the n2 value shall be calculated and written into the plots
+#   and into a file.
 
 
 class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):

@@ -223,19 +223,21 @@ class zScanDataAnalyser:
         today = "{0:4d}_{1:02d}_{2:02d}".format(now.year, now.month, now.day)
 
         # Attention, we should take care about the strings we pass to path.join!
-        folder0 = os.path.join(
-            '..', 
-            'Measurements',
-            today,
-            self.sample_material + "_" + self.solvent)
-
+        
+        if self.solvent != "--":
+            name = self.sample_material + "_" + self.solvent
+        else:
+            name = self.sample_material
+            
+        folder0 = os.path.join('..', 'Measurements', today, name)
+        
         folder = folder0
-        for i in xrange(2, 100):
+        for i in range(2, 100):
             if not os.path.exists(folder):
                 self.folder = folder
                 break
             else:
-                folder = os.path.join(folder0, "_{0}".format(i))
+                folder = folder0 + "_{0:02}".format(i)
 
 
     def check_and_create_folder(self):
@@ -246,6 +248,8 @@ class zScanDataAnalyser:
     def store_transmission_data(self):
         """ Stores the transmission data in self.T_CA and self.T_OA into a file.
         """
+        assert self.S is not None
+
         now = datetime.datetime.today()
         time = "{0:4d}.{1:02d}.{2:02d}  {3:02d}:{4:02d}".format(
             now.year, now.month, now.day, now.hour, now.minute)
@@ -255,6 +259,7 @@ class zScanDataAnalyser:
                  "Solvent: " + self.solvent + "\n" + \
                  "Concentration: " + str(self.concentration) + "mmol/l\n" + \
                  "Laser freq.: " + str(self.laserfreq) + "Hz\n" + \
+                 "Aperture transm. S = {0:.3f} +- {1:.3f}".format(self.S[0], self.S[1]) + "\n" + \
                  "Further notes: " + self.furtherNotes + "\n" + \
                  "\n" + \
                  "Position / mm    T_OA    deltaT_OA    T_CA    deltaT_CA"
@@ -326,7 +331,7 @@ class zScanDataAnalyser:
             self.fit_dΨ = fit_dΨ
 
         except Exception as ex:
-            print("Fit of open aperture data failed. Will try to only fit closed aperture data.")
+            print("Fit of open aperture data failed. Will try to fit closed aperture data only.")
             print(ex)
             # I assume there is no nonlinear absorption. Hence I will set dΨ manually to zero:
             self.fit_dΨ = np.array([0,0])
@@ -338,7 +343,7 @@ class zScanDataAnalyser:
                     fit_dΦ[1]/fit_dΦ[0] < 1
 
                 self.fit_z0 = fit_z0
-                self.fit_dΨ = fit_dΨ
+                self.fit_dΦ = fit_dΦ
 
                 return None
 
@@ -368,17 +373,22 @@ class zScanDataAnalyser:
 
 
 
-
     def store_fit_results(self):
 
-        if self.fit_z0 is None or self.fit_dΨ is None or self.fit_dΦ is None:
-            print("One or more fit parameters are still None. Fit results have not been written " +\
-                "into a file.")
-            return None
+        lines = np.empty(shape=(0,3))
 
-        lines = np.array([["z0", self.fit_z0[0], self.fit_z0[1]],
-                          ["dΨ", self.fit_dΨ[0], self.fit_dΨ[1]],
-                          ["dΦ", self.fit_dΦ[0], self.fit_dΦ[1]]])
+        if self.fit_z0 is not None:
+            lines = np.append(lines, [["z0", str(self.fit_z0[0]), str(self.fit_z0[1])]])
+        else:
+            lines = np.append(lines, [["z0", "Could not be fitted", ""]])
+        if self.fit_dΨ is not None:
+            lines = np.append(lines, [["dPsi", str(self.fit_dΨ[0]), str(self.fit_dΨ[1])]])
+        else:
+            lines = np.append(lines, [["dPsi", "Could not be fitted", ""]])
+        if self.fit_dΦ is not None:
+            lines = np.append(lines, [["dPhi", str(self.fit_dΦ[0]), str(self.fit_dΦ[1])]])
+        else:
+            lines = np.append(lines, [["dPhi", "Could not be fitted", ""]])
 
         now = datetime.datetime.today()
         time = "{0:4d}.{1:02d}.{2:02d}  {3:02d}:{4:02d}".format(
@@ -387,9 +397,9 @@ class zScanDataAnalyser:
         header = "Fit results, " + time
 
         try:
-            file = os.path.join(self.folder, "fit_results.dat")
             self.check_and_create_folder()
-            np.savetxt(file, lines, header=header, fmt="%10.4f")
+            file = os.path.join(self.folder, "fit_results.dat")
+            np.savetxt(file, lines, header=header, fmt="%s")
         except Exception as ex:
             print("Storage of fit results file failed!!!!")
             print(ex)
@@ -398,9 +408,7 @@ class zScanDataAnalyser:
     def plot_transmission_data(self):
 
         assert self.folder is not None
-        file = os.path.join(self.folder, "plot.pdf")
 
-        self.check_and_create_folder()
 
         T_OA = self.T_OA
         T_CA = self.T_CA
@@ -416,15 +424,32 @@ class zScanDataAnalyser:
             plt.plot(pos_vals, T_OA_vals, color="black")
             plt.plot(pos_vals, T_CA_vals, color="red")
 
-        plt.grid()
+        properties = "Sample: " + self.sample_material + \
+            ", Solvent: " + self.solvent + \
+            ", Concentration = {0}mmol/l".format(self.concentration) + "\n" + \
+            "Laserfreq = " + str(self.laserfreq) + "Hz"\
+            ", S = ({0:.2f} +- {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
+
+        plt.title(properties, fontsize=9)
+        plt.xlabel("z / mm")
+        plt.ylabel("Transmission")
         plt.legend()
-        plt.savefig(file, dpi=600)
+        plt.grid()
+
+        try:
+            self.check_and_create_folder()
+            file = os.path.join(self.folder, "plot.pdf")
+            plt.savefig(file, dpi=600)
+        except Exception as ex:
+            print("Storage of plot failed!!!!")
+            print(ex)
+
         plt.show()
 
 
     def evaluate_measurement_and_reinitialise(self):
         self.store_transmission_data()
-        #self.fit_transmission_data()
+        self.fit_transmission_data()
         self.store_fit_results()
         self.plot_transmission_data()
         self.reinitialise()
@@ -435,7 +460,7 @@ class zScanDataAnalyser:
         self.T_CA = np.zeros(shape=(self.tot_num_of_pos, 3))
 
         self.current_position_step = 0
-        self.folder = None
+        self._define_folder()
 
 
 
