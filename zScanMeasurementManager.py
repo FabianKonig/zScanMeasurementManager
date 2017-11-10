@@ -84,7 +84,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
     def onClick_calibratePhotodiodes(self):
         signals = self.nidaq_reader.get_nidaq_measurement_max_values()
         pulse_energy = self.data_analyser.extract_pulse_energy(signals[0])
-        self.label_pulseEnergyValue.setText("{0:.3f} +- {1:.3f}".format(*pulse_energy))
+        self.label_pulseEnergyValue.setText("{0:.3f} +- {1:.3f}".format(*pulse_energy*1e6))
 
         calib_factors = list(self.data_analyser.extract_calibration_factors(*signals))
         self.label_cOAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[0]))

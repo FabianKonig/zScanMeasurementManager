@@ -92,15 +92,17 @@ class zScanDataAnalyser:
         self._furtherNotes = furtherNotes
         self._folder = self._define_folder()
 
-        self.pulse_energy = None
+        self.pulse_energy = None  # in J
 
-        self.w0 = 20.0299e-6  #m waist of incident beam in vacuum
-        self.λ = 532e-9       #m in vacuum
-        self.zR = np.pi * self.w0**2 / self.λ * 1e3   #mm Rayleigh length in vacuum
+        self.w0 = 20.0299e-6  # m waist of incident beam in vacuum
+        self.λ = 532e-9       # m in vacuum
+        self.zR = np.pi * self.w0**2 / self.λ * 1e3   # mm Rayleigh length in vacuum
 
         self.fit_z0 = None    # fitted results
         self.fit_dΨ = None
         self.fit_dΦ = None
+
+        self._n2 = None   # in units of 1e-16 cm^2/W.
 
 
     @property
@@ -182,9 +184,9 @@ class zScanDataAnalyser:
                 
                 Returns:
                 1-dim numpy array of length 2, the first entry denoting the pulse_energy, the second
-                its error. Both in µJ.
+                its error. Both in J.
             """
-            fit_gradient = np.array([16.9274, 0.0212])
+            fit_gradient = np.array([16.9274, 0.0212]) * 1e-6 
 
             pulse_e = fit_gradient[0] * pd_ref_signal[0]
             delta_pulse_e = np.sqrt( (fit_gradient[1] * pd_ref_signal[0])**2 + \
@@ -304,7 +306,7 @@ class zScanDataAnalyser:
                  "Solvent: " + self.solvent + "\n" + \
                  "Concentration: " + str(self.concentration) + "mmol/l\n" + \
                  "Laser rep. rate: " + str(self.laser_rep_rate) + "Hz\n" + \
-                 "Pulse energy = ({0:.3f} +- {1:.3f})µJ\n".format(self.pulse_energy[0], self.pulse_energy[1]) + \
+                 "Pulse energy = ({0:.3f} +- {1:.3f})µJ\n".format(self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
                  "Aperture transm. S = {0:.3f} +- {1:.3f}".format(self.S[0], self.S[1]) + "\n" + \
                  "Further notes: " + self.furtherNotes + "\n" + \
                  "\n" + \
@@ -370,8 +372,8 @@ class zScanDataAnalyser:
         try:
             fit_z0, fit_dΨ = fit_OA_transmission(self.T_OA, self.T_CA, self.zR)
             assert np.abs(fit_z0[0]-22) < 3 and \
-                fit_z0[1]/fit_z0[0] < 1 and \
-                fit_dΨ[1]/fit_dΨ[0] < 1
+                np.abs(fit_z0[1]/fit_z0[0]) < 1 and \
+                np.abs(fit_dΨ[1]/fit_dΨ[0]) < 1
 
             self.fit_z0 = fit_z0
             self.fit_dΨ = fit_dΨ
@@ -385,11 +387,12 @@ class zScanDataAnalyser:
             try:
                 fit_z0, fit_dΦ = fit_CA_transmission_only(self.T_OA, self.T_CA, self.zR)
                 assert np.abs(fit_z0[0]-22) < 3 and \
-                    fit_z0[1]/fit_z0[0] < 1 and \
-                    fit_dΦ[1]/fit_dΦ[0] < 1
+                    np.abs(fit_z0[1]/fit_z0[0]) < 1 and \
+                    np.abs(fit_dΦ[1]/fit_dΦ[0]) < 1
 
                 self.fit_z0 = fit_z0
                 self.fit_dΦ = fit_dΦ
+                self.compute_n2(self.fit_dΦ)
 
                 return None
 
@@ -406,9 +409,10 @@ class zScanDataAnalyser:
         # now, fit T_CA using the data from the fit of T_OA
         try:
             fit_dΦ = fit_CA_transmission(self.T_OA, self.T_CA, fit_z0[0], self.zR, fit_dΨ[0])
-            assert fit_dΦ[1]/fit_dΦ[0] < 1
+            assert np.abs(fit_dΦ[1]/fit_dΦ[0]) < 1
 
             self.fit_dΦ = fit_dΦ
+            self.compute_n2(self.fit_dΦ)
 
         except Exception as ex:
             print("Fit of closed aperture data failed.")
@@ -417,6 +421,35 @@ class zScanDataAnalyser:
 
         return None
 
+
+    def compute_n2(self, dΦ):
+        """
+        Input:
+        dΦ: 1-dim numpy array of length 2, first entry being the fitted dΦ, second entry its error.
+
+        Output (OnlyS in place replacement):
+        n2: 1-dim numpy array of length 2, first entry being n2, second its error, both 
+        in units of 1e-16 cm^2/W.
+        """
+
+        # Constants
+        R = 0.0377  #Measured reflectivity of the front boundary glass cuvette/air
+        pulse_length = 15e-12  #seconds
+        
+        assert self.pulse_energy is not None
+
+        L_eff = 1e-3 # m   TODO: Measure alpha and compute L_eff correctly
+
+        P0 = np.array([self.pulse_energy[0], self.pulse_energy[1]]) / pulse_length*(1-R)
+        
+        I0 = np.empty(shape=(2))
+        I0[0] = 2*P0[0] / (np.pi*self.w0**2)
+        I0[1] = 2*P0[1] / (np.pi*self.w0**2)
+        k = 2*np.pi / self.λ
+        
+        n2 = dΦ[0] / (k*I0[0]*L_eff)
+        dn2 = np.sqrt( (dΦ[1] / (k*I0[0]*L_eff))**2 + (dΦ[0]*I0[1] / (k*I0[0]*L_eff)**2)**2)
+        self._n2 = np.array([n2, dn2]) * 1e4 * 1e16
 
 
     def store_fit_results(self):
@@ -430,9 +463,10 @@ class zScanDataAnalyser:
         else:
             line1 = "dPsi: Could not be fitted"
         if self.fit_dΦ is not None:
-            line2 = "dPhi: ({0:.3f} +- {1:.3f})".format(self.fit_dΦ[0], self.fit_dΦ[1])
+            line2 = "dPhi: ({0:.3f} +- {1:.3f})\n".format(self.fit_dΦ[0], self.fit_dΦ[1]) + \
+                    "n2 = ({0:.3f} +- {1:.3f})e-16 cm^2/W".format(self._n2[0], self._n2[1])
         else:
-            line2 = "dPhi: Could not be fitted"
+            line2 = "dPhi: Could not be fitted, hence n2 could not be computed."
 
         now = datetime.datetime.today()
         time = "{0:4d}.{1:02d}.{2:02d}  {3:02d}:{4:02d}".format(
@@ -479,9 +513,12 @@ class zScanDataAnalyser:
         properties = "Sample: " + self.sample_material + \
             ", Solvent: " + self.solvent + \
             ", Concentration = {0}mmol/l".format(self.concentration) + "\n" + \
-            r"$E_{Pulse}$" + " = ({0:.3f} +- {1:.3f})µJ".format(self.pulse_energy[0], self.pulse_energy[1]) + \
+            r"$E_{Pulse}$" + " = ({0:.3f} +- {1:.3f})µJ".format(self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
             r", $f_{Laser}$" + " = {0}Hz".format(self.laser_rep_rate) + \
             ", S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
+
+        if self._n2 is not None:
+            properties += "\n" + r"$n_2 = ({0:.3f} \pm {1:.3f})e-16 cm^2/W$".format(self._n2[0], self._n2[1])
 
         plt.title(properties, fontsize=9)
         plt.xlabel("z / mm")
