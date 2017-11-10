@@ -12,10 +12,7 @@ import nidaq_control
 # -----------------------------------
 # - A fit function to convert the reference photodiode signal to the input pulse energy is necessary.
 #   It should also take the pulse repetition rate into account! For high pulse rep rates, the photo
-#   diode signals increase, however, the power actually decreases!
-#   This energy value could then be computed every time calibrate_photodiodes is pressed and it could
-#   be appended to the measurement header in the transmission_data.dat file.
-#   So, make this calibration measurement!
+#   diode signals increase, however, the power actually decreases! Make this calibration measurement!
 # - The absorption (alpha coefficient) measurement should be taken care of.
 # - With the pulse energy and the fit params the n2 value shall be calculated and written into the plots
 #   and into a file.
@@ -86,10 +83,13 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
     def onClick_calibratePhotodiodes(self):
         signals = self.nidaq_reader.get_nidaq_measurement_max_values()
+        pulse_energy = self.data_analyser.extract_pulse_energy(signals[0])
+        self.label_pulseEnergyValue.setText("{0:.3f} +- {1:.3f}".format(*pulse_energy))
 
         calib_factors = list(self.data_analyser.extract_calibration_factors(*signals))
         self.label_cOAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[0]))
         self.label_cCAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[1]))
+
 
         if self.labelApertureTransmittanceValue.text() == "":
             self.groupBox_Aperture.setEnabled(True)

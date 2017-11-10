@@ -92,6 +92,8 @@ class zScanDataAnalyser:
         self._furtherNotes = furtherNotes
         self._folder = self._define_folder()
 
+        self.pulse_energy = None
+
         self.w0 = 20.0299e-6  #m waist of incident beam in vacuum
         self.λ = 532e-9       #m in vacuum
         self.zR = np.pi * self.w0**2 / self.λ * 1e3   #mm Rayleigh length in vacuum
@@ -152,6 +154,52 @@ class zScanDataAnalyser:
     @furtherNotes.setter
     def furtherNotes(self, value):
         self._furtherNotes = value
+
+
+    def extract_pulse_energy(self, ref_signal_max):
+        """ This function extracts from the signal of the reference photodiode the pulse energy.
+            For this to work, I have performed a fit of pulse energy (measured with an energymeter)
+            versus reference photodiode signal (measured with PCI Nidaq) at fixed 30Hz laser
+            repetition rate.
+            Note that there is also a dependence between laser repitition rate, pulse energy and
+            photodiode signal which is yet to be measured and included into this function.
+
+            Input:
+            ref_signal_max: 1-dim numpy array of arbitrary length > 1. The maximum measured values
+            of the reference photodiode in Volt.
+
+            Output:
+            1-dim numpy array of length 2, the first entry denoting the pulse_energy, the second
+            its error. Both in µJ.
+
+            Note:
+            For the calibration measurement, see folder "Masterarbeit/Z-Scan/Setup_calibration/
+            Calibration_PulseEnergy_Photodiode/" stored on my computer.
+        """
+        def pulse_energy(pd_ref_signal):
+            """ Fit function. Input be a 1-dim numpy array with two entries, the first entry being
+                the signal, the second its error. Both in Volt.
+                
+                Returns:
+                1-dim numpy array of length 2, the first entry denoting the pulse_energy, the second
+                its error. Both in µJ.
+            """
+            fit_gradient = np.array([16.9274, 0.0212])
+
+            pulse_e = fit_gradient[0] * pd_ref_signal[0]
+            delta_pulse_e = np.sqrt( (fit_gradient[1] * pd_ref_signal[0])**2 + \
+                                     (fit_gradient[0] * pd_ref_signal[1])**2 )
+
+            return np.array([pulse_e, delta_pulse_e])
+
+
+        mean = ref_signal_max.mean()
+        std = ref_signal_max.std(ddof=1)
+
+        self.pulse_energy = pulse_energy(np.array([mean, std]))
+
+        return self.pulse_energy
+
 
 
     def extract_calibration_factors(self, ref_signal, oa_signal, ca_signal):
@@ -256,6 +304,7 @@ class zScanDataAnalyser:
                  "Solvent: " + self.solvent + "\n" + \
                  "Concentration: " + str(self.concentration) + "mmol/l\n" + \
                  "Laser rep. rate: " + str(self.laser_rep_rate) + "Hz\n" + \
+                 "Pulse energy = ({0:.3f} +- {1:.3f})µJ\n".format(self.pulse_energy[0], self.pulse_energy[1]) + \
                  "Aperture transm. S = {0:.3f} +- {1:.3f}".format(self.S[0], self.S[1]) + "\n" + \
                  "Further notes: " + self.furtherNotes + "\n" + \
                  "\n" + \
@@ -430,7 +479,7 @@ class zScanDataAnalyser:
         properties = "Sample: " + self.sample_material + \
             ", Solvent: " + self.solvent + \
             ", Concentration = {0}mmol/l".format(self.concentration) + "\n" + \
-            r"$E_{Pulse}$ = pending" + \
+            r"$E_{Pulse}$" + " = ({0:.3f} +- {1:.3f})µJ".format(self.pulse_energy[0], self.pulse_energy[1]) + \
             r", $f_{Laser}$" + " = {0}Hz".format(self.laser_rep_rate) + \
             ", S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
 

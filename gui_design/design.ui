@@ -421,7 +421,7 @@ p, li { white-space: pre-wrap; }
            </widget>
           </item>
           <item row="2" column="2">
-           <widget class="QLabel" name="label_alpha_VALUE">
+           <widget class="QLabel" name="label_alphaValue">
             <property name="text">
              <string/>
             </property>
@@ -436,6 +436,20 @@ p, li { white-space: pre-wrap; }
           </item>
           <item row="0" column="2">
            <widget class="QLabel" name="label_cCAValue">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLabel" name="label_pulseEnergy">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;E&lt;span style=&quot; vertical-align:sub;&quot;&gt;Pulse&lt;/span&gt; / µJ =&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2">
+           <widget class="QLabel" name="label_pulseEnergyValue">
             <property name="text">
              <string/>
             </property>
