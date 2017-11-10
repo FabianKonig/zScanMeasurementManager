@@ -70,9 +70,9 @@
           </widget>
          </item>
          <item row="1" column="3">
-          <widget class="QLabel" name="label_laserfreq">
+          <widget class="QLabel" name="label_laserRepRate">
            <property name="text">
-            <string>Laserfreq. / Hz</string>
+            <string>Laser rep. / Hz</string>
            </property>
           </widget>
          </item>
@@ -127,7 +127,7 @@
           <widget class="QDoubleSpinBox" name="doubleSpinBox_concentration"/>
          </item>
          <item row="1" column="4">
-          <widget class="QSpinBox" name="spinBox_laserfreq">
+          <widget class="QSpinBox" name="spinBox_laserRepRate">
            <property name="minimum">
             <number>10</number>
            </property>

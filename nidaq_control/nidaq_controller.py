@@ -166,7 +166,7 @@ if __name__ == '__main__':
     
     import matplotlib.pyplot as plt
 
-    nr = NidaqReader(250000, 80000, 5)
+    nr = NidaqReader(250000, 120000, 8)
     signals = nr.get_nidaq_measurement_max_values()
     print(signals[0].mean(), signals[0].std())
     print(signals[1].mean(), signals[1].std())

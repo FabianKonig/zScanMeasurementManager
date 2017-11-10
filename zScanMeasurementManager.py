@@ -35,7 +35,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             self.lineEdit_sampleMaterial.text(),
             self.lineEdit_solvent.text(),
             self.doubleSpinBox_concentration.value(),
-            self.spinBox_laserfreq.value(),
+            self.spinBox_laserRepRate.value(),
             self.lineEdit_furtherNotes.text())
 
 
@@ -60,7 +60,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.lineEdit_sampleMaterial.textChanged.connect(self.onNotesChange)
         self.lineEdit_solvent.textChanged.connect(self.onNotesChange)
         self.doubleSpinBox_concentration.valueChanged.connect(self.onNotesChange)
-        self.spinBox_laserfreq.valueChanged.connect(self.onNotesChange)
+        self.spinBox_laserRepRate.valueChanged.connect(self.onNotesChange)
         self.spinBox_numPositions.valueChanged.connect(self.onNotesChange)
         self.lineEdit_furtherNotes.textChanged.connect(self.onNotesChange)
 
@@ -73,6 +73,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.data_analyser.sample_material = self.lineEdit_sampleMaterial.text()
         self.data_analyser.solvent = self.lineEdit_solvent.text()
         self.data_analyser.concentration = self.doubleSpinBox_concentration.value()
+        self.data_analyser.spinBox_laserRepRate = self.spinBox_laserRepRate.value()
         self.data_analyser.tot_num_of_pos = self.spinBox_numPositions.value()
         self.data_analyser.furtherNotes = self.lineEdit_furtherNotes.text()
 

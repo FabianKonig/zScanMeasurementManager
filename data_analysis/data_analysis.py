@@ -57,7 +57,7 @@ def T_CA_func(z, z0, zR, dΦ, dΨ):
 
 class zScanDataAnalyser:
 
-    def __init__(self, tot_num_of_pos, sample_material, solvent, concentration, laserfreq,
+    def __init__(self, tot_num_of_pos, sample_material, solvent, concentration, laser_rep_rate,
         furtherNotes):
         """ Class to extract calibration factors and transmissions from the photodiode signals.
             The first two functions to be called must be:
@@ -71,7 +71,7 @@ class zScanDataAnalyser:
             sample_material String
             solvent         String
             concentration   Float
-            laserfreq       Integer
+            laser_rep_rate  Integer
             furtherNotes    String
         """
         self.c_OA = None
@@ -88,7 +88,7 @@ class zScanDataAnalyser:
         self._sample_material = sample_material
         self._solvent = solvent
         self._concentration = concentration
-        self._laserfreq = laserfreq
+        self._laser_rep_rate = laser_rep_rate
         self._furtherNotes = furtherNotes
         self._folder = self._define_folder()
 
@@ -136,16 +136,14 @@ class zScanDataAnalyser:
     @concentration.setter
     def concentration(self, value):
         self._concentration = value
-        self._define_folder()
 
     @property
-    def laserfreq(self):
-        return self._laserfreq
+    def laser_rep_rate(self):
+        return self._laser_rep_rate
 
-    @laserfreq.setter
-    def laserfreq(self, value):
-        self._laserfreq = value
-        self._define_folder()
+    @laser_rep_rate.setter
+    def laser_rep_rate(self, value):
+        self._laser_rep_rate = value
 
     @property
     def furtherNotes(self):
@@ -154,7 +152,6 @@ class zScanDataAnalyser:
     @furtherNotes.setter
     def furtherNotes(self, value):
         self._furtherNotes = value
-        self._define_folder()
 
 
     def extract_calibration_factors(self, ref_signal, oa_signal, ca_signal):
@@ -258,7 +255,7 @@ class zScanDataAnalyser:
                  "Sample material: " + self.sample_material + "\n" + \
                  "Solvent: " + self.solvent + "\n" + \
                  "Concentration: " + str(self.concentration) + "mmol/l\n" + \
-                 "Laser freq.: " + str(self.laserfreq) + "Hz\n" + \
+                 "Laser rep. rate: " + str(self.laser_rep_rate) + "Hz\n" + \
                  "Aperture transm. S = {0:.3f} +- {1:.3f}".format(self.S[0], self.S[1]) + "\n" + \
                  "Further notes: " + self.furtherNotes + "\n" + \
                  "\n" + \
@@ -434,7 +431,7 @@ class zScanDataAnalyser:
             ", Solvent: " + self.solvent + \
             ", Concentration = {0}mmol/l".format(self.concentration) + "\n" + \
             r"$E_{Pulse}$ = pending" + \
-            r", $f_{Laser}$" + " = {0}Hz".format(self.laserfreq) + \
+            r", $f_{Laser}$" + " = {0}Hz".format(self.laser_rep_rate) + \
             ", S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
 
         plt.title(properties, fontsize=9)
