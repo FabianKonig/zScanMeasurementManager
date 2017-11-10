@@ -269,8 +269,8 @@ class zScanDataAnalyser:
         transmission_array = np.concatenate((self.T_OA, self.T_CA[:,1:]), axis=1)
 
         try:
-            file = os.path.join(self.folder, "transmission_data.dat")
             self.check_and_create_folder()
+            file = os.path.join(self.folder, "transmission_data.dat")
             np.savetxt(file, transmission_array, header=header, fmt="%10.4f")
         except Exception as ex:
             print("Storage of transmission data failed!!!!")
@@ -375,34 +375,38 @@ class zScanDataAnalyser:
 
     def store_fit_results(self):
 
-        lines = np.empty(shape=(0,3))
-
         if self.fit_z0 is not None:
-            lines = np.append(lines, [["z0", str(self.fit_z0[0]), str(self.fit_z0[1])]])
+            line0 = "z0: ({0:.3f} +- {1:.3f})".format(self.fit_z0[0], self.fit_z0[1])
         else:
-            lines = np.append(lines, [["z0", "Could not be fitted", ""]])
+            line0 = "z0: Could not be fitted"
         if self.fit_dΨ is not None:
-            lines = np.append(lines, [["dPsi", str(self.fit_dΨ[0]), str(self.fit_dΨ[1])]])
+            line1 = "dPsi: ({0:.3f} +- {1:.3f})".format(self.fit_dΨ[0], self.fit_dΨ[1])
         else:
-            lines = np.append(lines, [["dPsi", "Could not be fitted", ""]])
+            line1 = "dPsi: Could not be fitted"
         if self.fit_dΦ is not None:
-            lines = np.append(lines, [["dPhi", str(self.fit_dΦ[0]), str(self.fit_dΦ[1])]])
+            line2 = "dPhi: ({0:.3f} +- {1:.3f})".format(self.fit_dΦ[0], self.fit_dΦ[1])
         else:
-            lines = np.append(lines, [["dPhi", "Could not be fitted", ""]])
+            line2 = "dPhi: Could not be fitted"
 
         now = datetime.datetime.today()
         time = "{0:4d}.{1:02d}.{2:02d}  {3:02d}:{4:02d}".format(
             now.year, now.month, now.day, now.hour, now.minute)
 
-        header = "Fit results, " + time
+        header = "# Fit results\n# ---------------------\n#" + time + "\n#\n#\n"
 
         try:
             self.check_and_create_folder()
             file = os.path.join(self.folder, "fit_results.dat")
-            np.savetxt(file, lines, header=header, fmt="%s")
+
+            fhandle = open(file, 'w')
+            fhandle.write(header)
+            fhandle.write(line0 + "\n" + line1 + "\n" + line2 + "\n")
+
         except Exception as ex:
             print("Storage of fit results file failed!!!!")
             print(ex)
+        finally:
+            fhandle.close()
 
 
     def plot_transmission_data(self):
@@ -412,8 +416,10 @@ class zScanDataAnalyser:
 
         T_OA = self.T_OA
         T_CA = self.T_CA
-        plt.errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", color="black", label="OA")
-        plt.errorbar(T_CA[:,0], T_CA[:,1], yerr=T_CA[:,2], linestyle="", marker="x", color="red", label="CA")
+
+        plt.figure(figsize=(8.5, 5.5))
+        plt.errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", color="red", label="OA")
+        plt.errorbar(T_CA[:,0], T_CA[:,1], yerr=T_CA[:,2], linestyle="", marker="x", color="black", label="CA")
 
         # Plot the fit functions if fit parameters exist
         if self.fit_z0 is not None and self.fit_dΨ is not None and self.fit_dΦ is not None:
@@ -421,14 +427,15 @@ class zScanDataAnalyser:
             T_OA_vals = T_OA_func(pos_vals, self.fit_z0[0], self.zR, self.fit_dΨ[0])
             T_CA_vals = T_CA_func(pos_vals, self.fit_z0[0], self.zR, self.fit_dΦ[0], self.fit_dΨ[0])
             
-            plt.plot(pos_vals, T_OA_vals, color="black")
-            plt.plot(pos_vals, T_CA_vals, color="red")
+            plt.plot(pos_vals, T_OA_vals, color="red")
+            plt.plot(pos_vals, T_CA_vals, color="black")
 
         properties = "Sample: " + self.sample_material + \
             ", Solvent: " + self.solvent + \
             ", Concentration = {0}mmol/l".format(self.concentration) + "\n" + \
-            "Laserfreq = " + str(self.laserfreq) + "Hz"\
-            ", S = ({0:.2f} +- {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
+            r"$E_{Pulse}$ = pending" + \
+            r", $f_{Laser}$" + " = {0}Hz".format(self.laserfreq) + \
+            ", S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
 
         plt.title(properties, fontsize=9)
         plt.xlabel("z / mm")
