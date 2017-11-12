@@ -1,6 +1,7 @@
 import numpy as np
 import datetime
 import os
+import traceback
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 
@@ -322,7 +323,7 @@ class zScanDataAnalyser:
             np.savetxt(file, transmission_array, header=header, fmt="%10.4f")
         except Exception as ex:
             print("Storage of transmission data failed!!!!")
-            print(ex)
+            traceback.print_exc()
 
 
     def fit_transmission_data(self):
@@ -381,7 +382,7 @@ class zScanDataAnalyser:
 
         except Exception as ex:
             print("Fit of open aperture data failed. Will try to fit closed aperture data only.")
-            print(ex)
+            traceback.print_exc()
             # I assume there is no nonlinear absorption. Hence I will set dΨ manually to zero:
             self.fit_dΨ = np.array([0,0])
 
@@ -400,7 +401,7 @@ class zScanDataAnalyser:
 
             except Exception as ex:
                 print("The fit of closed aperture data only failed, as well!")
-                print(ex)
+                traceback.print_exc()
                 self.fit_z0 = None
                 self.fit_dΨ = None
                 self.fit_dΦ = None
@@ -418,7 +419,7 @@ class zScanDataAnalyser:
 
         except Exception as ex:
             print("Fit of closed aperture data failed.")
-            print(ex)
+            traceback.print_exc()
             self.fit_dΦ = None
 
         return None
@@ -489,7 +490,7 @@ class zScanDataAnalyser:
 
         except Exception as ex:
             print("Storage of fit results file failed!!!!")
-            print(ex)
+            traceback.print_exc()
         finally:
             fhandle.close()
 
@@ -541,7 +542,7 @@ class zScanDataAnalyser:
             plt.savefig(file, dpi=600)
         except Exception as ex:
             print("Storage of plot failed!!!!")
-            print(ex)
+            traceback.print_exc()
 
         plt.show()
 
