@@ -6,6 +6,25 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 
 
+
+CONSTANTS_beam_waist = 20.0299e-6  # m waist of incident beam in vacuum
+CONSTANTS_wavelength = 532e-9      # m in vacuum
+
+# Calibration of reference photodiode signal into pulse energy in J/V
+CONSTANTS_calib_photodiode_pulse_energy = np.array([16.9274, 0.0212]) * 1e-6 
+
+# Initial guess for fit parameters. The first entry denotes the beam waist position in mm
+CONSTANTS_guess_OA = [22,1]  # second entry: dΨ
+CONSTANTS_guess_CA = [22,1]  # second entry: dΦ
+
+CONSTANTS_tolerance_z0 = 1.5  # absolute tolerance of beam waist position from z=22mm in mm
+
+CONSTANTS_cuvette_reflectivity = 0.0377  # reflectivity of the glass/air boundary of the cuvette
+CONSTANTS_pulse_length = 15e-12 # laser pulse length in seconds 
+
+
+
+
 def average_ratio(data_1, data_2, calib_factor = None):
     """ Computes the statistical average of the element wise ratio of the two arrays data_1 and
         data_2. For this calculation, each element wise ratio value is assumed to be of the same
@@ -95,8 +114,8 @@ class zScanDataAnalyser:
 
         self.pulse_energy = None  # in J
 
-        self.w0 = 20.0299e-6  # m waist of incident beam in vacuum
-        self.λ = 532e-9       # m in vacuum
+        self.w0 = CONSTANTS_beam_waist  # m waist of incident beam in vacuum
+        self.λ = CONSTANTS_wavelength   # m in vacuum
         self.zR = np.pi * self.w0**2 / self.λ * 1e3   # mm Rayleigh length in vacuum
 
         self.fit_z0 = None    # fitted results
@@ -187,7 +206,7 @@ class zScanDataAnalyser:
                 1-dim numpy array of length 2, the first entry denoting the pulse_energy, the second
                 its error. Both in J.
             """
-            fit_gradient = np.array([16.9274, 0.0212]) * 1e-6 
+            fit_gradient = CONSTANTS_calib_photodiode_pulse_energy
 
             pulse_e = fit_gradient[0] * pd_ref_signal[0]
             delta_pulse_e = np.sqrt( (fit_gradient[1] * pd_ref_signal[0])**2 + \
@@ -330,7 +349,7 @@ class zScanDataAnalyser:
 
         def fit_OA_transmission(T_OA, T_CA, zR):
             T_OA_fitfunc = lambda z, z0, dΨ: T_OA_func(z, z0, zR, dΨ)
-            guess_OA = [22,1]
+            guess_OA = CONSTANTS_guess_OA
 
             fit_OA, cov_OA = curve_fit(
                 T_OA_fitfunc, T_OA[:,0], T_OA[:,1], sigma=T_OA[:,2], p0=guess_OA)
@@ -354,7 +373,7 @@ class zScanDataAnalyser:
 
         def fit_CA_transmission_only(T_OA, T_CA, zR):
             T_CA_fitfunc = lambda z, z0, dΦ: T_CA_func(z, z0, zR, dΦ, 0)-T_OA_func(z, z0, zR, 0)+1
-            guess_CA = [22, 1]
+            guess_CA = CONSTANTS_guess_CA
 
             fit_CA, cov_CA = curve_fit(
                 T_CA_fitfunc, T_CA[:,0], T_CA[:,1], sigma=T_CA[:,2], p0=guess_CA)
@@ -373,7 +392,7 @@ class zScanDataAnalyser:
         try:
             fit_z0, fit_dΨ = fit_OA_transmission(self.T_OA, self.T_CA, self.zR)
             # The waist should be close to z=22mm
-            assert np.abs(fit_z0[0]-22) < 1.5 and \
+            assert np.abs(fit_z0[0]-22) < CONSTANTS_tolerance_z0 and \
                 np.abs(fit_z0[1]/fit_z0[0]) < 1 and \
                 np.abs(fit_dΨ[1]/fit_dΨ[0]) < 1
 
@@ -389,7 +408,7 @@ class zScanDataAnalyser:
             try:
                 fit_z0, fit_dΦ = fit_CA_transmission_only(self.T_OA, self.T_CA, self.zR)
                 # The waist should be close to z=22mm
-                assert np.abs(fit_z0[0]-22) < 1.5 and \
+                assert np.abs(fit_z0[0]-22) < CONSTANTS_tolerance_z0 and \
                     np.abs(fit_z0[1]/fit_z0[0]) < 1 and \
                     np.abs(fit_dΦ[1]/fit_dΦ[0]) < 1
 
@@ -436,8 +455,8 @@ class zScanDataAnalyser:
         """
 
         # Constants
-        R = 0.0377  #Measured reflectivity of the front boundary glass cuvette/air
-        pulse_length = 15e-12  #seconds
+        R = CONSTANTS_cuvette_reflectivity  #Measured reflectivity of the front boundary glass cuvette/air
+        pulse_length = CONSTANTS_pulse_length  #seconds
         
         assert self.pulse_energy is not None
 
@@ -564,14 +583,16 @@ class zScanDataAnalyser:
 
 
     def get_power_of_ten(self, value):
-        """ Finds the power of ten of value and returns it as an integer.
+        """ Finds the power of ten of value and returns it as an integer. The power of ten must be
+            between -8 and -21!
         """
         assert value is not None
 
-        for i in range(-8,-20,-1):
+        for i in range(-8,-22,-1):
             if value / 10**i >= 1:
                 break
 
+        assert i < -21
         return i
 
 

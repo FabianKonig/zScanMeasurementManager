@@ -71,24 +71,6 @@ class NidaqReader:
 
         return signals
 
-    def substract_dark_voltage(self, signals):
-        """ Not entirely true. Can be deleted.
-        Due to electronic reflections, everytime the electronic setup is changed, it is
-            necessary to measure the "dark voltage", i.e. the voltage that the Nidaq measures if
-            the beam is blocked. This voltage is due to reflections from, e.g., the digital
-            oscilloscope. Hence, turn on all devices including the laser, block the beam before it
-            impinges on any photodiode and query the Nidaq. This is the darkvoltage for any channel
-        """
-        DARK_VOLTAGE_REF = 0.0687
-        DARK_VOLTAGE_OA = 0
-        DARK_VOLTAGE_CA = 0
-
-        signals[0,:] = signals[0,:] - DARK_VOLTAGE_REF
-        signals[1,:] = signals[1,:] - DARK_VOLTAGE_OA
-        signals[2,:] = signals[2,:] - DARK_VOLTAGE_CA
-
-        return signals
-
 
     def get_nidaq_measurement_max_values(self):
         """ I figured out that the best way of obtaining reproducable data from the Nidaq
