@@ -102,7 +102,7 @@ class zScanDataAnalyser:
         self.fit_dΨ = None
         self.fit_dΦ = None
 
-        self._n2 = None   # in units of 1e-16 cm^2/W.
+        self._n2 = None   # in units of cm^2/W.
 
 
     @property
@@ -371,7 +371,8 @@ class zScanDataAnalyser:
         # firstly, fit T_OA and use self.zR (Rayleigh length in vacuum)
         try:
             fit_z0, fit_dΨ = fit_OA_transmission(self.T_OA, self.T_CA, self.zR)
-            assert np.abs(fit_z0[0]-22) < 3 and \
+            # The waist should be close to z=22mm
+            assert np.abs(fit_z0[0]-22) < 1.5 and \
                 np.abs(fit_z0[1]/fit_z0[0]) < 1 and \
                 np.abs(fit_dΨ[1]/fit_dΨ[0]) < 1
 
@@ -386,7 +387,8 @@ class zScanDataAnalyser:
 
             try:
                 fit_z0, fit_dΦ = fit_CA_transmission_only(self.T_OA, self.T_CA, self.zR)
-                assert np.abs(fit_z0[0]-22) < 3 and \
+                # The waist should be close to z=22mm
+                assert np.abs(fit_z0[0]-22) < 1.5 and \
                     np.abs(fit_z0[1]/fit_z0[0]) < 1 and \
                     np.abs(fit_dΦ[1]/fit_dΦ[0]) < 1
 
@@ -449,13 +451,13 @@ class zScanDataAnalyser:
         
         n2 = dΦ[0] / (k*I0[0]*L_eff)
         dn2 = np.sqrt( (dΦ[1] / (k*I0[0]*L_eff))**2 + (dΦ[0]*I0[1] / (k*I0[0]*L_eff)**2)**2)
-        self._n2 = np.array([n2, dn2]) * 1e4 * 1e16
+        self._n2 = np.array([n2, dn2]) * 1e4 # in units of cm^2/W
 
 
     def store_fit_results(self):
 
         if self.fit_z0 is not None:
-            line0 = "z0: ({0:.3f} +- {1:.3f})".format(self.fit_z0[0], self.fit_z0[1])
+            line0 = "z0: ({0:.3f} +- {1:.3f})mm".format(self.fit_z0[0], self.fit_z0[1])
         else:
             line0 = "z0: Could not be fitted"
         if self.fit_dΨ is not None:
@@ -463,8 +465,11 @@ class zScanDataAnalyser:
         else:
             line1 = "dPsi: Could not be fitted"
         if self.fit_dΦ is not None:
+            n2_exp = self.get_power_of_ten(self._n2[0])
+
             line2 = "dPhi: ({0:.3f} +- {1:.3f})\n".format(self.fit_dΦ[0], self.fit_dΦ[1]) + \
-                    "n2 = ({0:.3f} +- {1:.3f})e-16 cm^2/W".format(self._n2[0], self._n2[1])
+                    "n2 = ({0:.2f} +- {1:.2f})e{2} cm^2/W".format(
+                        self._n2[0]/10**n2_exp, self._n2[1]/10**n2_exp, n2_exp)
         else:
             line2 = "dPhi: Could not be fitted, hence n2 could not be computed."
 
@@ -513,12 +518,16 @@ class zScanDataAnalyser:
         properties = "Sample: " + self.sample_material + \
             ", Solvent: " + self.solvent + \
             ", Concentration = {0}mmol/l".format(self.concentration) + "\n" + \
-            r"$E_{Pulse}$" + " = ({0:.3f} +- {1:.3f})µJ".format(self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
+            r"$E_{Pulse}$" + " = ({0:.3f} $\pm$ {1:.3f})µJ".format(self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
             r", $f_{Laser}$" + " = {0}Hz".format(self.laser_rep_rate) + \
             ", S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
 
         if self._n2 is not None:
-            properties += "\n" + r"$n_2 = ({0:.3f} \pm {1:.3f})e-16 cm^2/W$".format(self._n2[0], self._n2[1])
+            n2_exp = self.get_power_of_ten(self._n2[0])
+            n2string = "$n_2$ = ({0:.2f} $\pm$ {1:.2f})e{2} cm^2/W".format(
+                            self._n2[0]/10**n2_exp, self._n2[1]/10**n2_exp, n2_exp)
+
+            properties += "\n" + n2string
 
         plt.title(properties, fontsize=9)
         plt.xlabel("z / mm")
@@ -551,6 +560,18 @@ class zScanDataAnalyser:
 
         self.current_position_step = 0
         self._define_folder()
+
+
+    def get_power_of_ten(self, value):
+        """ Finds the power of ten of value and returns it as an integer.
+        """
+        assert value is not None
+
+        for i in range(-8,-20,-1):
+            if value / 10**i >= 1:
+                break
+
+        return i
 
 
 

@@ -10,14 +10,20 @@ import nidaq_control
 
 # TODO:
 # -----------------------------------
+# - Check how the fits would perform with another zR. Check how they would perform if I deleted the
+#   "middle points."
+# - Read the paper sent by Martin.
+# - Make sure the right power to ten is selected automatically and dynamically instead of statically
+#   when n2 is printed into file and into plot.                                                         DONE. Check it!
 # - A fit function to convert the reference photodiode signal to the input pulse energy is necessary.
 #   It should also take the pulse repetition rate into account! For high pulse rep rates, the photo
 #   diode signals increase, however, the power actually decreases! Make this calibration measurement!
+#   A change of the pulse rep rate should erase the calibration and aperture values that might have
+#   been measured before changing the pulse rep rate.
 # - The absorption (alpha coefficient) measurement should be taken care of.
-# - With the pulse energy and the fit params the n2 value shall be calculated and written into the plots
-#   and into a file.
 # - When the measurement is started, the measurement parameters section should be disabled.
 #   At the moment no problem as the GUI freezes anyway.
+# - Take care of multithreading.
 
 
 class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
