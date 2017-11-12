@@ -13,8 +13,6 @@ import nidaq_control
 # - Check how the fits would perform with another zR. Check how they would perform if I deleted the
 #   "middle points."
 # - Read the paper sent by Martin.
-# - Make sure the right power to ten is selected automatically and dynamically instead of statically
-#   when n2 is printed into file and into plot.                                                         DONE. Check it!
 # - A fit function to convert the reference photodiode signal to the input pulse energy is necessary.
 #   It should also take the pulse repetition rate into account! For high pulse rep rates, the photo
 #   diode signals increase, however, the power actually decreases! Make this calibration measurement!

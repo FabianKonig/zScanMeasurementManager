@@ -321,7 +321,7 @@ class zScanDataAnalyser:
         time = "{0:4d}.{1:02d}.{2:02d}  {3:02d}:{4:02d}".format(
             now.year, now.month, now.day, now.hour, now.minute)
         
-        header = time + "\n" + \
+        header = "Date of measurement: " + time + "\n" + \
                  "Sample material: " + self.sample_material + "\n" + \
                  "Solvent: " + self.solvent + "\n" + \
                  "Concentration: " + str(self.concentration) + "mmol/l\n" + \
@@ -343,6 +343,7 @@ class zScanDataAnalyser:
         except Exception as ex:
             print("Storage of transmission data failed!!!!")
             traceback.print_exc()
+            print("\n")
 
 
     def fit_transmission_data(self):
@@ -402,6 +403,7 @@ class zScanDataAnalyser:
         except Exception as ex:
             print("Fit of open aperture data failed. Will try to fit closed aperture data only.")
             traceback.print_exc()
+            print("\n")
             # I assume there is no nonlinear absorption. Hence I will set dΨ manually to zero:
             self.fit_dΨ = np.array([0,0])
 
@@ -421,6 +423,7 @@ class zScanDataAnalyser:
             except Exception as ex:
                 print("The fit of closed aperture data only failed, as well!")
                 traceback.print_exc()
+                print("\n")
                 self.fit_z0 = None
                 self.fit_dΨ = None
                 self.fit_dΦ = None
@@ -439,6 +442,7 @@ class zScanDataAnalyser:
         except Exception as ex:
             print("Fit of closed aperture data failed.")
             traceback.print_exc()
+            print("\n")
             self.fit_dΦ = None
 
         return None
@@ -497,7 +501,7 @@ class zScanDataAnalyser:
         time = "{0:4d}.{1:02d}.{2:02d}  {3:02d}:{4:02d}".format(
             now.year, now.month, now.day, now.hour, now.minute)
 
-        header = "# Fit results\n# ---------------------\n#" + time + "\n#\n#\n"
+        header = "# Fit results\n# ---------------------\n# " + time + "\n#\n#\n"
 
         try:
             self.check_and_create_folder()
@@ -510,13 +514,14 @@ class zScanDataAnalyser:
         except Exception as ex:
             print("Storage of fit results file failed!!!!")
             traceback.print_exc()
+            print("\n")
         finally:
             fhandle.close()
 
 
     def plot_transmission_data(self):
 
-        assert self.folder is not None
+        assert self.folder is not None and self.S is not None
 
 
         T_OA = self.T_OA
@@ -536,15 +541,15 @@ class zScanDataAnalyser:
             plt.plot(pos_vals, T_CA_vals, color="black")
 
         properties = "Sample: " + self.sample_material + \
-            ", Solvent: " + self.solvent + \
-            ", Concentration = {0}mmol/l".format(self.concentration) + "\n" + \
+            ",     Solvent: " + self.solvent + \
+            ",     Concentration = {0}mmol/l".format(self.concentration) + "\n" + \
             r"$E_{Pulse}$" + " = ({0:.3f} $\pm$ {1:.3f})µJ".format(self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
-            r", $f_{Laser}$" + " = {0}Hz".format(self.laser_rep_rate) + \
-            ", S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
+            r",     $f_{Laser}$" + " = {0}Hz".format(self.laser_rep_rate) + \
+            ",     S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
 
         if self._n2 is not None:
             n2_exp = self.get_power_of_ten(self._n2[0])
-            n2string = "$n_2$ = ({0:.2f} $\pm$ {1:.2f})e{2} cm^2/W".format(
+            n2string = "$n_2$ = ({0:.2f} $\pm$ {1:.2f})e{2} cm$^2$/W".format(
                             self._n2[0]/10**n2_exp, self._n2[1]/10**n2_exp, n2_exp)
 
             properties += "\n" + n2string
@@ -562,6 +567,7 @@ class zScanDataAnalyser:
         except Exception as ex:
             print("Storage of plot failed!!!!")
             traceback.print_exc()
+            print("\n")
 
         plt.show()
 
@@ -592,7 +598,7 @@ class zScanDataAnalyser:
             if value / 10**i >= 1:
                 break
 
-        assert i < -21
+        assert i > -21
         return i
 
 
