@@ -20,7 +20,11 @@ CONSTANTS_guess_CA = [22,1]  # second entry: dΦ
 CONSTANTS_tolerance_z0 = 1.5  # absolute tolerance of beam waist position from z=22mm in mm
 
 CONSTANTS_cuvette_reflectivity = 0.0377  # reflectivity of the glass/air boundary of the cuvette
-CONSTANTS_pulse_length = 15e-12 # laser pulse length in seconds 
+CONSTANTS_pulse_length = 15e-12  # laser pulse length in seconds
+
+# I don't know why, but the fits are much better if I introduce a correction factor for the
+# Rayleigh length in vacuum:
+CONSTANTS_rayleigh_length_correction_factor = 2.2
 
 
 
@@ -116,7 +120,8 @@ class zScanDataAnalyser:
 
         self.w0 = CONSTANTS_beam_waist  # m waist of incident beam in vacuum
         self.λ = CONSTANTS_wavelength   # m in vacuum
-        self.zR = np.pi * self.w0**2 / self.λ * 1e3   # mm Rayleigh length in vacuum
+        # mm Rayleigh length in vacuum
+        self.zR = np.pi * self.w0**2 / self.λ * 1e3 * CONSTANTS_rayleigh_length_correction_factor
 
         self.fit_z0 = None    # fitted results
         self.fit_dΨ = None
