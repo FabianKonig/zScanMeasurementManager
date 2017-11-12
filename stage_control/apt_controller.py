@@ -175,6 +175,30 @@ class APT_Controller:
         self.block_while_moving_then_assert_and_update_position(expected_new_combined_position)
 
 
+    def move_to_position(self, new_combined_position):
+        other_stage_position = 0  # Achieved with prior stages
+
+        self.move_stages_home()
+
+        for i in range(len(self._motors)):
+            motor = self._motors[i]
+            max_stage_position = motor.get_stage_axis_info()[1]
+
+            if new_combined_position - other_stage_position < max_stage_position:
+                motor.move_to(new_combined_position)
+                break
+            else:
+                motor.move_to(max_stage_position)
+                other_stage_position += max_stage_position
+
+        # Move remaining stages to position 0
+        for j in range(i+1, len(self._motors)):
+            motor = self._motors[j]
+            motor.move_to(0)
+
+        self.block_while_moving_then_assert_and_update_position(new_combined_position)
+
+
 
 if __name__ == '__main__':
     aptc = APT_Controller()

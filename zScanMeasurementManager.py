@@ -10,9 +10,9 @@ import nidaq_control
 
 # TODO:
 # -----------------------------------
-# - Verify that the stages don't slow down somehow around combined_position=23mm! Maybe let one stage move
-#   first and then the the other stage instead of both at the same time. Write the corresponding
-#   method! Or simpler, move the focussing lens by a few mm and see what happens.
+# - Verify that the stages don't slow down somehow around combined_position=23mm! Use the new method and 
+#   let one stage move first and then the the other stage instead of both at the same time. 
+#   Or simpler, move the focussing lens by a few mm and see what happens.
 # - Verify the measured beam waist again! Place the knife edge into the location of the focussing lens
 #   and evaluate the waist at this position. Maybe this explains the discrepancy of the Rayleigh length!
 # - What do we measure with no sample at all?
@@ -120,11 +120,16 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
     def onClick_startMeasurement(self):
         """ Assumption: Stages are located at their initial position!
         """
+        # Assert that stages are either at their home position or at their maximum position with a
+        # precision of 0.02mm=20µm.
+        assert isclose(self.stage_controller.combined_position, 0, abs_tol=0.02) or \
+        isclose(self.stage_controller.combined_position,
+            self.stage_controller.total_travel_distance,
+            abs_tol=0.02)
 
-        material = self.data_analyser.sample_material
 
-        # Make sure a note on the measurement has been typed in, otherwise return to the main loop.
-        if material == "--": # default String
+        # Make sure the material of the measurement has been typed in, otherwise return to the main loop.
+        if self.data_analyser.sample_material == "--": # default String
             self.lineEdit_sampleMaterial.setStyleSheet("color: rgb(255,0,0)")
             return None
         else:
