@@ -10,9 +10,15 @@ import nidaq_control
 
 # TODO:
 # -----------------------------------
-# - Check how the fits would perform with another zR. Check how they would perform if I deleted the
-#   "middle points."
-# - Read the paper sent by Martin.
+# - Verify that the stages don't slow down somehow around combined_position=23mm! Maybe let one stage move
+#   first and then the the other stage instead of both at the same time. Write the corresponding
+#   method! Or simpler, move the focussing lens by a few mm and see what happens.
+# - Verify the measured beam waist again! Place the knife edge into the location of the focussing lens
+#   and evaluate the waist at this position. Maybe this explains the discrepancy of the Rayleigh length!
+# - What do we measure with no sample at all?
+# 
+# - Read the email sent by Martin AND the paper sent by Martin!
+#
 # - A fit function to convert the reference photodiode signal to the input pulse energy is necessary.
 #   It should also take the pulse repetition rate into account! For high pulse rep rates, the photo
 #   diode signals increase, however, the power actually decreases! Make this calibration measurement!

@@ -115,8 +115,8 @@ class APT_Controller:
         for motor in self._motors:
             new_combined_position += motor.position
 
-        # Assert the position with a precision of up to 0.05mm = 50µm.
-        assert isclose(new_combined_position, expected_new_combined_position, abs_tol=0.05)
+        # Assert the position with a precision of up to 0.02mm = 20µm.
+        assert isclose(new_combined_position, expected_new_combined_position, abs_tol=0.02)
         self.combined_position = new_combined_position
 
 
@@ -141,6 +141,9 @@ class APT_Controller:
 
 
     def move_in_steps(self, tot_num_of_pos, direction):
+
+        assert tot_num_of_pos > 1
+
         if direction == "forward":
             direction = +1
         elif direction == "backward":
