@@ -11,6 +11,7 @@ from math import isclose
 
 # TODO:
 # -----------------------------------
+# - Condensates of light Anmeldung.
 # - Verify the measured beam waist! Place the knife edge into the location of the focussing lens
 #   and evaluate the waist at this position. Maybe this explains the discrepancy of the Rayleigh length!
 # 

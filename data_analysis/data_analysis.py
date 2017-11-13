@@ -114,7 +114,9 @@ class zScanDataAnalyser:
         self._concentration = concentration
         self._laser_rep_rate = laser_rep_rate
         self._furtherNotes = furtherNotes
-        self._folder = self._define_folder()
+        self._folder = None
+        self._folder_number = None  # number suffix of the folder's name
+        self._define_folder()
 
         self.pulse_energy = None  # in J
 
@@ -302,14 +304,14 @@ class zScanDataAnalyser:
             name = self.sample_material
             
         folder0 = os.path.join('..', 'Measurements', today, name)
-        
-        folder = folder0
-        for i in range(2, 100):
+
+        for i in range(1, 100):
+            folder = folder0 + "_{0:02}".format(i)
+
             if not os.path.exists(folder):
                 self.folder = folder
+                self._folder_num = i
                 break
-            else:
-                folder = folder0 + "_{0:02}".format(i)
 
 
     def check_and_create_folder(self):
@@ -320,7 +322,7 @@ class zScanDataAnalyser:
     def store_transmission_data(self):
         """ Stores the transmission data in self.T_CA and self.T_OA into a file.
         """
-        assert self.S is not None
+        assert self.S is not None and self._folder_num is not None
 
         now = datetime.datetime.today()
         time = "{0:4d}.{1:02d}.{2:02d}  {3:02d}:{4:02d}".format(
@@ -343,7 +345,7 @@ class zScanDataAnalyser:
 
         try:
             self.check_and_create_folder()
-            file = os.path.join(self.folder, "transmission_data.dat")
+            file = os.path.join(self.folder, "transmission_data_{0:02}.dat".format(self._folder_num))
             np.savetxt(file, transmission_array, header=header, fmt="%10.4f")
         except Exception as ex:
             print("Storage of transmission data failed!!!!")
@@ -510,7 +512,7 @@ class zScanDataAnalyser:
 
         try:
             self.check_and_create_folder()
-            file = os.path.join(self.folder, "fit_results.dat")
+            file = os.path.join(self.folder, "fit_results_{0:02}.dat".format(self._folder_num))
 
             fhandle = open(file, 'w')
             fhandle.write(header)
@@ -533,8 +535,8 @@ class zScanDataAnalyser:
         T_CA = self.T_CA
 
         plt.figure(figsize=(8.5, 5.5))
-        plt.errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", color="red", alpha=0.5, label="OA")
-        plt.errorbar(T_CA[:,0], T_CA[:,1], yerr=T_CA[:,2], linestyle="", marker="x", color="black", alpha=0.5, label="CA")
+        plt.errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", color="red", alpha=0.8, label="OA")
+        plt.errorbar(T_CA[:,0], T_CA[:,1], yerr=T_CA[:,2], linestyle="", marker="x", color="black", alpha=0.8, label="CA")
 
         # Plot the fit functions if fit parameters exist
         if self.fit_z0 is not None and self.fit_dΨ is not None and self.fit_dΦ is not None:
@@ -570,7 +572,7 @@ class zScanDataAnalyser:
 
         try:
             self.check_and_create_folder()
-            file = os.path.join(self.folder, "plot.pdf")
+            file = os.path.join(self.folder, "plot_{0:02}.pdf".format(self._folder_num))
             plt.savefig(file, dpi=600)
         except Exception as ex:
             print("Storage of plot failed!!!!")
