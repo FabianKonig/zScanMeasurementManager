@@ -5,6 +5,7 @@ else:
     from . import thorlabs_apt as apt
 
 import numpy as np
+import time
 from math import isclose
 
 
@@ -105,6 +106,7 @@ class APT_Controller:
         """
 
         while(True):
+            time.sleep(0.2)
             break_condition = True
             for motor in self._motors:
                 break_condition *= not motor.is_in_motion
@@ -176,9 +178,9 @@ class APT_Controller:
 
 
     def move_to_position(self, new_combined_position):
-        other_stage_position = 0  # Achieved with prior stages
+        assert new_combined_position >= 0 and new_combined_position <= self.total_travel_distance
 
-        self.move_stages_home()
+        other_stage_position = 0  # Already moved distance with prior stages
 
         for i in range(len(self._motors)):
             motor = self._motors[i]
