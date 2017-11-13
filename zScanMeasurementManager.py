@@ -5,17 +5,14 @@ import gui_design
 import data_analysis
 import stage_control
 import nidaq_control
+from math import isclose
 
 
 
 # TODO:
 # -----------------------------------
-# - Verify that the stages don't slow down somehow around combined_position=23mm! Use the new method and 
-#   let one stage move first and then the the other stage instead of both at the same time. 
-#   Or simpler, move the focussing lens by a few mm and see what happens.
-# - Verify the measured beam waist again! Place the knife edge into the location of the focussing lens
+# - Verify the measured beam waist! Place the knife edge into the location of the focussing lens
 #   and evaluate the waist at this position. Maybe this explains the discrepancy of the Rayleigh length!
-# - What do we measure with no sample at all?
 # 
 # - Read the email sent by Martin AND the paper sent by Martin!
 #
@@ -138,6 +135,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         # abbreviation
         tot_num_of_pos = self.data_analyser.tot_num_of_pos
 
+        """
+        # Possibilitly one of two
+        # Move both stages in tiny steps:
         for pos_index in range(tot_num_of_pos):
             signals = self.nidaq_reader.get_nidaq_measurement_max_values()
             
@@ -152,6 +152,17 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             # Don't move the last time because stages are already at their maximum positions:
             if pos_index < tot_num_of_pos-1:
                 self.stage_controller.move_in_steps(tot_num_of_pos, "backward")
+        """
+        
+        # Possibilitly two of two
+        # Firstly, move the first stage, and only if necessary the second stage and so on:
+        for position in np.linspace(self.stage_controller.total_travel_distance, 0, tot_num_of_pos):
+            self.stage_controller.move_to_position(position)
+            signals = self.nidaq_reader.get_nidaq_measurement_max_values()
+            position_wrt_beam = self.stage_controller.total_travel_distance - \
+                                    self.stage_controller.combined_position
+            self.data_analyser.extract_oa_ca_transmissions(position_wrt_beam, *signals)
+        
 
         self.data_analyser.evaluate_measurement_and_reinitialise()
         self.stage_controller.initialise_stages()

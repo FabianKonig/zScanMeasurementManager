@@ -186,8 +186,8 @@ class APT_Controller:
             motor = self._motors[i]
             max_stage_position = motor.get_stage_axis_info()[1]
 
-            if new_combined_position - other_stage_position < max_stage_position:
-                motor.move_to(new_combined_position)
+            if new_combined_position - other_stage_position <= max_stage_position:
+                motor.move_to(new_combined_position - other_stage_position)
                 break
             else:
                 motor.move_to(max_stage_position)

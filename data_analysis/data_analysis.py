@@ -533,8 +533,8 @@ class zScanDataAnalyser:
         T_CA = self.T_CA
 
         plt.figure(figsize=(8.5, 5.5))
-        plt.errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", color="red", label="OA")
-        plt.errorbar(T_CA[:,0], T_CA[:,1], yerr=T_CA[:,2], linestyle="", marker="x", color="black", label="CA")
+        plt.errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", color="red", alpha=0.5, label="OA")
+        plt.errorbar(T_CA[:,0], T_CA[:,1], yerr=T_CA[:,2], linestyle="", marker="x", color="black", alpha=0.5, label="CA")
 
         # Plot the fit functions if fit parameters exist
         if self.fit_z0 is not None and self.fit_dΨ is not None and self.fit_dΦ is not None:
@@ -551,6 +551,9 @@ class zScanDataAnalyser:
             r"$E_{Pulse}$" + " = ({0:.3f} $\pm$ {1:.3f})µJ".format(self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
             r",     $f_{Laser}$" + " = {0}Hz".format(self.laser_rep_rate) + \
             ",     S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
+
+        if self._furtherNotes != "---": #default value
+            properties += "\nFurther notes: " + self._furtherNotes
 
         if self._n2 is not None:
             n2_exp = self.get_power_of_ten(self._n2[0])
@@ -590,6 +593,10 @@ class zScanDataAnalyser:
         self.T_CA = np.zeros(shape=(self.tot_num_of_pos, 3))
 
         self.current_position_step = 0
+        self.fit_z0 = None
+        self.fit_dΨ = None
+        self.fit_dΦ = None
+        self._n2 = None
         self._define_folder()
 
 
