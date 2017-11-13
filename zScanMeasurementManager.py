@@ -8,12 +8,14 @@ import nidaq_control
 from math import isclose
 
 
-
 # TODO:
+
 # -----------------------------------
-# - Condensates of light Anmeldung.
-# - Verify the measured beam waist! Place the knife edge into the location of the focussing lens
-#   and evaluate the waist at this position. Maybe this explains the discrepancy of the Rayleigh length!
+# - Condensates of Light Anmeldung.
+# - Now, the beam is collimated for sure. Remeasure the beam waist and deduce the Rayleigh length
+#   from that. Use this new zR in future.
+# - Which pulse length to use? 15ps or 20ps as written on the laser case?
+# - Repeat measurements with Acetone.
 # 
 # - Read the email sent by Martin AND the paper sent by Martin!
 #
