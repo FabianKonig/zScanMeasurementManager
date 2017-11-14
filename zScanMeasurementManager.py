@@ -12,18 +12,15 @@ from math import isclose
 
 # -----------------------------------
 # - Condensates of Light Anmeldung.
-# - Now, the beam is collimated for sure. Remeasure the beam waist and deduce the Rayleigh length
-#   from that. Use this new zR in future.
-# - Which pulse length to use? 15ps or 20ps as written on the laser case?
 # - Repeat measurements with Acetone.
 # 
-# - Read the email sent by Martin AND the paper sent by Martin!
+# - Read the paper sent by Martin!
 #
 # - A fit function to convert the reference photodiode signal to the input pulse energy is necessary.
 #   It should also take the pulse repetition rate into account! For high pulse rep rates, the photo
 #   diode signals increase, however, the power actually decreases! Make this calibration measurement!
-#   A change of the pulse rep rate should erase the calibration and aperture values that might have
-#   been measured before changing the pulse rep rate.
+#   A change of the pulse rep rate should erase pulse energy label that might have been measured
+#   before changing the pulse rep rate.
 # - The absorption (alpha coefficient) measurement should be taken care of.
 # - When the measurement is started, the measurement parameters section should be disabled.
 #   At the moment no problem as the GUI freezes anyway.

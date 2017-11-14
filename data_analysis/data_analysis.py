@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 
 
-CONSTANTS_beam_waist = 20.0299e-6  # m waist of incident beam in vacuum
+CONSTANTS_beam_waist = 19.0537e-6  # m waist of incident beam in vacuum
 CONSTANTS_wavelength = 532e-9      # m in vacuum
 
 # Calibration of reference photodiode signal into pulse energy in J/V
@@ -20,7 +20,7 @@ CONSTANTS_guess_CA = [22,1]  # second entry: dΦ
 CONSTANTS_tolerance_z0 = 1.5  # absolute tolerance of beam waist position from z=22mm in mm
 
 CONSTANTS_cuvette_reflectivity = 0.0377  # reflectivity of the glass/air boundary of the cuvette
-CONSTANTS_pulse_length = 15e-12  # laser pulse length in seconds
+CONSTANTS_pulse_length_FWHM = 15e-12  # laser pulse length in seconds
 
 # I don't know why, but the fits are much better if I introduce a correction factor for the
 # Rayleigh length in vacuum:
@@ -120,8 +120,8 @@ class zScanDataAnalyser:
 
         self.pulse_energy = None  # in J
 
-        self.w0 = CONSTANTS_beam_waist  # m waist of incident beam in vacuum
-        self.λ = CONSTANTS_wavelength   # m in vacuum
+        self._w0 = CONSTANTS_beam_waist  # m waist of incident beam in vacuum
+        self._λ = CONSTANTS_wavelength   # m in vacuum
         # mm Rayleigh length in vacuum
         self.zR = np.pi * self.w0**2 / self.λ * 1e3 * CONSTANTS_rayleigh_length_correction_factor
 
@@ -183,6 +183,25 @@ class zScanDataAnalyser:
     @furtherNotes.setter
     def furtherNotes(self, value):
         self._furtherNotes = value
+
+    @property
+    def w0(self):
+        return self._w0
+
+    @w0.setter
+    def w0(self, value):
+        self._w0 = value
+        self.zR = np.pi * self.w0**2 / self.λ * 1e3 * CONSTANTS_rayleigh_length_correction_factor
+
+    @property
+    def λ(self):
+        return self._λ
+
+    @λ.setter
+    def λ(self, value):
+        self._λ = value
+        self.zR = np.pi * self.w0**2 / self.λ * 1e3 * CONSTANTS_rayleigh_length_correction_factor
+
 
 
     def extract_pulse_energy(self, ref_signal_max):
@@ -400,9 +419,9 @@ class zScanDataAnalyser:
         try:
             fit_z0, fit_dΨ = fit_OA_transmission(self.T_OA, self.T_CA, self.zR)
             # The waist should be close to z=22mm
-            assert np.abs(fit_z0[0]-22) < CONSTANTS_tolerance_z0 and \
-                np.abs(fit_z0[1]/fit_z0[0]) < 1 and \
-                np.abs(fit_dΨ[1]/fit_dΨ[0]) < 1
+            assert np.abs(fit_z0[0]-22) < CONSTANTS_tolerance_z0
+            assert np.abs(fit_z0[1]/fit_z0[0]) < 1
+            assert np.abs(fit_dΨ[1]/fit_dΨ[0]) < 1
 
             self.fit_z0 = fit_z0
             self.fit_dΨ = fit_dΨ
@@ -417,9 +436,9 @@ class zScanDataAnalyser:
             try:
                 fit_z0, fit_dΦ = fit_CA_transmission_only(self.T_OA, self.T_CA, self.zR)
                 # The waist should be close to z=22mm
-                assert np.abs(fit_z0[0]-22) < CONSTANTS_tolerance_z0 and \
-                    np.abs(fit_z0[1]/fit_z0[0]) < 1 and \
-                    np.abs(fit_dΦ[1]/fit_dΦ[0]) < 1
+                assert np.abs(fit_z0[0]-22) < CONSTANTS_tolerance_z0
+                assert np.abs(fit_z0[1]/fit_z0[0]) < 1
+                assert np.abs(fit_dΦ[1]/fit_dΦ[0]) < 1
 
                 self.fit_z0 = fit_z0
                 self.fit_dΦ = fit_dΦ
@@ -467,7 +486,7 @@ class zScanDataAnalyser:
 
         # Constants
         R = CONSTANTS_cuvette_reflectivity  #Measured reflectivity of the front boundary glass cuvette/air
-        pulse_length = CONSTANTS_pulse_length  #seconds
+        pulse_length = CONSTANTS_pulse_length_FWHM  #seconds
         
         assert self.pulse_energy is not None
 
