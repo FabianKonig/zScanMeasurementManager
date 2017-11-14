@@ -12,7 +12,7 @@ from math import isclose
 
 # -----------------------------------
 # - Condensates of Light Anmeldung.
-# - Repeat measurements with Acetone.
+# - Make a measurement with either ZnSe or Rhodamine-Ethylenglykol.
 # 
 # - Read the paper sent by Martin!
 #
@@ -127,10 +127,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
         # Make sure the material of the measurement has been typed in, otherwise return to the main loop.
         if self.data_analyser.sample_material == "--": # default String
-            self.lineEdit_sampleMaterial.setStyleSheet("color: rgb(255,0,0)")
+            QtWidgets.QMessageBox.information(self, "Specify material",
+            "Please specify the sample material.")
             return None
-        else:
-            self.lineEdit_sampleMaterial.setStyleSheet("color: rgb(0,0,0)")
 
         # abbreviation
         tot_num_of_pos = self.data_analyser.tot_num_of_pos
