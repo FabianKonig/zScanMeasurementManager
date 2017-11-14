@@ -640,7 +640,7 @@ class zScanDataAnalyser:
         assert value is not None
 
         for i in range(-8,-22,-1):
-            if value / 10**i >= 1:
+            if np.abs(value) / 10**i >= 1:
                 break
 
         assert i > -21

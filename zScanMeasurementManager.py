@@ -12,7 +12,11 @@ from math import isclose
 
 # -----------------------------------
 # - Condensates of Light Anmeldung.
-# - Make a measurement with either ZnSe or Rhodamine-Ethylenglykol.
+# - Try to fit Julians "5.dat" measurement of RH6G in Ethylenglykol with both curves separately.
+#   Do I obtain identical (at least similar) results?
+# - Make a measurement with ZnSe and Rhodamine-Ethylenglykol and water.
+# - With those measurements, make sure the behaviour of Nitrobenzole is not due to alignment, but
+#   really only due to Nitrobenzole itself.
 # 
 # - Read the paper sent by Martin!
 #
