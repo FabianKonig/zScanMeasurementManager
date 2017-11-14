@@ -24,7 +24,7 @@ CONSTANTS_pulse_length_FWHM = 15e-12  # laser pulse length in seconds
 
 # I don't know why, but the fits are much better if I introduce a correction factor for the
 # Rayleigh length in vacuum:
-CONSTANTS_rayleigh_length_correction_factor = 2.2
+CONSTANTS_rayleigh_length_correction_factor = 1.7
 
 
 
@@ -515,11 +515,18 @@ class zScanDataAnalyser:
         else:
             line1 = "dPsi: Could not be fitted"
         if self.fit_dΦ is not None:
-            n2_exp = self.get_power_of_ten(self._n2[0])
+            line2 = "dPhi: ({0:.3f} +- {1:.3f})\n".format(self.fit_dΦ[0], self.fit_dΦ[1])
+            
+            try:
+                n2_exp = self.get_power_of_ten(self._n2[0])
 
-            line2 = "dPhi: ({0:.3f} +- {1:.3f})\n".format(self.fit_dΦ[0], self.fit_dΦ[1]) + \
-                    "n2 = ({0:.2f} +- {1:.2f})e{2} cm^2/W".format(
-                        self._n2[0]/10**n2_exp, self._n2[1]/10**n2_exp, n2_exp)
+                line2 += "\nn2 = ({0:.2f} +- {1:.2f})e{2} cm^2/W".format(
+                    self._n2[0]/10**n2_exp, self._n2[1]/10**n2_exp, n2_exp)
+            except Exception as ex:
+                print("Problem finding power of ten of n2.")
+                traceback.print_exc()
+                line2 += "\nFinding the power of ten of n2 raised an exception."
+
         else:
             line2 = "dPhi: Could not be fitted, hence n2 could not be computed."
 
@@ -577,11 +584,16 @@ class zScanDataAnalyser:
             properties += "\nFurther notes: " + self._furtherNotes
 
         if self._n2 is not None:
-            n2_exp = self.get_power_of_ten(self._n2[0])
-            n2string = "$n_2$ = ({0:.2f} $\pm$ {1:.2f})e{2} cm$^2$/W".format(
-                            self._n2[0]/10**n2_exp, self._n2[1]/10**n2_exp, n2_exp)
+            try:
+                n2_exp = self.get_power_of_ten(self._n2[0])
+                n2string = "$n_2$ = ({0:.2f} $\pm$ {1:.2f})e{2} cm$^2$/W".format(
+                                self._n2[0]/10**n2_exp, self._n2[1]/10**n2_exp, n2_exp)
 
-            properties += "\n" + n2string
+                properties += "\n" + n2string
+
+            except Exception as ex:
+                print("Problem finding the power of ten of n2")
+                traceback.print_exc()
 
         plt.title(properties, fontsize=9)
         plt.xlabel("z / mm")
