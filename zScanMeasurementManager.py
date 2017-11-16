@@ -11,12 +11,10 @@ from math import isclose
 # TODO:
 # -----------------------------------
 # - Condensates of Light Anmeldung.
-# - Include a check button to disable fitting.                                                          DONE. CHECK IT!
-# - Include n0 in the calculation of the power inside the sample.                                       DONE. CHECK IT!
-# - Include a field to provide the geometric length of the sample.
-# - Include an input field to provide alpha for a sample. Maybe include a drop down list with
-#   known alpha values. Compute the effective length.
+# - Hadish das Paper schicken.
 
+# - Include a prefactor field to account for different optical density filters in front of the reference photodiode.
+# - Make more measurements with Rhodamine with low power and high power and also with different repetition rates.
 # - Try to fit Julians "5.dat" measurement of RH6G in Ethylenglykol with both curves separately.
 #   Do I obtain identical (at least similar) results?
 # - Make a measurement with ZnSe and Rhodamine-Ethylenglykol and water.
@@ -53,7 +51,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             self.spinBox_laserRepRate.value(),
             self.lineEdit_furtherNotes.text(),
             self.doubleSpinBox_refrIndexMaterial.value(),
-            self.doubleSpinBox_refrIndexAmbient.value())
+            self.doubleSpinBox_refrIndexAmbient.value(),
+            self.doubleSpinBox_geomSampleLength.value(),
+            self.doubleSpinBox_alpha.value())
 
 
         self.nidaq_reader = nidaq_control.NidaqReader(
@@ -80,6 +80,8 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.spinBox_laserRepRate.valueChanged.connect(self.onNotesChange)
         self.spinBox_numPositions.valueChanged.connect(self.onNotesChange)
         self.lineEdit_furtherNotes.textChanged.connect(self.onNotesChange)
+        self.doubleSpinBox_geomSampleLength.valueChanged.connect(self.onNotesChange)
+        self.doubleSpinBox_alpha.valueChanged.connect(self.onNotesChange)
 
         self.spinBox_samplingRate.valueChanged.connect(self.onNidaqParamsChange)
         self.spinBox_samplesPerChannel.valueChanged.connect(self.onNidaqParamsChange)
@@ -98,6 +100,8 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.data_analyser.furtherNotes = self.lineEdit_furtherNotes.text()
         self.data_analyser.refr_index_material = self.doubleSpinBox_refrIndexMaterial.value()
         self.data_analyser.refr_index_ambient = self.doubleSpinBox_refrIndexAmbient.value()
+        self.data_analyser.geom_length = self.doubleSpinBox_geomSampleLength.value()
+        self.data_analyser.alpha = self.doubleSpinBox_alpha.value()
 
 
     def onNidaqParamsChange(self):

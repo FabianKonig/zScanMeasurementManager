@@ -80,7 +80,7 @@ def T_CA_func(z, z0, zR, dΦ, dΨ):
 class zScanDataAnalyser:
 
     def __init__(self, tot_num_of_pos, sample_material, solvent, concentration, laser_rep_rate,
-        furtherNotes, refr_index_mat, refr_index_amb):
+        furtherNotes, refr_index_mat, refr_index_amb, geom_length, alpha):
         """ Class to extract calibration factors and transmissions from the photodiode signals.
             The first two functions to be called must be:
                 1. extract_calibration_factors
@@ -97,6 +97,8 @@ class zScanDataAnalyser:
             furtherNotes    String
             refr_index_mat  Float
             ref_index_amb   Float
+            geom_length     Float
+            alpha           Float
         """
         self.c_OA = None
         self.c_CA = None
@@ -119,6 +121,8 @@ class zScanDataAnalyser:
         self._define_folder()
         self.refr_index_material = refr_index_mat
         self.refr_index_ambient = refr_index_amb
+        self.geom_length = geom_length  # mm
+        self.alpha = alpha     # 1/mm
 
         self.pulse_energy = None  # in J
 
@@ -258,7 +262,7 @@ class zScanDataAnalyser:
 
         assert self.pulse_energy is not None
 
-        transm_ambientMaterial_air = 1 - ((self.refr_index_ambient-1) / (refr_index_ambient+1) )**2
+        transm_ambientMaterial_air = 1 - ((self.refr_index_ambient-1) / (self.refr_index_ambient+1) )**2
         transm_material_ambientMaterial = 1 - ((self.refr_index_material-self.refr_index_ambient) / (self.refr_index_material+self.refr_index_ambient))**2
 
         transmission = transm_ambientMaterial_air * transm_material_ambientMaterial
@@ -374,8 +378,9 @@ class zScanDataAnalyser:
                  "Eff. pulse energy = ({0:.3f} +- {1:.3f})µJ\n".format(eff_pulse_energy[0]*1e6, eff_pulse_energy[1]*1e6) + \
                  "Aperture transm. S = {0:.3f} +- {1:.3f}\n".format(self.S[0], self.S[1]) + \
                  "Further notes: " + self.furtherNotes + "\n" + \
-                 "Used linear refractive index: {0:.3f}\n".format(self.refr_index_material)
-                 "Ambient refractive index: {0:.3f}\n".format(self.refr_index_ambient)
+                 "Used linear refractive index: {0:.3f}\n".format(self.refr_index_material) + \
+                 "Ambient refractive index: {0:.3f}\n".format(self.refr_index_ambient) + \
+                 "Used alpha: {0:.3f} mm^-1\n".format(self.alpha) + \
                  "\n" + \
                  "Position / mm    T_OA    deltaT_OA    T_CA    deltaT_CA"
         
@@ -510,8 +515,11 @@ class zScanDataAnalyser:
         
         eff_pulse_energy = self.effective_pulse_energy()
 
+        alpha = self.alpha + 1e-15
 
-        L_eff = 1e-3 # m   TODO: Measure alpha and compute L_eff correctly
+        eff_length = (1-np.exp(-alpha * self.geom_length)) / alpha  # all in mm
+        eff_length *= 1e-3  # in m
+
 
         P0 = np.array([eff_pulse_energy[0], eff_pulse_energy[1]]) / pulse_length
         
@@ -520,8 +528,8 @@ class zScanDataAnalyser:
         I0[1] = 2*P0[1] / (np.pi*self.w0**2)
         k = 2*np.pi / self.λ
         
-        n2 = dΦ[0] / (k*I0[0]*L_eff)
-        dn2 = np.sqrt( (dΦ[1] / (k*I0[0]*L_eff))**2 + (dΦ[0]*I0[1] / (k*I0[0]*L_eff)**2)**2)
+        n2 = dΦ[0] / (k*I0[0]*eff_length)
+        dn2 = np.sqrt( (dΦ[1] / (k*I0[0]*eff_length))**2 + (dΦ[0]*I0[1] / (k*I0[0]*eff_length)**2)**2)
         self._n2 = np.array([n2, dn2]) * 1e4 # in units of cm^2/W
 
 
