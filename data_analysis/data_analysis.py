@@ -19,7 +19,8 @@ CONSTANTS_guess_CA = [22,1]  # second entry: dΦ
 
 CONSTANTS_tolerance_z0 = 1.5  # absolute tolerance of beam waist position from z=22mm in mm
 
-CONSTANTS_cuvette_reflectivity = 0.0377  # reflectivity of the glass/air boundary of the cuvette
+CONSTANTS_cuvette_reflectivity = 0.0377  # reflectivity of the glass/air boundary of the cuvette (measured)
+
 CONSTANTS_pulse_length_FWHM = 15e-12  # laser pulse length in seconds
 
 # I don't know why, but the fits are much better if I introduce a correction factor for the
@@ -82,7 +83,7 @@ def T_CA_func(z, z0, zR, dΦ, dΨ):
 class zScanDataAnalyser:
 
     def __init__(self, tot_num_of_pos, sample_material, solvent, concentration, laser_rep_rate,
-        furtherNotes):
+        furtherNotes, refr_index_mat, refr_index_amb):
         """ Class to extract calibration factors and transmissions from the photodiode signals.
             The first two functions to be called must be:
                 1. extract_calibration_factors
@@ -97,6 +98,8 @@ class zScanDataAnalyser:
             concentration   Float
             laser_rep_rate  Integer
             furtherNotes    String
+            refr_index_mat  Float
+            ref_index_amb   Float
         """
         self.c_OA = None
         self.c_CA = None
@@ -117,6 +120,8 @@ class zScanDataAnalyser:
         self._folder = None
         self._folder_number = None  # number suffix of the folder's name
         self._define_folder()
+        self.refr_index_material = refr_index_mat
+        self.refr_index_ambient = refr_index_amb
 
         self.pulse_energy = None  # in J
 
@@ -350,11 +355,13 @@ class zScanDataAnalyser:
         header = "Date of measurement: " + time + "\n" + \
                  "Sample material: " + self.sample_material + "\n" + \
                  "Solvent: " + self.solvent + "\n" + \
-                 "Concentration: " + str(self.concentration) + "mmol/l\n" + \
+                 "Concentration: {0:.2f}mmol/l\n".format(self.concentration) + \
                  "Laser rep. rate: " + str(self.laser_rep_rate) + "Hz\n" + \
                  "Pulse energy = ({0:.3f} +- {1:.3f})µJ\n".format(self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
-                 "Aperture transm. S = {0:.3f} +- {1:.3f}".format(self.S[0], self.S[1]) + "\n" + \
+                 "Aperture transm. S = {0:.3f} +- {1:.3f}\n".format(self.S[0], self.S[1]) + \
                  "Further notes: " + self.furtherNotes + "\n" + \
+                 "Used linear refractive index: {0:.3f}\n".format(self.refr_index_material)
+                 "Ambient refractive index: {0:.3f}\n".format(self.refr_index_ambient)
                  "\n" + \
                  "Position / mm    T_OA    deltaT_OA    T_CA    deltaT_CA"
         
@@ -490,9 +497,14 @@ class zScanDataAnalyser:
         
         assert self.pulse_energy is not None
 
+
+        # Compute the reflectivity taking the refractive index of the sample material into account:
+        R = 1 - (1-R) * (1-((self.refr_index_material-self.refr_index_ambient) / (self.refr_index_material+self.refr_index_ambient))**2)
+
+
         L_eff = 1e-3 # m   TODO: Measure alpha and compute L_eff correctly
 
-        P0 = np.array([self.pulse_energy[0], self.pulse_energy[1]]) / pulse_length*(1-R)
+        P0 = np.array([self.pulse_energy[0], self.pulse_energy[1]]) / pulse_length * (1-R)
         
         I0 = np.empty(shape=(2))
         I0[0] = 2*P0[0] / (np.pi*self.w0**2)
@@ -575,7 +587,7 @@ class zScanDataAnalyser:
 
         properties = "Sample: " + self.sample_material + \
             ",     Solvent: " + self.solvent + \
-            ",     Concentration = {0}mmol/l".format(self.concentration) + "\n" + \
+            ",     Concentration = {0:.2f}mmol/l".format(self.concentration) + "\n" + \
             r"$E_{Pulse}$" + " = ({0:.3f} $\pm$ {1:.3f})µJ".format(self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
             r",     $f_{Laser}$" + " = {0}Hz".format(self.laser_rep_rate) + \
             ",     S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
@@ -613,10 +625,11 @@ class zScanDataAnalyser:
         plt.show()
 
 
-    def evaluate_measurement_and_reinitialise(self):
+    def evaluate_measurement_and_reinitialise(self, want_fit):
         self.store_transmission_data()
-        self.fit_transmission_data()
-        self.store_fit_results()
+        if want_fit:
+            self.fit_transmission_data()
+            self.store_fit_results()
         self.plot_transmission_data()
         self.reinitialise()
 

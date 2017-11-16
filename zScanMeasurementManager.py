@@ -9,14 +9,21 @@ from math import isclose
 
 
 # TODO:
-
 # -----------------------------------
 # - Condensates of Light Anmeldung.
+# - Include a check button to disable fitting.                                                          DONE. CHECK IT!
+# - Include n0 in the calculation of the power inside the sample.                                       DONE. CHECK IT!
+# - Include a field to provide the geometric length of the sample.
+# - Include an input field to provide alpha for a sample. Maybe include a drop down list with
+#   known alpha values. Compute the effective length.
+
 # - Try to fit Julians "5.dat" measurement of RH6G in Ethylenglykol with both curves separately.
 #   Do I obtain identical (at least similar) results?
 # - Make a measurement with ZnSe and Rhodamine-Ethylenglykol and water.
 # - With those measurements, make sure the behaviour of Nitrobenzole is not due to alignment, but
 #   really only due to Nitrobenzole itself.
+# - What if you decrease the time the sample is exposed to radiation? Does the Rayleigh length decrease?
+#   Then it might be a thermal effect!
 # 
 # - Read the paper sent by Martin!
 #
@@ -44,7 +51,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             self.lineEdit_solvent.text(),
             self.doubleSpinBox_concentration.value(),
             self.spinBox_laserRepRate.value(),
-            self.lineEdit_furtherNotes.text())
+            self.lineEdit_furtherNotes.text(),
+            self.doubleSpinBox_refrIndexMaterial.value(),
+            self.doubleSpinBox_refrIndexAmbient.value())
 
 
         self.nidaq_reader = nidaq_control.NidaqReader(
@@ -76,6 +85,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.spinBox_samplesPerChannel.valueChanged.connect(self.onNidaqParamsChange)
         self.spinBox_iterations.valueChanged.connect(self.onNidaqParamsChange)
 
+        self.doubleSpinBox_refrIndexMaterial.valueChanged.connect(self.onNotesChange)
+        self.doubleSpinBox_refrIndexAmbient.valueChanged.connect(self.onNotesChange)
+
 
     def onNotesChange(self):
         self.data_analyser.sample_material = self.lineEdit_sampleMaterial.text()
@@ -84,6 +96,8 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.data_analyser.spinBox_laserRepRate = self.spinBox_laserRepRate.value()
         self.data_analyser.tot_num_of_pos = self.spinBox_numPositions.value()
         self.data_analyser.furtherNotes = self.lineEdit_furtherNotes.text()
+        self.data_analyser.refr_index_material = self.doubleSpinBox_refrIndexMaterial.value()
+        self.data_analyser.refr_index_ambient = self.doubleSpinBox_refrIndexAmbient.value()
 
 
     def onNidaqParamsChange(self):
@@ -167,7 +181,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             self.data_analyser.extract_oa_ca_transmissions(position_wrt_beam, *signals)
         
 
-        self.data_analyser.evaluate_measurement_and_reinitialise()
+        self.data_analyser.evaluate_measurement_and_reinitialise(self.checkBox_wantFit.isChecked())
         self.stage_controller.initialise_stages()
 
 
