@@ -18,9 +18,6 @@ CONSTANTS_guess_OA = [22,1]  # second entry: dΨ
 CONSTANTS_guess_CA = [22,1]  # second entry: dΦ
 
 CONSTANTS_tolerance_z0 = 1.5  # absolute tolerance of beam waist position from z=22mm in mm
-
-CONSTANTS_cuvette_reflectivity = 0.0377  # reflectivity of the glass/air boundary of the cuvette (measured)
-
 CONSTANTS_pulse_length_FWHM = 15e-12  # laser pulse length in seconds
 
 # I don't know why, but the fits are much better if I introduce a correction factor for the
@@ -254,6 +251,20 @@ class zScanDataAnalyser:
         return self.pulse_energy
 
 
+    def effective_pulse_energy(self):
+        """ Computes the pulse energy that the sample is exposed to, i.e. it computes the fraction of
+            incident pulse energy that is not reflected by glass cuvette or by the material.
+        """
+
+        assert self.pulse_energy is not None
+
+        transm_ambientMaterial_air = 1 - ((self.refr_index_ambient-1) / (refr_index_ambient+1) )**2
+        transm_material_ambientMaterial = 1 - ((self.refr_index_material-self.refr_index_ambient) / (self.refr_index_material+self.refr_index_ambient))**2
+
+        transmission = transm_ambientMaterial_air * transm_material_ambientMaterial
+        return self.pulse_energy * transmission
+
+
 
     def extract_calibration_factors(self, ref_signal, oa_signal, ca_signal):
         """ If the sample is placed into the beam far displaced from the focal spot, i.e. nonlinear
@@ -351,13 +362,16 @@ class zScanDataAnalyser:
         now = datetime.datetime.today()
         time = "{0:4d}.{1:02d}.{2:02d}  {3:02d}:{4:02d}".format(
             now.year, now.month, now.day, now.hour, now.minute)
+
+        eff_pulse_energy = self.effective_pulse_energy()
         
         header = "Date of measurement: " + time + "\n" + \
                  "Sample material: " + self.sample_material + "\n" + \
                  "Solvent: " + self.solvent + "\n" + \
                  "Concentration: {0:.2f}mmol/l\n".format(self.concentration) + \
                  "Laser rep. rate: " + str(self.laser_rep_rate) + "Hz\n" + \
-                 "Pulse energy = ({0:.3f} +- {1:.3f})µJ\n".format(self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
+                 "Pulse energy: = ({0:.3f} +- {1:.3f})µJ\n".format(self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
+                 "Eff. pulse energy = ({0:.3f} +- {1:.3f})µJ\n".format(eff_pulse_energy[0]*1e6, eff_pulse_energy[1]*1e6) + \
                  "Aperture transm. S = {0:.3f} +- {1:.3f}\n".format(self.S[0], self.S[1]) + \
                  "Further notes: " + self.furtherNotes + "\n" + \
                  "Used linear refractive index: {0:.3f}\n".format(self.refr_index_material)
@@ -492,19 +506,14 @@ class zScanDataAnalyser:
         """
 
         # Constants
-        R = CONSTANTS_cuvette_reflectivity  #Measured reflectivity of the front boundary glass cuvette/air
         pulse_length = CONSTANTS_pulse_length_FWHM  #seconds
         
-        assert self.pulse_energy is not None
-
-
-        # Compute the reflectivity taking the refractive index of the sample material into account:
-        R = 1 - (1-R) * (1-((self.refr_index_material-self.refr_index_ambient) / (self.refr_index_material+self.refr_index_ambient))**2)
+        eff_pulse_energy = self.effective_pulse_energy()
 
 
         L_eff = 1e-3 # m   TODO: Measure alpha and compute L_eff correctly
 
-        P0 = np.array([self.pulse_energy[0], self.pulse_energy[1]]) / pulse_length * (1-R)
+        P0 = np.array([eff_pulse_energy[0], eff_pulse_energy[1]]) / pulse_length
         
         I0 = np.empty(shape=(2))
         I0[0] = 2*P0[0] / (np.pi*self.w0**2)
@@ -572,6 +581,8 @@ class zScanDataAnalyser:
         T_OA = self.T_OA
         T_CA = self.T_CA
 
+        eff_pulse_energy = self.effective_pulse_energy()
+
         plt.figure(figsize=(8.5, 5.5))
         plt.errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", color="red", alpha=0.8, label="OA")
         plt.errorbar(T_CA[:,0], T_CA[:,1], yerr=T_CA[:,2], linestyle="", marker="x", color="black", alpha=0.8, label="CA")
@@ -588,7 +599,7 @@ class zScanDataAnalyser:
         properties = "Sample: " + self.sample_material + \
             ",     Solvent: " + self.solvent + \
             ",     Concentration = {0:.2f}mmol/l".format(self.concentration) + "\n" + \
-            r"$E_{Pulse}$" + " = ({0:.3f} $\pm$ {1:.3f})µJ".format(self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
+            r"$E_{Pulse, eff}$" + " = ({0:.3f} $\pm$ {1:.3f})µJ".format(eff_pulse_energy[0]*1e6, eff_pulse_energy[1]*1e6) + \
             r",     $f_{Laser}$" + " = {0}Hz".format(self.laser_rep_rate) + \
             ",     S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
 
