@@ -11,6 +11,8 @@ from math import isclose
 # TODO:
 # -----------------------------------
 # - Condensates of Light Anmeldung.
+# - Allow more decimal digits in I/I0 field in GUI.
+# - When changing the geometrical length, the effective length must be changed as well in GUI
 
 # - Make more measurements with Rhodamine with low power and high power and also with different repetition rates.
 # - Try to fit Julians "5.dat" measurement of RH6G in Ethylenglykol with both curves separately.
@@ -93,7 +95,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.data_analyser.sample_material = self.lineEdit_sampleMaterial.text()
         self.data_analyser.solvent = self.lineEdit_solvent.text()
         self.data_analyser.concentration = self.doubleSpinBox_concentration.value()
-        self.data_analyser.spinBox_laserRepRate = self.spinBox_laserRepRate.value()
+        self.data_analyser.laser_rep_rate = self.spinBox_laserRepRate.value()
         self.data_analyser.tot_num_of_pos = self.spinBox_numPositions.value()
         self.data_analyser.furtherNotes = self.lineEdit_furtherNotes.text()
         self.data_analyser.refr_index_material = self.doubleSpinBox_refrIndexMaterial.value()

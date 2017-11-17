@@ -534,17 +534,17 @@ class zScanDataAnalyser:
         T_CA_OA = np.empty(shape=(self.tot_num_of_pos, 3))
         T_CA_OA[:,0] = T_CA[:,0]
         T_CA_OA[:,1] = T_CA[:,1] / T_OA[:,1]
-        T_CA_OA[:,2] = np.sqrt( (T_CA[:,2]/T_OA[:,1])**2 + (T_CA[:,1]*T_OA[:,2] / T_OA[:,2]**2)**2 )
+        T_CA_OA[:,2] = np.sqrt( (T_CA[:,2]/T_OA[:,1])**2 + (T_CA[:,1]*T_OA[:,2] / T_OA[:,1]**2)**2 )
 
         try:
-            fit_z0, fit_dΦ = fit_CA_OA_transmission(T_OA, self.zR)
+            fit_z0, fit_dΦ = fit_CA_normalised_wrt_oa(T_CA_OA, self.zR)
             assert np.abs(fit_z0[0]-22) < CONSTANTS_tolerance_z0
             assert np.abs(fit_z0[1]/fit_z0[0]) < 1
             assert np.abs(fit_dΦ[1]/fit_dΦ[0]) < 1
 
             self.fit_z0_CA_OA = fit_z0
             self.fit_dΦ_CA_OA = fit_dΦ
-            self._n2_CA_OA = self.compute_n2(fit_dΦ_CA_OA)
+            self._n2_CA_OA = self.compute_n2(self.fit_dΦ_CA_OA)
 
         except Exception as ex:
             print("Fit of closed aperture data normalised wrt open aperture data failed.")
@@ -623,7 +623,7 @@ class zScanDataAnalyser:
 
 
 
-        line3 = "\nResults from a CA/OA fit:"
+        line3 = "\n\nResults from a CA/OA fit:"
 
         if self.fit_z0_CA_OA is not None and self.fit_dΦ_CA_OA is not None:
             line4 = "z0: ({0:.3f} +- {1:.3f})mm".format(self.fit_z0_CA_OA[0], self.fit_z0_CA_OA[1])
@@ -633,7 +633,7 @@ class zScanDataAnalyser:
                 n2_exp = self.get_power_of_ten(self._n2_CA_OA[0])
 
                 line5 += "\nn2 = ({0:.2f} +- {1:.2f})e{2} cm^2/W".format(
-                    self._n2[0]/10**n2_exp, self._n2[1]/10**n2_exp, n2_exp)
+                    self._n2_CA_OA[0]/10**n2_exp, self._n2_CA_OA[1]/10**n2_exp, n2_exp)
             except Exception as ex:
                 print("Problem finding power of ten of n2.")
                 traceback.print_exc()
@@ -677,7 +677,7 @@ class zScanDataAnalyser:
         T_CA_OA = np.empty(shape=(self.tot_num_of_pos, 3))
         T_CA_OA[:,0] = T_CA[:,0]
         T_CA_OA[:,1] = T_CA[:,1] / T_OA[:,1]
-        T_CA_OA[:,2] = np.sqrt( (T_CA[:,2]/T_OA[:,1])**2 + (T_CA[:,1]*T_OA[:,2] / T_OA[:,2]**2)**2 )
+        T_CA_OA[:,2] = np.sqrt( (T_CA[:,2]/T_OA[:,1])**2 + (T_CA[:,1]*T_OA[:,2] / T_OA[:,1]**2)**2 )
 
 
         eff_pulse_energy = self.effective_pulse_energy()
@@ -738,16 +738,14 @@ class zScanDataAnalyser:
 
 
         plt.figure(figsize=(8.5, 5.5))
-        plt.errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", color="red", alpha=0.8, label="OA")
+        #plt.errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", color="red", alpha=0.8, label="OA")
         plt.errorbar(T_CA_OA[:,0], T_CA_OA[:,1], yerr=T_CA_OA[:,2], linestyle="", marker="x", color="orange", alpha=0.8, label="CA/OA")
 
         # Plot the fit functions if fit parameters exist
         if self.fit_z0_CA_OA is not None and self.fit_dΦ_CA_OA is not None:
             pos_vals = np.linspace(T_OA[0,0]-.5, T_OA[-1,0]+.5, 200)
-            T_OA_vals = T_OA_func(pos_vals, self.fit_z0_CA_OA[0], self.zR, 0)
             T_CA_OA_vals = T_CA_func(pos_vals, self.fit_z0_CA_OA[0], self.zR, self.fit_dΦ_CA_OA[0], 0)
             
-            plt.plot(pos_vals, T_OA_vals, color="red")
             plt.plot(pos_vals, T_CA_OA_vals, color="orange")
 
 
@@ -761,6 +759,28 @@ class zScanDataAnalyser:
 
             except Exception as ex:
                 print("Problem finding the power of ten of n2")
+                traceback.print_exc()
+
+        properties = "Sample: " + self.sample_material + \
+            ",     Solvent: " + self.solvent + \
+            ",     Concentration = {0:.2f}mmol/l".format(self.concentration) + "\n" + \
+            r"$E_{Pulse, eff}$" + " = ({0:.3f} $\pm$ {1:.3f})µJ".format(eff_pulse_energy[0]*1e6, eff_pulse_energy[1]*1e6) + \
+            r",     $f_{Laser}$" + " = {0}Hz".format(self.laser_rep_rate) + \
+            ",     S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
+
+        if self._furtherNotes != "---": #default value
+            properties += "\nFurther notes: " + self._furtherNotes
+
+        if self._n2_CA_OA is not None:
+            try:
+                n2_exp = self.get_power_of_ten(self._n2_CA_OA[0])
+                n2string = "$n_2$ = ({0:.2f} $\pm$ {1:.2f})e{2} cm$^2$/W".format(
+                                self._n2_CA_OA[0]/10**n2_exp, self._n2_CA_OA[1]/10**n2_exp, n2_exp)
+
+                properties += "\n" + n2string
+
+            except Exception as ex:
+                print("Problem finding the power of ten of n2_CA_OA")
                 traceback.print_exc()
 
         plt.title(properties, fontsize=9)
@@ -800,7 +820,10 @@ class zScanDataAnalyser:
         self.fit_z0 = None
         self.fit_dΨ = None
         self.fit_dΦ = None
+        self.fit_z0_CA_OA = None
+        self.fit_dΦ_CA_OA = None
         self._n2 = None
+        self._n2_CA_OA = None
         self._define_folder()
 
 
