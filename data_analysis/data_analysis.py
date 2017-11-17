@@ -11,7 +11,9 @@ CONSTANTS_beam_waist = 19.0537e-6  # m waist of incident beam in vacuum
 CONSTANTS_wavelength = 532e-9      # m in vacuum
 
 # Calibration of reference photodiode signal into pulse energy in J/V
-CONSTANTS_calib_photodiode_pulse_energy = np.array([16.9274, 0.0212]) * 1e-6 
+# Factor of 1/1000 because the calibration factor was measured with an OD3 neutral density filter in
+# front of the reference photodiode.
+CONSTANTS_calib_photodiode_pulse_energy = np.array([16.9274, 0.0212]) * 1e-6 / 1000
 
 # Initial guess for fit parameters. The first entry denotes the beam waist position in mm
 CONSTANTS_guess_OA = [22,1]  # second entry: dΨ

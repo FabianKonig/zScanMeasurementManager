@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>610</width>
-    <height>661</height>
+    <width>597</width>
+    <height>802</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -35,6 +35,26 @@
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
         <layout class="QGridLayout" name="gridLayout_measurementParams">
+         <item row="6" column="1">
+          <widget class="QSpinBox" name="spinBox_numPositions">
+           <property name="minimum">
+            <number>2</number>
+           </property>
+           <property name="maximum">
+            <number>150</number>
+           </property>
+           <property name="value">
+            <number>45</number>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="lineEdit_sampleMaterial">
+           <property name="text">
+            <string>--</string>
+           </property>
+          </widget>
+         </item>
          <item row="1" column="2">
           <spacer name="horizontalSpacer_6">
            <property name="orientation">
@@ -47,13 +67,6 @@
             </size>
            </property>
           </spacer>
-         </item>
-         <item row="0" column="1">
-          <widget class="QLineEdit" name="lineEdit_sampleMaterial">
-           <property name="text">
-            <string>--</string>
-           </property>
-          </widget>
          </item>
          <item row="0" column="3">
           <widget class="QLabel" name="label_solvent">
@@ -113,26 +126,6 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="label_numPositions">
-           <property name="text">
-            <string>No. of positions</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QSpinBox" name="spinBox_numPositions">
-           <property name="minimum">
-            <number>2</number>
-           </property>
-           <property name="maximum">
-            <number>150</number>
-           </property>
-           <property name="value">
-            <number>45</number>
-           </property>
-          </widget>
-         </item>
          <item row="1" column="4">
           <widget class="QSpinBox" name="spinBox_laserRepRate">
            <property name="minimum">
@@ -146,21 +139,7 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="0">
-          <widget class="QLabel" name="label_furtherNotes">
-           <property name="text">
-            <string>Further notes</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="1" colspan="4">
-          <widget class="QLineEdit" name="lineEdit_furtherNotes">
-           <property name="text">
-            <string>---</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="2">
+         <item row="6" column="2">
           <spacer name="horizontalSpacer_7">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
@@ -173,14 +152,40 @@
            </property>
           </spacer>
          </item>
-         <item row="4" column="0">
+         <item row="4" column="1">
+          <widget class="QDoubleSpinBox" name="doubleSpinBox_refrIndexMaterial">
+           <property name="decimals">
+            <number>2</number>
+           </property>
+           <property name="minimum">
+            <double>1.000000000000000</double>
+           </property>
+           <property name="maximum">
+            <double>100.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+           <property name="value">
+            <double>1.460000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="0">
+          <widget class="QLabel" name="label_numPositions">
+           <property name="text">
+            <string>No. of positions</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
           <widget class="QLabel" name="labe_geomSampleLength">
            <property name="text">
             <string>Geom. sample length / mm</string>
            </property>
           </widget>
          </item>
-         <item row="4" column="1">
+         <item row="2" column="1">
           <widget class="QDoubleSpinBox" name="doubleSpinBox_geomSampleLength">
            <property name="singleStep">
             <double>0.100000000000000</double>
@@ -190,17 +195,63 @@
            </property>
           </widget>
          </item>
-         <item row="4" column="3">
-          <widget class="QLabel" name="label_alpha">
-           <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;α / mm&lt;span style=&quot; vertical-align:super;&quot;&gt;-1&lt;/span&gt; =&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <item row="4" column="4">
+          <widget class="QDoubleSpinBox" name="doubleSpinBox_refrIndexAmbient">
+           <property name="decimals">
+            <number>2</number>
+           </property>
+           <property name="minimum">
+            <double>1.000000000000000</double>
+           </property>
+           <property name="maximum">
+            <double>100.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+           <property name="value">
+            <double>1.460000000000000</double>
            </property>
           </widget>
          </item>
-         <item row="4" column="4">
-          <widget class="QDoubleSpinBox" name="doubleSpinBox_alpha">
-           <property name="maximum">
-            <double>1000.000000000000000</double>
+         <item row="4" column="3">
+          <widget class="QLabel" name="label_RefrIndexAmbient">
+           <property name="text">
+            <string>Ambient refractive index</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="2">
+          <spacer name="horizontalSpacer_8">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="label_RefrIndexMaterial">
+           <property name="text">
+            <string>Refractive index material</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0">
+          <widget class="QLabel" name="label_furtherNotes">
+           <property name="text">
+            <string>Further notes</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="1" colspan="4">
+          <widget class="QLineEdit" name="lineEdit_furtherNotes">
+           <property name="text">
+            <string>---</string>
            </property>
           </widget>
          </item>
@@ -328,6 +379,79 @@
      </widget>
     </item>
     <item>
+     <widget class="QGroupBox" name="groupBox">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="title">
+       <string>1. Measure linear absorption coeficient</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_5">
+       <item>
+        <layout class="QGridLayout" name="gridLayout_2">
+         <item row="1" column="0" colspan="2">
+          <widget class="QPushButton" name="pushButton_computeAlpha">
+           <property name="text">
+            <string>Compute α</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_II0">
+           <property name="text">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;I/I&lt;span style=&quot; vertical-align:sub;&quot;&gt;0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QDoubleSpinBox" name="doubleSpinBox_II0">
+           <property name="value">
+            <double>1.000000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2" rowspan="2">
+          <widget class="Line" name="line_4">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="4">
+          <widget class="QLabel" name="label_alphaValue">
+           <property name="text">
+            <string>0.00</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="3">
+          <widget class="QLabel" name="label_alpha">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>65</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;α / mm&lt;span style=&quot; vertical-align:super;&quot;&gt;-1&lt;/span&gt; =&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
      <widget class="QGroupBox" name="groupBox_Calibration">
       <property name="enabled">
        <bool>true</bool>
@@ -339,7 +463,7 @@
        </sizepolicy>
       </property>
       <property name="title">
-       <string>1. Calibration: Insert medium and open the aperture (S=1)</string>
+       <string>2. Calibration: Insert medium and open the aperture (S=1)</string>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
@@ -347,55 +471,26 @@
          <layout class="QVBoxLayout" name="verticalLayout_2">
           <item>
            <layout class="QGridLayout" name="gridLayout_refrIndexes">
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_RefrIndexMaterial">
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_attenuationPdRef">
               <property name="text">
-               <string>Refractive index material</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Attenuation PD&lt;span style=&quot; vertical-align:sub;&quot;&gt;Ref&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
-            <item row="0" column="1">
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_refrIndexMaterial">
-              <property name="decimals">
-               <number>2</number>
-              </property>
+            <item row="2" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_attenuationPdRef">
               <property name="minimum">
                <double>1.000000000000000</double>
               </property>
               <property name="maximum">
-               <double>100.000000000000000</double>
+               <double>10000.000000000000000</double>
               </property>
               <property name="singleStep">
-               <double>0.100000000000000</double>
-              </property>
-              <property name="value">
-               <double>1.460000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="label_RefrIndexAmbient">
-              <property name="text">
-               <string>Ambient refractive index</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_refrIndexAmbient">
-              <property name="decimals">
-               <number>2</number>
-              </property>
-              <property name="minimum">
-               <double>1.000000000000000</double>
-              </property>
-              <property name="maximum">
                <double>100.000000000000000</double>
               </property>
-              <property name="singleStep">
-               <double>0.100000000000000</double>
-              </property>
               <property name="value">
-               <double>1.460000000000000</double>
+               <double>1000.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -515,7 +610,7 @@
        </sizepolicy>
       </property>
       <property name="title">
-       <string>2. Align aperture</string>
+       <string>3. Align aperture</string>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout_4">
        <item>
@@ -580,7 +675,7 @@
        </sizepolicy>
       </property>
       <property name="title">
-       <string>3. Start measurement</string>
+       <string>4. Start measurement</string>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>

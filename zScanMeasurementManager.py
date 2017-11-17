@@ -11,9 +11,8 @@ from math import isclose
 # TODO:
 # -----------------------------------
 # - Condensates of Light Anmeldung.
-# - Hadish das Paper schicken.
 
-# - Include a prefactor field to account for different optical density filters in front of the reference photodiode.
+# - Include a prefactor field to account for different optical density filters in front of the reference photodiode.  DONE. CHECK IT.
 # - Make more measurements with Rhodamine with low power and high power and also with different repetition rates.
 # - Try to fit Julians "5.dat" measurement of RH6G in Ethylenglykol with both curves separately.
 #   Do I obtain identical (at least similar) results?
@@ -112,7 +111,8 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
     def onClick_calibratePhotodiodes(self):
         signals = self.nidaq_reader.get_nidaq_measurement_max_values()
-        pulse_energy = self.data_analyser.extract_pulse_energy(signals[0])
+        pulse_energy = self.data_analyser.extract_pulse_energy(
+            signals[0] * self.doubleSpinBox_attenuationPdRef.value())
         self.label_pulseEnergyValue.setText("{0:.3f} +- {1:.3f}".format(*pulse_energy*1e6))
 
         calib_factors = list(self.data_analyser.extract_calibration_factors(*signals))
