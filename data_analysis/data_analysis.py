@@ -11,9 +11,9 @@ CONSTANTS_beam_waist = 19.0537e-6  # m waist of incident beam in vacuum
 CONSTANTS_wavelength = 532e-9      # m in vacuum
 
 # Calibration of reference photodiode signal into pulse energy in J/V
-# Factor of 1/1000 because the calibration factor was measured with an OD3 neutral density filter in
+# Factor of 1/100 because the calibration factor was measured with an OD2 neutral density filter in
 # front of the reference photodiode.
-CONSTANTS_calib_photodiode_pulse_energy = np.array([16.9274, 0.0212]) * 1e-6 / 1000
+CONSTANTS_calib_photodiode_pulse_energy = np.array([16.9274, 0.0212]) * 1e-6 / 100
 
 # Initial guess for fit parameters. The first entry denotes the beam waist position in mm
 CONSTANTS_guess_OA = [22,1]  # second entry: dΨ
@@ -369,20 +369,20 @@ class zScanDataAnalyser:
         assert self.S is not None and self._folder_num is not None
 
         now = datetime.datetime.today()
-        time = "{0:4d}.{1:02d}.{2:02d}  {3:02d}:{4:02d}".format(
-            now.year, now.month, now.day, now.hour, now.minute)
+        time = "{0:02d}.{1:02d}.{2:4d}  {3:02d}:{4:02d}".format(
+            now.day, now.month, now.year, now.hour, now.minute)
 
         eff_pulse_energy = self.effective_pulse_energy()
         
-        header = "Date of measurement:     " + time + "\n" + \
-                 "Sample material:         " + self.sample_material + "\n" + \
-                 "Solvent:                 " + self.solvent + "\n" + \
+        header = "Date of measurement:      " + time + "\n" + \
+                 "Sample material:          " + self.sample_material + "\n" + \
+                 "Solvent:                  " + self.solvent + "\n" + \
                  "Concentration:            {0:.2f}mmol/l\n".format(self.concentration) + \
-                 "Laser rep. rate:         " + str(self.laser_rep_rate) + "Hz\n" + \
+                 "Laser rep. rate:          " + str(self.laser_rep_rate) + "Hz\n" + \
                  "Pulse energy:             ({0:.3f} +- {1:.3f})µJ\n".format(self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
                  "Eff. pulse energy:        ({0:.3f} +- {1:.3f})µJ\n".format(eff_pulse_energy[0]*1e6, eff_pulse_energy[1]*1e6) + \
                  "Aperture transm. S:       {0:.3f} +- {1:.3f}\n".format(self.S[0], self.S[1]) + \
-                 "Further notes:           " + self.furtherNotes + "\n" + \
+                 "Further notes:            " + self.furtherNotes + "\n" + \
                  "Linear refractive index:  {0:.3f}\n".format(self.refr_index_material) + \
                  "Ambient refractive index: {0:.3f}\n".format(self.refr_index_ambient) + \
                  "alpha:                    {0:.3f} mm^-1\n".format(self.alpha) + \
@@ -554,6 +554,17 @@ class zScanDataAnalyser:
             self.fit_dΦ_CA_OA = None
 
 
+    def compute_effective_length(self):
+        assert self.alpha is not None
+
+        if self.alpha == 0.:
+            eff_length = self.geom_length * 1e-3  # in m
+        else:
+            eff_length = (1-np.exp(-self.alpha * self.geom_length)) / self.alpha  # all in mm
+            eff_length *= 1e-3  # in m
+
+        return eff_length  # in m
+
 
     def compute_n2(self, dΦ):
         """
@@ -569,13 +580,7 @@ class zScanDataAnalyser:
         pulse_length = CONSTANTS_pulse_length_FWHM  #seconds
         
         eff_pulse_energy = self.effective_pulse_energy()
-
-
-        if alpha == 0.:
-            eff_length = self.geom_length * 1e-3  # in m
-        else:
-            eff_length = (1-np.exp(-self.alpha * self.geom_length)) / self.alpha  # all in mm
-            eff_length *= 1e-3  # in m
+        eff_length = self.compute_effective_length()  # in m
 
 
         P0 = np.array([eff_pulse_energy[0], eff_pulse_energy[1]]) / pulse_length
@@ -737,23 +742,14 @@ class zScanDataAnalyser:
         plt.errorbar(T_CA_OA[:,0], T_CA_OA[:,1], yerr=T_CA_OA[:,2], linestyle="", marker="x", color="orange", alpha=0.8, label="CA/OA")
 
         # Plot the fit functions if fit parameters exist
-        if self.fit_z0 is not None and self.fit_dΨ is not None and self.fit_dΦ is not None:
+        if self.fit_z0_CA_OA is not None and self.fit_dΦ_CA_OA is not None:
             pos_vals = np.linspace(T_OA[0,0]-.5, T_OA[-1,0]+.5, 200)
-            T_OA_vals = T_OA_func(pos_vals, self.fit_z0[0], self.zR, self.fit_dΨ[0])
-            T_CA_OA_vals = T_CA_func(pos_vals, self.fit_z0[0], self.zR, self.fit_dΦ[0], self.fit_dΨ[0])
+            T_OA_vals = T_OA_func(pos_vals, self.fit_z0_CA_OA[0], self.zR, 0)
+            T_CA_OA_vals = T_CA_func(pos_vals, self.fit_z0_CA_OA[0], self.zR, self.fit_dΦ_CA_OA[0], 0)
             
             plt.plot(pos_vals, T_OA_vals, color="red")
             plt.plot(pos_vals, T_CA_OA_vals, color="orange")
 
-        properties = "Sample: " + self.sample_material + \
-            ",     Solvent: " + self.solvent + \
-            ",     Concentration = {0:.2f}mmol/l".format(self.concentration) + "\n" + \
-            r"$E_{Pulse, eff}$" + " = ({0:.3f} $\pm$ {1:.3f})µJ".format(eff_pulse_energy[0]*1e6, eff_pulse_energy[1]*1e6) + \
-            r",     $f_{Laser}$" + " = {0}Hz".format(self.laser_rep_rate) + \
-            ",     S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
-
-        if self._furtherNotes != "---": #default value
-            properties += "\nFurther notes: " + self._furtherNotes
 
         if self._n2_CA_OA is not None:
             try:
@@ -790,6 +786,7 @@ class zScanDataAnalyser:
         self.store_transmission_data()
         if want_fit:
             self.fit_transmission_data()
+            self.fitting_ca_normalised_wrt_oa()
             self.store_fit_results()
         self.plot_transmission_data()
         self.reinitialise()

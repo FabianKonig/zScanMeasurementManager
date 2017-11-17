@@ -445,28 +445,6 @@
        <item>
         <widget class="QWidget" name="widgetAlphaValue" native="true">
          <layout class="QGridLayout" name="gridLayout_2">
-          <item row="4" column="4">
-           <widget class="QLineEdit" name="lineEdit_alphaValue">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">background-color:&quot;transparent&quot;</string>
-            </property>
-            <property name="text">
-             <string>0.00</string>
-            </property>
-            <property name="frame">
-             <bool>false</bool>
-            </property>
-            <property name="readOnly">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
           <item row="4" column="3">
            <widget class="QLabel" name="label_alpha">
             <property name="sizePolicy">
@@ -477,6 +455,27 @@
             </property>
             <property name="text">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;          α / mm&lt;span style=&quot; vertical-align:super;&quot;&gt;-1&lt;/span&gt; =&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="3">
+           <widget class="QLabel" name="label_effLength">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;L&lt;span style=&quot; vertical-align:sub;&quot;&gt;eff&lt;/span&gt; / mm =&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="4">
+           <widget class="QLabel" name="label_effLengthValue">
+            <property name="text">
+             <string>1.00</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="4">
+           <widget class="QLabel" name="label_alphaValue">
+            <property name="text">
+             <string>0.00</string>
             </property>
            </widget>
           </item>
@@ -525,7 +524,7 @@
                <double>100.000000000000000</double>
               </property>
               <property name="value">
-               <double>1000.000000000000000</double>
+               <double>100.000000000000000</double>
               </property>
              </widget>
             </item>

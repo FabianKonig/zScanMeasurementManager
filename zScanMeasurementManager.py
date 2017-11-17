@@ -12,7 +12,6 @@ from math import isclose
 # -----------------------------------
 # - Condensates of Light Anmeldung.
 
-# - Include a prefactor field to account for different optical density filters in front of the reference photodiode.  DONE. CHECK IT.
 # - Make more measurements with Rhodamine with low power and high power and also with different repetition rates.
 # - Try to fit Julians "5.dat" measurement of RH6G in Ethylenglykol with both curves separately.
 #   Do I obtain identical (at least similar) results?
@@ -29,7 +28,7 @@ from math import isclose
 #   diode signals increase, however, the power actually decreases! Make this calibration measurement!
 #   A change of the pulse rep rate should erase pulse energy label that might have been measured
 #   before changing the pulse rep rate.
-# - The absorption (alpha coefficient) measurement should be taken care of.
+# - The absorption (alpha coefficient) measurement should be taken care of.                             DONE. Check it.
 # - When the measurement is started, the measurement parameters section should be disabled.
 #   At the moment no problem as the GUI freezes anyway.
 # - Take care of multithreading.
@@ -52,7 +51,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             self.doubleSpinBox_refrIndexMaterial.value(),
             self.doubleSpinBox_refrIndexAmbient.value(),
             self.doubleSpinBox_geomSampleLength.value(),
-            float(self.lineEdit_alphaValue.text()))
+            float(self.label_alphaValue.text()))
 
 
         self.nidaq_reader = nidaq_control.NidaqReader(
@@ -81,7 +80,6 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.spinBox_numPositions.valueChanged.connect(self.onNotesChange)
         self.lineEdit_furtherNotes.textChanged.connect(self.onNotesChange)
         self.doubleSpinBox_geomSampleLength.valueChanged.connect(self.onNotesChange)
-        self.lineEdit_alphaValue.textChanged.connect(self.onNotesChange)
 
         self.spinBox_samplingRate.valueChanged.connect(self.onNidaqParamsChange)
         self.spinBox_samplesPerChannel.valueChanged.connect(self.onNidaqParamsChange)
@@ -101,7 +99,6 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.data_analyser.refr_index_material = self.doubleSpinBox_refrIndexMaterial.value()
         self.data_analyser.refr_index_ambient = self.doubleSpinBox_refrIndexAmbient.value()
         self.data_analyser.geom_length = self.doubleSpinBox_geomSampleLength.value()
-        self.data_analyser.alpha = float(self.lineEdit_alphaValue.text())
 
 
     def onNidaqParamsChange(self):
@@ -118,15 +115,18 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
         transmission_glass_air = 1 - ((refr_index_ambient-1)/(refr_index_ambient+1))**2
         transmission_ambient_material = 1 - ((refr_index_ambient-refr_index_material)/(refr_index_ambient+refr_index_material))**2
-        expected_transmission = transmission_ambient_material * transmission_glass_air
+        # each transmission is squared because the light has to transmit each boundary twice:
+        expected_transmission = transmission_ambient_material**2 * transmission_glass_air**2
 
         # the transmission through the medium (after being corrected by Fresnel transmission)
         transmission_medium = transmission / expected_transmission
 
         alpha = -np.log(transmission_medium) / geom_length  # in 1/mm
 
-        self.lineEdit_alphaValue.setText("{0:.3f}".format(alpha))  # automatically causes signal textChanged to be emitted.
-
+        self.label_alphaValue.setText("{0:.3f}".format(alpha))
+        self.data_analyser.alpha = alpha
+        eff_length = self.data_analyser.compute_effective_length() * 1e3  # in mm
+        self.label_effLengthValue.setText("{0:.3f}".format(eff_length))
 
 
     def onClick_calibratePhotodiodes(self):
