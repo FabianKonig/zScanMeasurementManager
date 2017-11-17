@@ -52,7 +52,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             self.doubleSpinBox_refrIndexMaterial.value(),
             self.doubleSpinBox_refrIndexAmbient.value(),
             self.doubleSpinBox_geomSampleLength.value(),
-            self.doubleSpinBox_alpha.value())
+            float(self.lineEdit_alphaValue.text()))
 
 
         self.nidaq_reader = nidaq_control.NidaqReader(
@@ -72,6 +72,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.pushButton_calibratePDs.clicked.connect(self.onClick_calibratePhotodiodes)
         self.pushButton_measureAperture.clicked.connect(self.onClick_measureApertureTransmission)
         self.pushButton_startMeasurement.clicked.connect(self.onClick_startMeasurement)
+        self.pushButton_computeAlpha.clicked.connect(self.onClick_computeAlpha)
 
         self.lineEdit_sampleMaterial.textChanged.connect(self.onNotesChange)
         self.lineEdit_solvent.textChanged.connect(self.onNotesChange)
@@ -80,7 +81,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.spinBox_numPositions.valueChanged.connect(self.onNotesChange)
         self.lineEdit_furtherNotes.textChanged.connect(self.onNotesChange)
         self.doubleSpinBox_geomSampleLength.valueChanged.connect(self.onNotesChange)
-        self.doubleSpinBox_alpha.valueChanged.connect(self.onNotesChange)
+        self.lineEdit_alphaValue.textChanged.connect(self.onNotesChange)
 
         self.spinBox_samplingRate.valueChanged.connect(self.onNidaqParamsChange)
         self.spinBox_samplesPerChannel.valueChanged.connect(self.onNidaqParamsChange)
@@ -100,13 +101,32 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.data_analyser.refr_index_material = self.doubleSpinBox_refrIndexMaterial.value()
         self.data_analyser.refr_index_ambient = self.doubleSpinBox_refrIndexAmbient.value()
         self.data_analyser.geom_length = self.doubleSpinBox_geomSampleLength.value()
-        self.data_analyser.alpha = self.doubleSpinBox_alpha.value()
+        self.data_analyser.alpha = float(self.lineEdit_alphaValue.text())
 
 
     def onNidaqParamsChange(self):
         self.nidaq_reader.sampling_rate = self.spinBox_samplingRate.value()
         self.nidaq_reader.num_samples_per_chan = self.spinBox_samplesPerChannel.value()
         self.nidaq_reader.iterations = self.spinBox_iterations.value()
+
+
+    def onClick_computeAlpha(self):
+        transmission = self.doubleSpinBox_II0.value()
+        refr_index_material = self.doubleSpinBox_refrIndexMaterial.value()
+        refr_index_ambient = self.doubleSpinBox_refrIndexAmbient.value()
+        geom_length = self.doubleSpinBox_geomSampleLength.value()  # given in mm
+
+        transmission_glass_air = 1 - ((refr_index_ambient-1)/(refr_index_ambient+1))**2
+        transmission_ambient_material = 1 - ((refr_index_ambient-refr_index_material)/(refr_index_ambient+refr_index_material))**2
+        expected_transmission = transmission_ambient_material * transmission_glass_air
+
+        # the transmission through the medium (after being corrected by Fresnel transmission)
+        transmission_medium = transmission / expected_transmission
+
+        alpha = -np.log(transmission_medium) / geom_length  # in 1/mm
+
+        self.lineEdit_alphaValue.setText("{0:.3f}".format(alpha))  # automatically causes signal textChanged to be emitted.
+
 
 
     def onClick_calibratePhotodiodes(self):

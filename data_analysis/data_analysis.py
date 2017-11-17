@@ -19,7 +19,7 @@ CONSTANTS_calib_photodiode_pulse_energy = np.array([16.9274, 0.0212]) * 1e-6 / 1
 CONSTANTS_guess_OA = [22,1]  # second entry: dΨ
 CONSTANTS_guess_CA = [22,1]  # second entry: dΦ
 
-CONSTANTS_tolerance_z0 = 1.5  # absolute tolerance of beam waist position from z=22mm in mm
+CONSTANTS_tolerance_z0 = 5.5  # absolute tolerance of beam waist position from z=22mm in mm
 CONSTANTS_pulse_length_FWHM = 15e-12  # laser pulse length in seconds
 
 # I don't know why, but the fits are much better if I introduce a correction factor for the
@@ -136,8 +136,11 @@ class zScanDataAnalyser:
         self.fit_z0 = None    # fitted results
         self.fit_dΨ = None
         self.fit_dΦ = None
+        self.fit_z0_CA_OA = None  # fit results from a CA normalised wrt OA fit
+        self.fit_dΦ_CA_OA = None
 
         self._n2 = None   # in units of cm^2/W.
+        self._n2_CA_OA = None  # in units of cm^2/W.
 
 
     @property
@@ -371,18 +374,18 @@ class zScanDataAnalyser:
 
         eff_pulse_energy = self.effective_pulse_energy()
         
-        header = "Date of measurement: " + time + "\n" + \
-                 "Sample material: " + self.sample_material + "\n" + \
-                 "Solvent: " + self.solvent + "\n" + \
-                 "Concentration: {0:.2f}mmol/l\n".format(self.concentration) + \
-                 "Laser rep. rate: " + str(self.laser_rep_rate) + "Hz\n" + \
-                 "Pulse energy: = ({0:.3f} +- {1:.3f})µJ\n".format(self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
-                 "Eff. pulse energy = ({0:.3f} +- {1:.3f})µJ\n".format(eff_pulse_energy[0]*1e6, eff_pulse_energy[1]*1e6) + \
-                 "Aperture transm. S = {0:.3f} +- {1:.3f}\n".format(self.S[0], self.S[1]) + \
-                 "Further notes: " + self.furtherNotes + "\n" + \
-                 "Used linear refractive index: {0:.3f}\n".format(self.refr_index_material) + \
+        header = "Date of measurement:     " + time + "\n" + \
+                 "Sample material:         " + self.sample_material + "\n" + \
+                 "Solvent:                 " + self.solvent + "\n" + \
+                 "Concentration:            {0:.2f}mmol/l\n".format(self.concentration) + \
+                 "Laser rep. rate:         " + str(self.laser_rep_rate) + "Hz\n" + \
+                 "Pulse energy:             ({0:.3f} +- {1:.3f})µJ\n".format(self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
+                 "Eff. pulse energy:        ({0:.3f} +- {1:.3f})µJ\n".format(eff_pulse_energy[0]*1e6, eff_pulse_energy[1]*1e6) + \
+                 "Aperture transm. S:       {0:.3f} +- {1:.3f}\n".format(self.S[0], self.S[1]) + \
+                 "Further notes:           " + self.furtherNotes + "\n" + \
+                 "Linear refractive index:  {0:.3f}\n".format(self.refr_index_material) + \
                  "Ambient refractive index: {0:.3f}\n".format(self.refr_index_ambient) + \
-                 "Used alpha: {0:.3f} mm^-1\n".format(self.alpha) + \
+                 "alpha:                    {0:.3f} mm^-1\n".format(self.alpha) + \
                  "\n" + \
                  "Position / mm    T_OA    deltaT_OA    T_CA    deltaT_CA"
         
@@ -402,7 +405,7 @@ class zScanDataAnalyser:
 
     def fit_transmission_data(self):
 
-        def fit_OA_transmission(T_OA, T_CA, zR):
+        def fit_OA_transmission(T_OA, zR):
             T_OA_fitfunc = lambda z, z0, dΨ: T_OA_func(z, z0, zR, dΨ)
             guess_OA = CONSTANTS_guess_OA
 
@@ -416,7 +419,7 @@ class zScanDataAnalyser:
             return fit_z0, fit_dΨ
 
             
-        def fit_CA_transmission(T_OA, T_CA, z0, zR, dΨ):
+        def fit_CA_transmission(T_CA, z0, zR, dΨ):
             T_CA_fitfunc = lambda z, dΦ: T_CA_func(z, z0, zR, dΦ, dΨ)
 
             fit_CA, cov_CA = curve_fit(T_CA_fitfunc, T_CA[:,0], T_CA[:,1], sigma=T_CA[:,2])
@@ -426,7 +429,8 @@ class zScanDataAnalyser:
             
             return fit_dΦ
 
-        def fit_CA_transmission_only(T_OA, T_CA, zR):
+
+        def fit_CA_transmission_only(T_CA, zR):
             T_CA_fitfunc = lambda z, z0, dΦ: T_CA_func(z, z0, zR, dΦ, 0)-T_OA_func(z, z0, zR, 0)+1
             guess_CA = CONSTANTS_guess_CA
 
@@ -440,12 +444,13 @@ class zScanDataAnalyser:
             return fit_z0, fit_dΦ
 
 
+
         assert self.T_OA is not None and self.T_CA is not None
 
 
         # firstly, fit T_OA and use self.zR (Rayleigh length in vacuum)
         try:
-            fit_z0, fit_dΨ = fit_OA_transmission(self.T_OA, self.T_CA, self.zR)
+            fit_z0, fit_dΨ = fit_OA_transmission(self.T_OA, self.zR)
             # The waist should be close to z=22mm
             assert np.abs(fit_z0[0]-22) < CONSTANTS_tolerance_z0
             assert np.abs(fit_z0[1]/fit_z0[0]) < 1
@@ -462,7 +467,7 @@ class zScanDataAnalyser:
             self.fit_dΨ = np.array([0,0])
 
             try:
-                fit_z0, fit_dΦ = fit_CA_transmission_only(self.T_OA, self.T_CA, self.zR)
+                fit_z0, fit_dΦ = fit_CA_transmission_only(self.T_CA, self.zR)
                 # The waist should be close to z=22mm
                 assert np.abs(fit_z0[0]-22) < CONSTANTS_tolerance_z0
                 assert np.abs(fit_z0[1]/fit_z0[0]) < 1
@@ -470,7 +475,7 @@ class zScanDataAnalyser:
 
                 self.fit_z0 = fit_z0
                 self.fit_dΦ = fit_dΦ
-                self.compute_n2(self.fit_dΦ)
+                self._n2 = self.compute_n2(self.fit_dΦ)
 
                 return None
 
@@ -487,11 +492,11 @@ class zScanDataAnalyser:
 
         # now, fit T_CA using the data from the fit of T_OA
         try:
-            fit_dΦ = fit_CA_transmission(self.T_OA, self.T_CA, fit_z0[0], self.zR, fit_dΨ[0])
+            fit_dΦ = fit_CA_transmission(self.T_CA, fit_z0[0], self.zR, fit_dΨ[0])
             assert np.abs(fit_dΦ[1]/fit_dΦ[0]) < 1
 
             self.fit_dΦ = fit_dΦ
-            self.compute_n2(self.fit_dΦ)
+            self._n2 = self.compute_n2(self.fit_dΦ)
 
         except Exception as ex:
             print("Fit of closed aperture data failed.")
@@ -502,12 +507,60 @@ class zScanDataAnalyser:
         return None
 
 
+
+    def fitting_ca_normalised_wrt_oa(self):
+        """ Fit closed aperture data normalised with respect to the open aperture data.
+        """
+        def fit_CA_normalised_wrt_oa(T_CA_OA, zR):
+            T_CA_OA_fitfunc = lambda z, z0, dΦ: T_CA_func(z, z0, zR, dΦ, 0)-T_OA_func(z, z0, zR, 0)+1
+            guess_CA_OA = CONSTANTS_guess_CA
+
+            fit_CA_OA, cov_CA_OA = curve_fit(
+                T_CA_OA_fitfunc, T_CA_OA[:,0], T_CA_OA[:,1], sigma=T_CA_OA[:,2], p0=guess_CA_OA)
+            std_err_CA_OA = np.sqrt(np.diag(cov_CA_OA))
+
+            fit_z0 = np.array([fit_CA_OA[0], std_err_CA_OA[0]])
+            fit_dΦ = np.array([fit_CA_OA[1], std_err_CA_OA[1]])
+
+            return fit_z0, fit_dΦ
+
+
+
+        assert self.T_OA is not None and self.T_CA is not None
+
+        T_OA = self.T_OA
+        T_CA = self.T_CA
+
+        T_CA_OA = np.empty(shape=(self.tot_num_of_pos, 3))
+        T_CA_OA[:,0] = T_CA[:,0]
+        T_CA_OA[:,1] = T_CA[:,1] / T_OA[:,1]
+        T_CA_OA[:,2] = np.sqrt( (T_CA[:,2]/T_OA[:,1])**2 + (T_CA[:,1]*T_OA[:,2] / T_OA[:,2]**2)**2 )
+
+        try:
+            fit_z0, fit_dΦ = fit_CA_OA_transmission(T_OA, self.zR)
+            assert np.abs(fit_z0[0]-22) < CONSTANTS_tolerance_z0
+            assert np.abs(fit_z0[1]/fit_z0[0]) < 1
+            assert np.abs(fit_dΦ[1]/fit_dΦ[0]) < 1
+
+            self.fit_z0_CA_OA = fit_z0
+            self.fit_dΦ_CA_OA = fit_dΦ
+            self._n2_CA_OA = self.compute_n2(fit_dΦ_CA_OA)
+
+        except Exception as ex:
+            print("Fit of closed aperture data normalised wrt open aperture data failed.")
+            traceback.print_exc()
+            print("\n")
+            self.fit_z0_CA_OA = None
+            self.fit_dΦ_CA_OA = None
+
+
+
     def compute_n2(self, dΦ):
         """
         Input:
         dΦ: 1-dim numpy array of length 2, first entry being the fitted dΦ, second entry its error.
 
-        Output (OnlyS in place replacement):
+        Output:
         n2: 1-dim numpy array of length 2, first entry being n2, second its error, both 
         in units of 1e-16 cm^2/W.
         """
@@ -517,10 +570,12 @@ class zScanDataAnalyser:
         
         eff_pulse_energy = self.effective_pulse_energy()
 
-        alpha = self.alpha + 1e-15
 
-        eff_length = (1-np.exp(-alpha * self.geom_length)) / alpha  # all in mm
-        eff_length *= 1e-3  # in m
+        if alpha == 0.:
+            eff_length = self.geom_length * 1e-3  # in m
+        else:
+            eff_length = (1-np.exp(-self.alpha * self.geom_length)) / self.alpha  # all in mm
+            eff_length *= 1e-3  # in m
 
 
         P0 = np.array([eff_pulse_energy[0], eff_pulse_energy[1]]) / pulse_length
@@ -532,7 +587,7 @@ class zScanDataAnalyser:
         
         n2 = dΦ[0] / (k*I0[0]*eff_length)
         dn2 = np.sqrt( (dΦ[1] / (k*I0[0]*eff_length))**2 + (dΦ[0]*I0[1] / (k*I0[0]*eff_length)**2)**2)
-        self._n2 = np.array([n2, dn2]) * 1e4 # in units of cm^2/W
+        return np.array([n2, dn2]) * 1e4 # in units of cm^2/W
 
 
     def store_fit_results(self):
@@ -561,6 +616,30 @@ class zScanDataAnalyser:
         else:
             line2 = "dPhi: Could not be fitted, hence n2 could not be computed."
 
+
+
+        line3 = "\nResults from a CA/OA fit:"
+
+        if self.fit_z0_CA_OA is not None and self.fit_dΦ_CA_OA is not None:
+            line4 = "z0: ({0:.3f} +- {1:.3f})mm".format(self.fit_z0_CA_OA[0], self.fit_z0_CA_OA[1])
+            line5 = "dPhi: ({0:.3f} +- {1:.3f})\n".format(self.fit_dΦ_CA_OA[0], self.fit_dΦ_CA_OA[1])
+
+            try:
+                n2_exp = self.get_power_of_ten(self._n2_CA_OA[0])
+
+                line5 += "\nn2 = ({0:.2f} +- {1:.2f})e{2} cm^2/W".format(
+                    self._n2[0]/10**n2_exp, self._n2[1]/10**n2_exp, n2_exp)
+            except Exception as ex:
+                print("Problem finding power of ten of n2.")
+                traceback.print_exc()
+                line5 += "\nFinding the power of ten of n2 raised an exception."
+
+        else:
+            line4 = "z0: Could not be fitted."
+            line5 = "dPhi: Could not be fitted, hence n2 could not be computed."
+
+
+
         now = datetime.datetime.today()
         time = "{0:4d}.{1:02d}.{2:02d}  {3:02d}:{4:02d}".format(
             now.year, now.month, now.day, now.hour, now.minute)
@@ -573,7 +652,7 @@ class zScanDataAnalyser:
 
             fhandle = open(file, 'w')
             fhandle.write(header)
-            fhandle.write(line0 + "\n" + line1 + "\n" + line2 + "\n")
+            fhandle.write(line0 + "\n" + line1 + "\n" + line2 + "\n" + line3 + "\n" + line4 + "\n" + line5)
 
         except Exception as ex:
             print("Storage of fit results file failed!!!!")
@@ -590,6 +669,11 @@ class zScanDataAnalyser:
 
         T_OA = self.T_OA
         T_CA = self.T_CA
+        T_CA_OA = np.empty(shape=(self.tot_num_of_pos, 3))
+        T_CA_OA[:,0] = T_CA[:,0]
+        T_CA_OA[:,1] = T_CA[:,1] / T_OA[:,1]
+        T_CA_OA[:,2] = np.sqrt( (T_CA[:,2]/T_OA[:,1])**2 + (T_CA[:,1]*T_OA[:,2] / T_OA[:,2]**2)**2 )
+
 
         eff_pulse_energy = self.effective_pulse_energy()
 
@@ -644,6 +728,62 @@ class zScanDataAnalyser:
             print("\n")
 
         plt.show()
+
+
+
+
+        plt.figure(figsize=(8.5, 5.5))
+        plt.errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", color="red", alpha=0.8, label="OA")
+        plt.errorbar(T_CA_OA[:,0], T_CA_OA[:,1], yerr=T_CA_OA[:,2], linestyle="", marker="x", color="orange", alpha=0.8, label="CA/OA")
+
+        # Plot the fit functions if fit parameters exist
+        if self.fit_z0 is not None and self.fit_dΨ is not None and self.fit_dΦ is not None:
+            pos_vals = np.linspace(T_OA[0,0]-.5, T_OA[-1,0]+.5, 200)
+            T_OA_vals = T_OA_func(pos_vals, self.fit_z0[0], self.zR, self.fit_dΨ[0])
+            T_CA_OA_vals = T_CA_func(pos_vals, self.fit_z0[0], self.zR, self.fit_dΦ[0], self.fit_dΨ[0])
+            
+            plt.plot(pos_vals, T_OA_vals, color="red")
+            plt.plot(pos_vals, T_CA_OA_vals, color="orange")
+
+        properties = "Sample: " + self.sample_material + \
+            ",     Solvent: " + self.solvent + \
+            ",     Concentration = {0:.2f}mmol/l".format(self.concentration) + "\n" + \
+            r"$E_{Pulse, eff}$" + " = ({0:.3f} $\pm$ {1:.3f})µJ".format(eff_pulse_energy[0]*1e6, eff_pulse_energy[1]*1e6) + \
+            r",     $f_{Laser}$" + " = {0}Hz".format(self.laser_rep_rate) + \
+            ",     S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
+
+        if self._furtherNotes != "---": #default value
+            properties += "\nFurther notes: " + self._furtherNotes
+
+        if self._n2_CA_OA is not None:
+            try:
+                n2_exp = self.get_power_of_ten(self._n2_CA_OA[0])
+                n2string = "$n_2$ = ({0:.2f} $\pm$ {1:.2f})e{2} cm$^2$/W".format(
+                                self._n2_CA_OA[0]/10**n2_exp, self._n2_CA_OA[1]/10**n2_exp, n2_exp)
+
+                properties += "\n" + n2string
+
+            except Exception as ex:
+                print("Problem finding the power of ten of n2")
+                traceback.print_exc()
+
+        plt.title(properties, fontsize=9)
+        plt.xlabel("z / mm")
+        plt.ylabel("Transmission")
+        plt.legend()
+        plt.grid()
+
+        try:
+            self.check_and_create_folder()
+            file = os.path.join(self.folder, "plot_{0:02}_CAOA.pdf".format(self._folder_num))
+            plt.savefig(file, dpi=600)
+        except Exception as ex:
+            print("Storage of plot CAOA failed!!!!")
+            traceback.print_exc()
+            print("\n")
+
+        plt.show()
+
 
 
     def evaluate_measurement_and_reinitialise(self, want_fit):
