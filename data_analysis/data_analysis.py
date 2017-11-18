@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 CONSTANTS_beam_waist = 19.0537e-6  # m waist of incident beam in vacuum
 CONSTANTS_wavelength = 532e-9      # m in vacuum
 
-# Calibration of reference photodiode signal into pulse energy in J/V
+# Calibration of reference photodiode signal into pulse energy in J/V (due to factor of 1e-6)
 # Factor of 1/100 because the calibration factor was measured with an OD2 neutral density filter in
 # front of the reference photodiode.
 CONSTANTS_calib_photodiode_pulse_energy = np.array([16.9274, 0.0212]) * 1e-6 / 100
@@ -107,19 +107,19 @@ class zScanDataAnalyser:
         self.S = None                         # Transmission of aperture
         self.combined_c_CA = None             # S*c_CA
 
-        self._tot_num_of_pos = tot_num_of_pos  # The total number of measurement stage positions.
+        self.tot_num_of_pos = tot_num_of_pos  # The total number of measurement stage positions.
         self.current_position_step = 0     # Integer indicating next empty transmission array entry.
 
         self.T_OA = np.zeros(shape=(self.tot_num_of_pos, 3))  # transmission in open aperture path.
         self.T_CA = np.zeros(shape=(self.tot_num_of_pos, 3))  # transmission in closed aperture path.
 
-        self._sample_material = sample_material
-        self._solvent = solvent
-        self._concentration = concentration
-        self._laser_rep_rate = laser_rep_rate
-        self._furtherNotes = furtherNotes
-        self._folder = None
-        self._folder_number = None  # number suffix of the folder's name
+        self.sample_material = sample_material
+        self.solvent = solvent
+        self.concentration = concentration
+        self.laser_rep_rate = laser_rep_rate
+        self.furtherNotes = furtherNotes
+        self.folder = None
+        self.folder_num = None  # number suffix of the folder's name
         self._define_folder()
         self.refr_index_material = refr_index_mat
         self.refr_index_ambient = refr_index_amb
@@ -128,8 +128,8 @@ class zScanDataAnalyser:
 
         self.pulse_energy = None  # in J
 
-        self._w0 = CONSTANTS_beam_waist  # m waist of incident beam in vacuum
-        self._λ = CONSTANTS_wavelength   # m in vacuum
+        self.w0 = CONSTANTS_beam_waist  # m waist of incident beam in vacuum
+        self.λ = CONSTANTS_wavelength   # m in vacuum
         # mm Rayleigh length in vacuum
         self.zR = np.pi * self.w0**2 / self.λ * 1e3 * CONSTANTS_rayleigh_length_correction_factor
 
@@ -170,30 +170,6 @@ class zScanDataAnalyser:
     def solvent(self, value):
         self._solvent = value
         self._define_folder()
-
-    @property
-    def concentration(self):
-        return self._concentration
-
-    @concentration.setter
-    def concentration(self, value):
-        self._concentration = value
-
-    @property
-    def laser_rep_rate(self):
-        return self._laser_rep_rate
-
-    @laser_rep_rate.setter
-    def laser_rep_rate(self, value):
-        self._laser_rep_rate = value
-
-    @property
-    def furtherNotes(self):
-        return self._furtherNotes
-
-    @furtherNotes.setter
-    def furtherNotes(self, value):
-        self._furtherNotes = value
 
     @property
     def w0(self):
@@ -354,7 +330,7 @@ class zScanDataAnalyser:
 
             if not os.path.exists(folder):
                 self.folder = folder
-                self._folder_num = i
+                self.folder_num = i
                 break
 
 
@@ -366,7 +342,7 @@ class zScanDataAnalyser:
     def store_transmission_data(self):
         """ Stores the transmission data in self.T_CA and self.T_OA into a file.
         """
-        assert self.S is not None and self._folder_num is not None
+        assert self.S is not None and self.folder_num is not None
 
         now = datetime.datetime.today()
         time = "{0:02d}.{1:02d}.{2:4d}  {3:02d}:{4:02d}".format(
@@ -395,7 +371,7 @@ class zScanDataAnalyser:
 
         try:
             self.check_and_create_folder()
-            file = os.path.join(self.folder, "transmission_data_{0:02}.dat".format(self._folder_num))
+            file = os.path.join(self.folder, "transmission_data_{0:02}.dat".format(self.folder_num))
             np.savetxt(file, transmission_array, header=header, fmt="%10.4f")
         except Exception as ex:
             print("Storage of transmission data failed!!!!")
@@ -653,7 +629,7 @@ class zScanDataAnalyser:
 
         try:
             self.check_and_create_folder()
-            file = os.path.join(self.folder, "fit_results_{0:02}.dat".format(self._folder_num))
+            file = os.path.join(self.folder, "fit_results_{0:02}.dat".format(self.folder_num))
 
             fhandle = open(file, 'w')
             fhandle.write(header)
@@ -702,8 +678,8 @@ class zScanDataAnalyser:
             r",     $f_{Laser}$" + " = {0}Hz".format(self.laser_rep_rate) + \
             ",     S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
 
-        if self._furtherNotes != "---": #default value
-            properties += "\nFurther notes: " + self._furtherNotes
+        if self.furtherNotes != "---": #default value
+            properties += "\nFurther notes: " + self.furtherNotes
 
         if self._n2 is not None:
             try:
@@ -725,7 +701,7 @@ class zScanDataAnalyser:
 
         try:
             self.check_and_create_folder()
-            file = os.path.join(self.folder, "plot_{0:02}.pdf".format(self._folder_num))
+            file = os.path.join(self.folder, "plot_{0:02}.pdf".format(self.folder_num))
             plt.savefig(file, dpi=600)
         except Exception as ex:
             print("Storage of plot failed!!!!")
@@ -768,8 +744,8 @@ class zScanDataAnalyser:
             r",     $f_{Laser}$" + " = {0}Hz".format(self.laser_rep_rate) + \
             ",     S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
 
-        if self._furtherNotes != "---": #default value
-            properties += "\nFurther notes: " + self._furtherNotes
+        if self.furtherNotes != "---": #default value
+            properties += "\nFurther notes: " + self.furtherNotes
 
         if self._n2_CA_OA is not None:
             try:
@@ -791,7 +767,7 @@ class zScanDataAnalyser:
 
         try:
             self.check_and_create_folder()
-            file = os.path.join(self.folder, "plot_{0:02}_CAOA.pdf".format(self._folder_num))
+            file = os.path.join(self.folder, "plot_{0:02}_CAOA.pdf".format(self.folder_num))
             plt.savefig(file, dpi=600)
         except Exception as ex:
             print("Storage of plot CAOA failed!!!!")

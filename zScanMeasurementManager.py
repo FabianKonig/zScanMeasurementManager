@@ -10,27 +10,31 @@ from math import isclose
 
 # TODO:
 # -----------------------------------
+# - When changing the geometrical length, the effective length must be changed as well in GUI.          DONE. Check it!
 # - Condensates of Light Anmeldung.
-# - Allow more decimal digits in I/I0 field in GUI.
-# - When changing the geometrical length, the effective length must be changed as well in GUI
+# - Get in touch with Julian.
+# - Displacements of the aperture have some (minimal) effects. Try to centre the aperture. For that,
+#   close it to a tiny spot, then move it and maximise the tranmsitted power by observing the
+#   photodiode signal on the oscilloscope. Do it with a medium inside. Use a zero-aperture aperture
+#   that can be moved with screws.
 
-# - Make more measurements with Rhodamine with low power and high power and also with different repetition rates.
+# - Überarbeite das ganze Programm, insbesondere das Fitten.
+
 # - Try to fit Julians "5.dat" measurement of RH6G in Ethylenglykol with both curves separately.
-#   Do I obtain identical (at least similar) results?
+# - Wie sehen Julians Messwerte zu ZnSe aus? Versuche sie zu fitten, um zu sehen, ob sie wirklich
+#   den Kurven entsprechen.
+
 # - Make a measurement with ZnSe and Rhodamine-Ethylenglykol and water.
 # - With those measurements, make sure the behaviour of Nitrobenzole is not due to alignment, but
 #   really only due to Nitrobenzole itself.
 # - What if you decrease the time the sample is exposed to radiation? Does the Rayleigh length decrease?
 #   Then it might be a thermal effect!
-# 
-# - Read the paper sent by Martin!
-#
+
 # - A fit function to convert the reference photodiode signal to the input pulse energy is necessary.
 #   It should also take the pulse repetition rate into account! For high pulse rep rates, the photo
 #   diode signals increase, however, the power actually decreases! Make this calibration measurement!
 #   A change of the pulse rep rate should erase pulse energy label that might have been measured
 #   before changing the pulse rep rate.
-# - The absorption (alpha coefficient) measurement should be taken care of.                             DONE. Check it.
 # - When the measurement is started, the measurement parameters section should be disabled.
 #   At the moment no problem as the GUI freezes anyway.
 # - Take care of multithreading.
@@ -82,6 +86,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.spinBox_numPositions.valueChanged.connect(self.onNotesChange)
         self.lineEdit_furtherNotes.textChanged.connect(self.onNotesChange)
         self.doubleSpinBox_geomSampleLength.valueChanged.connect(self.onNotesChange)
+        self.doubleSpinBox_geomSampleLength.valueChanged.connect(self.onGeomLengthChange)
 
         self.spinBox_samplingRate.valueChanged.connect(self.onNidaqParamsChange)
         self.spinBox_samplesPerChannel.valueChanged.connect(self.onNidaqParamsChange)
@@ -107,6 +112,13 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.nidaq_reader.sampling_rate = self.spinBox_samplingRate.value()
         self.nidaq_reader.num_samples_per_chan = self.spinBox_samplesPerChannel.value()
         self.nidaq_reader.iterations = self.spinBox_iterations.value()
+
+
+    def onGeomLengthChange(self):
+        self.label_effLengthValue.setText("{0:.3f}".format(self.doubleSpinBox_geomSampleLength.value()))
+        self.doubleSpinBox_II0.setValue(1.)
+        self.label_alphaValue.setText("{0:.3f}".format(0.))
+        self.data_analyser.alpha = 0.
 
 
     def onClick_computeAlpha(self):
