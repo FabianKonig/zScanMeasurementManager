@@ -61,7 +61,8 @@ class zScanDataProcessor:
 
     def __init__(self):
         """ Class to extract calibration factors and transmissions from the photodiode signals.
-            The first two functions to be called must be:
+            Prior to invoking the function "extract_oa_ca_transmissions", these functions need be
+            called:
                 1. extract_calibration_factors
                 2. extract_aperture_transmission (in this order)
             Only then is it sensible to call the function "extract_oa_ca_transmissions".
@@ -260,7 +261,7 @@ class zScanDataProcessor:
             geom_length         float, geometrical length of the sample in m
 
             Output:
-            alpha   float
+            alpha   float, in 1/m
         """
 
         # transmission at each boundary:
@@ -278,7 +279,7 @@ class zScanDataProcessor:
             print("alpha would be negative. It is being set to zero manually.")
             transmission_medium = 1
 
-        alpha = -np.log(transmission_medium) / geom_length *1e-3 # in 1/m
+        alpha = -np.log(transmission_medium) / geom_length  # in 1/m
         return alpha
 
 

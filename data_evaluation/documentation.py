@@ -7,24 +7,28 @@ class Documentation:
         refr_index_sample, refr_index_ambient, alpha, geom_sample_length, eff_sample_length,
         pulse_energy, eff_pulse_energy, S):
         
-        self.sample = sample
-        self.solvent = solvent
-        self.concentration = concentration              # in mol/l
-        self.laser_rep_rate = laser_rep_rate            # in Hz
-        self.furtherNotes = furtherNotes
-        self.refr_index_sample = refr_index_sample
-        self.refr_index_ambient = refr_index_ambient
-        self.alpha = alpha                              # in 1/m
-        self.geom_sample_length = geom_sample_length    # in m
-        self.eff_sample_length = eff_sample_length      # in m
+        self.sample = sample                            # string
+        self.solvent = solvent                          # string
+        self.concentration = concentration              # string
+        self.laser_rep_rate = laser_rep_rate            # in Hz, float
+        self.furtherNotes = furtherNotes                # string
+        self.refr_index_sample = refr_index_sample      # float
+        self.refr_index_ambient = refr_index_ambient    # float
+        self.alpha = alpha                              # in 1/m, float
+        self.geom_sample_length = geom_sample_length    # in m, float
+        self.eff_sample_length = eff_sample_length      # in m, float
 
-        self.pulse_energy = pulse_energy                # in J
-        self.eff_pulse_energy = eff_pulse_energy        # in J
-        self.S = S
+        self.pulse_energy = pulse_energy                # in J, 1-dim np.array
+        self.eff_pulse_energy = eff_pulse_energy        # in J, 1-dim np.array
+        self.S = S                                      # aperture transmission, 1-dim np.array
 
-        self.folder = None
-        self.folder_num = None                          # number suffix of folder name
+        self.folder = None                              # string
+        self.folder_num = None                          # integer number suffix of folder name
         self.define_folder()
+
+    @staticmethod
+    def empty(self):
+        self.__init__(None, None, None, None, None, None, None, None, None, None, None, None, None)
 
 
     @property
@@ -32,7 +36,7 @@ class Documentation:
         return self._sample
  
 
-    @sample_material.setter
+    @sample.setter
     def sample(self, value):
         self._sample = value
         self.define_folder()
@@ -85,7 +89,7 @@ class Documentation:
         header = "Date of measurement:      " + time + "\n" + \
                  "Sample:                   " + self.sample + "\n" + \
                  "Solvent:                  " + self.solvent + "\n" + \
-                 "Concentration:            {0:.2f}mmol/l\n".format(self.concentration*1e-3) + \
+                 "Concentration:            " + self.concentration + "\n" + \
                  "Laser rep. rate:          {0}Hz\n".format(self.laser_rep_rate) + \
                  "Further notes:            " + furtherNotes + "\n" + \
                  "Pulse energy:             ({0:.3f} +- {1:.3f})µJ\n".format(self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
@@ -100,3 +104,21 @@ class Documentation:
                  "Position / mm    T_OA    deltaT_OA    T_CA    deltaT_CA"
 
         return header
+
+
+    def assert_completeness(self):
+        assert self.sample is not None
+        assert self.solvent is not None
+        assert self.concentration is not None
+        assert self.laser_rep_rate is not None
+        assert self.furtherNotes is not None
+        assert self.refr_index_sample is not None
+        assert self.refr_index_ambient is not None
+        assert self.alpha is not None
+        assert self.geom_sample_length is not None
+        assert self.eff_sample_length is not None
+        assert self.pulse_energy is not None
+        assert self.eff_pulse_energy is not None
+        assert self.S is not None
+        assert self.folder is not None
+        assert self.folder_num is not None

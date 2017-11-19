@@ -10,7 +10,6 @@ from math import isclose
 
 # TODO:
 # -----------------------------------
-# - When changing the geometrical length, the effective length must be changed as well in GUI.          DONE. Check it!
 # - Condensates of Light Anmeldung.
 # - Get in touch with Julian.
 # - Displacements of the aperture have some (minimal) effects. Try to centre the aperture. For that,
@@ -46,6 +45,8 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.setupUi(self)    # call setupUI of gui_design.Ui_MainWindow (generated with QtDesigner)
         self.defineSignalsSlots()
 
+        self.documentation = data.data_evaluation.Documentation.empty()
+        self.compile_documentation()
 
         self.data_processor = data_evaluation.zScanDataProcessor()
 
@@ -61,20 +62,39 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.stage_controller = stage_control.APT_Controller()
 
 
-
     def defineSignalsSlots(self):
         self.pushButton_computeAlpha.clicked.connect(self.onClick_computeAlpha)
         self.pushButton_calibratePDs.clicked.connect(self.onClick_calibratePhotodiodes)
         self.pushButton_measureAperture.clicked.connect(self.onClick_measureApertureTransmission)
         self.pushButton_startMeasurement.clicked.connect(self.onClick_startMeasurement)
 
+        self.lineEdit_sample.textChanged.connect(self.compile_documentation())
+        self.lineEdit_solvent.textChanged.connect(self.compile_documentation())
+        self.lineEdit_concentration.textChanged.connect(self.compile_documentation())
+        self.spinBox_laserRepRate.valueChanged.connect(self.compile_documentation())
+        self.doubleSpinBox_geomSampleLength.valueChanged.connect(self.compile_documentation())
+        self.lineEdit_furtherNotes.textChanged.connect(self.compile_documentation())
+        self.doubleSpinBox_refrIndexSample.valueChanged.connect(self.compile_documentation())
+        self.doubleSpinBox_refrIndexAmbient.valueChanged.connect(self.compile_documentation())
+
         self.doubleSpinBox_geomSampleLength.valueChanged.connect(self.reinitAlphaAndEffLength)
-        self.doubleSpinBox_refrIndexMaterial.valueChanged.connect(self.reinitAlphaAndEffLength)
+        self.doubleSpinBox_refrIndexSample.valueChanged.connect(self.reinitAlphaAndEffLength)
         self.doubleSpinBox_refrIndexAmbient.valueChanged.connect(self.reinitAlphaAndEffLength)
 
         self.spinBox_samplingRate.valueChanged.connect(self.onNidaqParamsChange)
         self.spinBox_samplesPerChannel.valueChanged.connect(self.onNidaqParamsChange)
         self.spinBox_iterations.valueChanged.connect(self.onNidaqParamsChange)
+
+
+    def compile_documentation(self):
+        self.documentation.sample = self.lineEdit_sample.text()
+        self.documentation.solvent = self.lineEdit_solvent.text()
+        self.documentation.concentration = self.lineEdit_concentration.text()
+        self.documentation.laser_rep_rate = self.spinBox_laserRepRate.value()
+        self.documentation.geom_sample_length = self.doubleSpinBox_geomSampleLength.value()*1e-3
+        self.documentation.furtherNotes = self.lineEdit_furtherNotes.text()
+        self.documentation.refr_index_sample = self.doubleSpinBox_refrIndexSample.value()
+        self.documentation.refr_index_ambient = self.doubleSpinBox_refrIndexAmbient.value()
 
 
     def onNidaqParamsChange(self):
@@ -91,30 +111,40 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         """
         self.label_effLengthValue.setText("{0:.3f}".format(
             self.doubleSpinBox_geomSampleLength.value()))
+        self.documentation.eff_sample_length = self.doubleSpinBox_geomSampleLength.value()
+
         self.label_alphaValue.setText("{0:.3f}".format(0.))
+        self.documentation.alpha = 0
 
 
     def onClick_computeAlpha(self):
         transmission = self.doubleSpinBox_II0.value()
-        refr_index_sample = self.doubleSpinBox_refrIndexMaterial.value()
-        refr_index_ambient = self.doubleSpinBox_refrIndexAmbient.value()
-        geom_sample_length = self.doubleSpinBox_geomSampleLength.value()  # in mm
+        refr_index_sample = self.documentation.refr_index_sample
+        refr_index_ambient = self.documentation.refr_index_ambient
+        geom_sample_length = self.documentation.geom_sample_length  # in m
 
         alpha = self.data_processor.compute_alpha(transmission, refr_index_sample,
-            refr_index_ambient, geom_sample_length*1e-3)  # in 1/m
-
-        eff_length = self.data_processor.compute_effective_length(geom_sample_length,
-            alpha)  # in m
-
+            refr_index_ambient, geom_sample_length)  # in 1/m
+        self.documentation.alpha = alpha
         self.label_alphaValue.setText("{0:.3f}".format(alpha))  # in 1/m
-        self.label_effLengthValue.setText("{0:.3f}".format(eff_length * 1e3))  # in mm
+        
+        eff_sample_length = self.data_processor.compute_effective_length(geom_sample_length,
+            alpha)  # in m
+        self.documentation.eff_sample_length = eff_sample_length
+        self.label_effLengthValue.setText("{0:.3f}".format(eff_sample_length * 1e3))  # in mm
 
 
     def onClick_calibratePhotodiodes(self):
         signals = self.nidaq_reader.get_nidaq_measurement_max_values()
         pulse_energy = self.data_processor.extract_pulse_energy(
             signals[0] * self.doubleSpinBox_attenuationPdRef.value())
+        self.documentation.pulse_energy = pulse_energy
         self.label_pulseEnergyValue.setText("{0:.3f} +- {1:.3f}".format(*pulse_energy*1e6))
+
+        self.documentation.eff_pulse_energy = self.data_processor.compute_effective_pulse_energy(
+            pulse_energy,
+            self.documentation.refr_index_sample,
+            self.documentation.refr_index_ambient)
 
         calib_factors = list(self.data_processor.extract_calibration_factors(*signals))
         self.label_cOAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[0]))
@@ -130,8 +160,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
     def onClick_measureApertureTransmission(self):
         signals = self.nidaq_reader.get_nidaq_measurement_max_values()
 
-        s = list(self.data_processor.extract_aperture_transmission(signals[0], signals[2]))
-        self.labelApertureTransmittanceValue.setText("{0:.3f} +- {1:.3f}".format(*s))
+        S = self.data_processor.extract_aperture_transmission(signals[0], signals[2])
+        self.documentation.S = S
+        self.labelApertureTransmittanceValue.setText("{0:.3f} +- {1:.3f}".format(*list(S)))
 
         self.groupBox_Measurement.setEnabled(True)
 
@@ -151,6 +182,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             QtWidgets.QMessageBox.information(self, "Specify sample",
             "Please specify the sample under examination.")
             return None
+
+        # Assert that documentation is complete
+        self.documentation.assert_completeness()
 
         # abbreviation
         tot_num_of_pos = self.spinBox_numPositions.value()
@@ -184,30 +218,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
                                     self.stage_controller.combined_position
             self.data_processor.extract_oa_ca_transmissions(position_wrt_beam, *signals,
                 tot_num_of_pos)
-        
-
-        # Compile all information for documentation purposes
-        sample = self.lineEdit_sample.text()
-        solvent = self.lineEdit_solvent.text()
-        concentration = self.doubleSpinBox_concentration.value()
-        laser_rep_rate = self.spinBox_laserRepRate.value()
-        furtherNotes = self.lineEdit_furtherNotes.text()
-        refr_index_sample = self.doubleSpinBox_refrIndexSample.value()
-        refr_index_ambient = self.doubleSpinBox_refrIndexAmbient.value()
-        alpha = float(self.label_alphaValue.text()) * 1e3
-        geom_sample_length = self.doubleSpinBox_geomSampleLength.value()*1e-3
-        eff_sample_length = float(self.label_effSampleLengthValue.value())*1e-3
-        pulse_energy = float(label_pulseEnergyValue.text())
-        eff_pulse_energy = self.data_processor.compute_effective_pulse_energy(pulse_energy,
-            refr_index_sample, refr_index_ambient)
-        S = self.data_processor.S
-
-        documentation = data_evaluation.Documentation(sample, solvent, concentration,
-            laser_rep_rate, furtherNotes, refr_index_sample, refr_index_ambient, alpha,
-            geom_sample_length, eff_sample_length, pulse_energy, eff_pulse_energy, S)
 
 
-        self.data_processor.store_transmission_data(documentation)
+        self.data_processor.store_transmission_data(self.documentation)
         self.data_processor.reinitialise()
         self.stage_controller.initialise_stages()
 
