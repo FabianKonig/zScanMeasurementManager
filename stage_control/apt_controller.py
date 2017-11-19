@@ -178,6 +178,13 @@ class APT_Controller:
 
 
     def move_to_position(self, new_combined_position):
+        """ Moves the combined stages to a new combined_position. It does so by moving the first
+            stage. If new_combined_position is larger than the range of the first stage, the second
+            stage is moved as far as necessary. If the range of first and second stage is not large
+            enough, the third stage is moved and so on. The stages which are not necessary to reach
+            new_combined_position are moved to position zero.
+        """
+
         assert new_combined_position >= 0 and new_combined_position <= self.total_travel_distance
 
         other_stage_position = 0  # Already moved distance with prior stages
