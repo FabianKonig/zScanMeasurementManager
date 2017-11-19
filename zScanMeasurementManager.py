@@ -39,6 +39,14 @@ from math import isclose
 # - Take care of multithreading.
 
 
+
+
+# Constants:
+CONSTANTS_beam_waist = 19.0537e-6  # waist of incident beam in vacuum in m
+CONSTANTS_wavelength = 532e-9      # wavelength of incident beam in vacuum in m
+
+
+
 class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
     def __init__(self):
         super().__init__()    # call __init__ of QtWidgets.QMainWindow
@@ -95,6 +103,8 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.documentation.furtherNotes = self.lineEdit_furtherNotes.text()
         self.documentation.refr_index_sample = self.doubleSpinBox_refrIndexSample.value()
         self.documentation.refr_index_ambient = self.doubleSpinBox_refrIndexAmbient.value()
+        self.documentation.λ_vac = CONSTANTS_wavelength
+        self.documentation.w0 = CONSTANTS_beam_waist
 
 
     def onNidaqParamsChange(self):
@@ -220,7 +230,11 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
                 tot_num_of_pos)
 
 
-        self.data_processor.store_transmission_data(self.documentation)
+        storage_directory, folder_num = self.documentation.get_directory_for_storage()
+
+        data_file_header = self.documentation.get_data_file_header()
+        self.data_processor.store_transmission_data(storage_directory, folder_num, data_file_header)
+        
         self.data_processor.reinitialise()
         self.stage_controller.initialise_stages()
 

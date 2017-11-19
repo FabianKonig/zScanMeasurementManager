@@ -1,11 +1,16 @@
 import datetime
 import os
 
+
+CONSTANTS_beam_waist = 19.0537e-6  # waist of incident beam in vacuum in m
+CONSTANTS_wavelength = 532e-9      # wavelength of incident beam in vacuum in m
+
+
 class Documentation:
 
     def __init__(self, sample, solvent, concentration, laser_rep_rate, furtherNotes,
         refr_index_sample, refr_index_ambient, alpha, geom_sample_length, eff_sample_length,
-        pulse_energy, eff_pulse_energy, S):
+        pulse_energy, eff_pulse_energy, S, λ_vac, w0):
         
         self.sample = sample                            # string
         self.solvent = solvent                          # string
@@ -22,38 +27,40 @@ class Documentation:
         self.eff_pulse_energy = eff_pulse_energy        # in J, 1-dim np.array
         self.S = S                                      # aperture transmission, 1-dim np.array
 
-        self.folder = None                              # string
-        self.folder_num = None                          # integer number suffix of folder name
-        self.define_folder()
+        self.λ_vac = λ_vac                              # in m, float, vacuum wavelength of beam
+        self.w0 = w0                                    # in m, float, beam waist of incident beam
+        self.zR = np.pi*self.w0**2/self.λ_vac           # in m, float, Rayleigh length in vacuum
+
 
     @staticmethod
     def empty(self):
-        self.__init__(None, None, None, None, None, None, None, None, None, None, None, None, None)
+        self.__init__(None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None)
 
 
     @property
-    def sample(self):
-        return self._sample
+    def w0(self):
+        return self._w0
  
 
-    @sample.setter
-    def sample(self, value):
-        self._sample = value
-        self.define_folder()
- 
+    @w0.setter
+    def w0(self, value):
+        self._w0 = value
+        self.zR = np.pi*self.w0**2/self.λ_vac
+
 
     @property
-    def solvent(self):
-        return self._solvent
+    def λ_vac(self):
+        return self._λ_vac
  
 
-    @solvent.setter
-    def solvent(self, value):
-        self._solvent = value
-        self.define_folder()
+    @λ_vac.setter
+    def λ_vac(self, value):
+        self._λ_vac = value
+        self.zR = np.pi*self.w0**2/self.λ_vac
 
 
-    def define_folder(self):
+    def define_directory(self):
         now = datetime.date.today()
         today = "{0:4d}_{1:02d}_{2:02d}".format(now.year, now.month, now.day)
 
@@ -63,22 +70,25 @@ class Documentation:
         else:
             name = self.sample
             
-        folder0 = os.path.join('..', 'Measurements', today, name)
+        directory0 = os.path.join('..', 'Measurements', today, name)
 
         for i in range(1, 100):
-            folder = folder0 + "_{0:02}".format(i)
+            directory = directory0 + "_{0:02}".format(i)
 
-            if not os.path.exists(folder):
-                self.folder = folder
-                self.folder_num = i
+            if not os.path.exists(directory):
                 break
 
+        return directory, i
 
-    def get_folder_for_storage(self):
-        if not os.path.exists(self.folder):
-            os.makedirs(self.folder)
 
-        return self.folder, self.folder_num
+    def get_directory_for_storage(self):
+
+        directory, folder_num = self.define_directory()
+
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        return directory, folder_num
 
 
     def get_data_file_header(self):
@@ -100,6 +110,10 @@ class Documentation:
                  "alpha:                    {0:.3f} mm^-1\n".format(self.alpha*1e3) + \
                  "Geometric sample length:  {0:.3f}mm\n".format(self.geom_sample_length*1e3) + \
                  "Effective sample length:  {0:.3f}mm\n".format(self.eff_sample_length*1e3) + \
+                 "Wavelength vacuum:        {0:.3f}nm\n".format(self.λ_vac*1e9) + \
+                 "Beam waist:               {0:.3f}µm\n".format(self.w0*1e6) + \
+                 "Rayleigh length vacuum:   {0:.3f}mm\n".format(self.zR*1e3)
+                 "\n" + \
                  "\n" + \
                  "Position / mm    T_OA    deltaT_OA    T_CA    deltaT_CA"
 
@@ -120,5 +134,5 @@ class Documentation:
         assert self.pulse_energy is not None
         assert self.eff_pulse_energy is not None
         assert self.S is not None
-        assert self.folder is not None
-        assert self.folder_num is not None
+        assert self.λ_vac is not None
+        assert self.w0 is not None

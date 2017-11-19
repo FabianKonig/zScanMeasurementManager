@@ -152,24 +152,22 @@ class zScanDataProcessor:
         self.current_position_step += 1
 
 
-    def store_transmission_data(self, documentation):
+    def store_transmission_data(self, storage_dir, folder_num, data_file_header):
         """ Stores the transmission data self.T_CA and self.T_OA into a file.
 
             Input:
-            documentation   A Documentation instance storing all relevant information on this
-                            measurement. These information define the file header and the directory
-                            the transmission data file is stored in.
+            storage_dir         String specifying the directory to store the transmission data file.
+            folder_num          Integer specifiying the number suffix of the folder.
+            data_file_header    String to be written into the header of the transmission data file.
         """
 
         # assert that position entries in T_OA and T_CA are identical
         assert (self.T_OA[:,0] == self.T_CA[:,0]).all()
         transmission_array = np.concatenate((self.T_OA, self.T_CA[:,1:]), axis=1)
-        file_header = documentation.get_data_file_header()
 
         try:
-            folder, folder_num = documentation.get_folder_for_storage()
-            file = os.path.join(folder, "transmission_data_{0:02}.dat".format(folder_num))
-            np.savetxt(file, transmission_array, header=file_header, fmt="%10.4f")
+            file = os.path.join(storage_dir, "transmission_data_{0:02}.dat".format(folder_num))
+            np.savetxt(file, transmission_array, header=data_file_header, fmt="%10.4f")
         except Exception as ex:
             print("Storage of transmission data failed!!!!")
             traceback.print_exc()
