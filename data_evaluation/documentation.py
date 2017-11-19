@@ -81,7 +81,7 @@ class Documentation:
         return directory, i
 
 
-    def get_directory_for_storage(self):
+    def get_new_directory_for_storage(self):
 
         directory, folder_num = self.define_directory()
 
@@ -102,8 +102,10 @@ class Documentation:
                  "Concentration:            " + self.concentration + "\n" + \
                  "Laser rep. rate:          {0}Hz\n".format(self.laser_rep_rate) + \
                  "Further notes:            " + furtherNotes + "\n" + \
-                 "Pulse energy:             ({0:.3f} +- {1:.3f})µJ\n".format(self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
-                 "Eff. pulse energy:        ({0:.3f} +- {1:.3f})µJ\n".format(self.eff_pulse_energy[0]*1e6, self.eff_pulse_energy[1]*1e6) + \
+                 "Pulse energy:             ({0:.3f} +- {1:.3f})µJ\n".format(
+                    self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
+                 "Eff. pulse energy:        ({0:.3f} +- {1:.3f})µJ\n".format(
+                    self.eff_pulse_energy[0]*1e6, self.eff_pulse_energy[1]*1e6) + \
                  "Aperture transm. S:       {0:.3f} +- {1:.3f}\n".format(self.S[0], self.S[1]) + \
                  "Linear refractive index:  {0:.3f}\n".format(self.refr_index_sample) + \
                  "Ambient refractive index: {0:.3f}\n".format(self.refr_index_ambient) + \
@@ -116,6 +118,18 @@ class Documentation:
                  "\n" + \
                  "\n" + \
                  "Position / mm    T_OA    deltaT_OA    T_CA    deltaT_CA"
+
+        return header
+
+
+    def get_plot_header(self):
+        header = "Sample: " + self.sample + \
+                 ",     Solvent: " + self.solvent + \
+                 ",     Concentration = " + self.concentration + "\n" + \
+                 "$E_{Pulse}^{eff}$" + " = ({0:.3f} $\pm$ {1:.3f})µJ".format(
+                    self.eff_pulse_energy[0]*1e6, self.eff_pulse_energy[1]*1e6) + \
+                 ",     $f_{Laser}$" + " = {0}Hz".format(self.laser_rep_rate) + \
+                 ",     S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
 
         return header
 

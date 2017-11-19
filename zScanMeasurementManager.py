@@ -12,12 +12,11 @@ from math import isclose
 # -----------------------------------
 # - Condensates of Light Anmeldung.
 # - Get in touch with Julian.
+# - Schreibe Programm zu Ende. Basically plotten und von Datei parsen.
 # - Displacements of the aperture have some (minimal) effects. Try to centre the aperture. For that,
 #   close it to a tiny spot, then move it and maximise the tranmsitted power by observing the
 #   photodiode signal on the oscilloscope. Do it with a medium inside. Use a zero-aperture aperture
 #   that can be moved with screws.
-
-# - Überarbeite das ganze Programm, insbesondere das Fitten.
 
 # - Try to fit Julians "5.dat" measurement of RH6G in Ethylenglykol with both curves separately.
 # - Wie sehen Julians Messwerte zu ZnSe aus? Versuche sie zu fitten, um zu sehen, ob sie wirklich
@@ -230,7 +229,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
                 tot_num_of_pos)
 
 
-        storage_directory, folder_num = self.documentation.get_directory_for_storage()
+        storage_directory, folder_num = self.documentation.get_new_directory_for_storage()
 
         data_file_header = self.documentation.get_data_file_header()
         self.data_processor.store_transmission_data(storage_directory, folder_num, data_file_header)
