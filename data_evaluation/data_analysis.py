@@ -253,7 +253,7 @@ class zScanDataAnalyser:
         """ Stores all fit results into a file in the provided directory. """
 
         now = datetime.datetime.today()
-        time = "{0:02d}.{1:02d}.{3:4d}  {3:02d}:{4:02d}".format(
+        time = "{0:02d}.{1:02d}.{2:4d}  {3:02d}:{4:02d}".format(
             now.day, now.month, now.year, now.hour, now.minute)
         header = "Fit results\n---------------------\n" + time + "\n\n\n"
 
@@ -419,8 +419,14 @@ def get_power_of_ten(value):
     """ Finds the power of ten of value and returns it as an integer. The power of ten must be
         between 20 and -21!
     """
-    assert value < 1e21
-    assert value > 1e-21
+    try:
+        assert np.abs(value) < 1e21
+        assert np.abs(value) > 1e-21
+    except Exception as ex:
+        print("value is to large or to small for this function to find the power of ten!")
+        traceback.print_exc()
+        print("\n")
+        return 0
 
     for i in range(20,-22,-1):
         if np.abs(value) / 10**i >= 1:

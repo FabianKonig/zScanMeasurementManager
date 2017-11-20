@@ -11,8 +11,9 @@ from math import isclose
 # TODO:
 # -----------------------------------
 # - Condensates of Light Anmeldung.
+
 # - Get in touch with Julian.
-# - Schreibe Programm zu Ende. Basically plotten und von Datei parsen.
+# - Dateien müsses geparsed werden können.
 # - Displacements of the aperture have some (minimal) effects. Try to centre the aperture. For that,
 #   close it to a tiny spot, then move it and maximise the tranmsitted power by observing the
 #   photodiode signal on the oscilloscope. Do it with a medium inside. Use a zero-aperture aperture
@@ -52,7 +53,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.setupUi(self)    # call setupUI of gui_design.Ui_MainWindow (generated with QtDesigner)
         self.defineSignalsSlots()
 
-        self.doc = data.data_evaluation.Documentation.empty()
+        self.doc = data_evaluation.Documentation.empty(CONSTANTS_wavelength, CONSTANTS_beam_waist)
+        self.doc.alpha = 0  # initially
+        self.doc.eff_sample_length = self.doubleSpinBox_geomSampleLength.value()*1e-3
         self.compile_documentation()
 
         self.data_processor = data_evaluation.zScanDataProcessor()
@@ -75,14 +78,14 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.pushButton_measureAperture.clicked.connect(self.onClick_measureApertureTransmission)
         self.pushButton_startMeasurement.clicked.connect(self.onClick_startMeasurement)
 
-        self.lineEdit_sample.textChanged.connect(self.compile_documentation())
-        self.lineEdit_solvent.textChanged.connect(self.compile_documentation())
-        self.lineEdit_concentration.textChanged.connect(self.compile_documentation())
-        self.spinBox_laserRepRate.valueChanged.connect(self.compile_documentation())
-        self.doubleSpinBox_geomSampleLength.valueChanged.connect(self.compile_documentation())
-        self.lineEdit_furtherNotes.textChanged.connect(self.compile_documentation())
-        self.doubleSpinBox_refrIndexSample.valueChanged.connect(self.compile_documentation())
-        self.doubleSpinBox_refrIndexAmbient.valueChanged.connect(self.compile_documentation())
+        self.lineEdit_sample.textChanged.connect(self.compile_documentation)
+        self.lineEdit_solvent.textChanged.connect(self.compile_documentation)
+        self.lineEdit_concentration.textChanged.connect(self.compile_documentation)
+        self.spinBox_laserRepRate.valueChanged.connect(self.compile_documentation)
+        self.doubleSpinBox_geomSampleLength.valueChanged.connect(self.compile_documentation)
+        self.lineEdit_furtherNotes.textChanged.connect(self.compile_documentation)
+        self.doubleSpinBox_refrIndexSample.valueChanged.connect(self.compile_documentation)
+        self.doubleSpinBox_refrIndexAmbient.valueChanged.connect(self.compile_documentation)
 
         self.doubleSpinBox_geomSampleLength.valueChanged.connect(self.reinitAlphaAndEffLength)
         self.doubleSpinBox_refrIndexSample.valueChanged.connect(self.reinitAlphaAndEffLength)
@@ -118,7 +121,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             Before having done so, alpha is set to 0 again and the effective length to the geometric
             length.
         """
-        self.label_effLengthValue.setText("{0:.3f}".format(
+        self.label_effSampleLengthValue.setText("{0:.3f}".format(
             self.doubleSpinBox_geomSampleLength.value()))
         self.doc.eff_sample_length = self.doubleSpinBox_geomSampleLength.value()
 
@@ -140,7 +143,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         eff_sample_length = self.data_processor.compute_effective_length(geom_sample_length,
             alpha)  # in m
         self.doc.eff_sample_length = eff_sample_length
-        self.label_effLengthValue.setText("{0:.3f}".format(eff_sample_length * 1e3))  # in mm
+        self.label_effSampleLengthValue.setText("{0:.3f}".format(eff_sample_length * 1e3))  # in mm
 
 
     def onClick_calibratePhotodiodes(self):
@@ -234,10 +237,23 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         data_file_header = self.doc.get_data_file_header()
         self.data_processor.store_transmission_data(storage_directory, folder_num, data_file_header)
         
-        self.data_processor.reinitialise()
         self.stage_controller.initialise_stages()
 
 
+        # data postprocessing:
+        data_analyser = data_evaluation.zScanDataAnalyser(self.data_processor.T_OA,
+                                                          self.data_processor.T_CA,
+                                                          self.doc)
+
+        if self.checkBox_wantFit.isChecked():
+            data_analyser.perform_combined_fit()
+            data_analyser.perform_independent_ca_fit()
+            data_analyser.perform_ca_normalised_wrt_oa_fit()
+            data_analyser.store_fit_results(storage_directory, folder_num)
+        data_analyser.plot_data(storage_directory, folder_num)
+        data_analyser.reinitialise()
+
+        self.data_processor.reinitialise()
 
 
 if __name__ == '__main__':

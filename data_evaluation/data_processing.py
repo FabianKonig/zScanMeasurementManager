@@ -134,7 +134,7 @@ class zScanDataProcessor:
         """
         assert self.c_OA is not None
         assert self.c_CA is not None
-        assert self.S[0] < 1.
+        assert self.S is not None
         assert self.combined_c_CA is not None
         assert self.current_position_step < tot_num_of_pos
         
@@ -275,7 +275,7 @@ class zScanDataProcessor:
 
         if transmission_medium > 1:
             print("alpha would be negative. It is being set to zero manually.")
-            transmission_medium = 1
+            return 0
 
         alpha = -np.log(transmission_medium) / geom_length  # in 1/m
         return alpha

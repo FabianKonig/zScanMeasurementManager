@@ -31,9 +31,9 @@ class Documentation:
 
 
     @staticmethod
-    def empty(self):
-        self.__init__(None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None)
+    def empty(λ_vac, w0):
+        return Documentation(None, None, None, None, None, None, None, None, None, None, None, None,
+            None, λ_vac, w0)
 
 
     @property
@@ -99,7 +99,7 @@ class Documentation:
                  "Solvent:                  " + self.solvent + "\n" + \
                  "Concentration:            " + self.concentration + "\n" + \
                  "Laser rep. rate:          {0}Hz\n".format(self.laser_rep_rate) + \
-                 "Further notes:            " + furtherNotes + "\n" + \
+                 "Further notes:            " + self.furtherNotes + "\n" + \
                  "Pulse energy:             ({0:.3f} +- {1:.3f})µJ\n".format(
                     self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
                  "Eff. pulse energy:        ({0:.3f} +- {1:.3f})µJ\n".format(

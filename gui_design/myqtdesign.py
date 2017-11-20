@@ -400,7 +400,7 @@ class Ui_MainWindow(object):
         self.groupBox.setTitle(_translate("MainWindow", "1. Compute linear absorption coefficient"))
         self.label_II0.setText(_translate("MainWindow", "<html><head/><body><p>I/I<span style=\" vertical-align:sub;\">0</span> at low irradiance</p></body></html>"))
         self.pushButton_computeAlpha.setText(_translate("MainWindow", "Compute α"))
-        self.label_alpha.setText(_translate("MainWindow", "<html><head/><body><p>α / m =</p></body></html>"))
+        self.label_alpha.setText(_translate("MainWindow", "<html><head/><body><p>α / m<span style=\" vertical-align:super;\">-1</span> =</p></body></html>"))
         self.label_effSampleLength.setText(_translate("MainWindow", "<html><head/><body><p>L<span style=\" vertical-align:sub;\">eff</span> / mm =</p></body></html>"))
         self.label_effSampleLengthValue.setText(_translate("MainWindow", "1.00"))
         self.label_alphaValue.setText(_translate("MainWindow", "0.00"))
