@@ -1,5 +1,6 @@
 import datetime
 import os
+import numpy as np
 
 
 
@@ -24,8 +25,8 @@ class Documentation:
         self.eff_pulse_energy = eff_pulse_energy        # in J, 1-dim np.array
         self.S = S                                      # aperture transmission, 1-dim np.array
 
-        self.λ_vac = λ_vac                              # in m, float, vacuum wavelength of beam
-        self.w0 = w0                                    # in m, float, beam waist of incident beam
+        self._λ_vac = λ_vac                             # in m, float, vacuum wavelength of beam
+        self._w0 = w0                                   # in m, float, beam waist of incident beam
         self.zR = np.pi*self.w0**2/self.λ_vac           # in m, float, Rayleigh length in vacuum
 
 
@@ -111,7 +112,7 @@ class Documentation:
                  "Effective sample length:  {0:.3f}mm\n".format(self.eff_sample_length*1e3) + \
                  "Wavelength vacuum:        {0:.3f}nm\n".format(self.λ_vac*1e9) + \
                  "Beam waist:               {0:.3f}µm\n".format(self.w0*1e6) + \
-                 "Rayleigh length vacuum:   {0:.3f}mm\n".format(self.zR*1e3)
+                 "Rayleigh length vacuum:   {0:.3f}mm\n".format(self.zR*1e3) + \
                  "\n" + \
                  "\n" + \
                  "Position / mm    T_OA    deltaT_OA    T_CA    deltaT_CA"
