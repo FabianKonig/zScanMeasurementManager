@@ -2,9 +2,6 @@ import datetime
 import os
 
 
-CONSTANTS_beam_waist = 19.0537e-6  # waist of incident beam in vacuum in m
-CONSTANTS_wavelength = 532e-9      # wavelength of incident beam in vacuum in m
-
 
 class Documentation:
 
@@ -130,6 +127,9 @@ class Documentation:
                     self.eff_pulse_energy[0]*1e6, self.eff_pulse_energy[1]*1e6) + \
                  ",     $f_{Laser}$" + " = {0}Hz".format(self.laser_rep_rate) + \
                  ",     S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
+
+        if self.furtherNotes != "---": #default value
+            header += "\nFurther notes: " + self.furtherNotes
 
         return header
 

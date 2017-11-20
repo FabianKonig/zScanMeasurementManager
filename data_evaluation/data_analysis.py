@@ -59,7 +59,21 @@ class zScanDataAnalyser:
         """ Initialise by passing in a file that has been stored by the zScanDataProcessor. The file
             will be parsed for all relevant data.
         """
-        pass  # Make parsing and then "return zScanDataAnalyser(with the parsed data)".
+        data = np.genfromtxt(file)
+        T_OA = np.empty(shape=(len(data), 3))
+        T_CA = np.empty(shape=(len(data), 3))
+        T_OA[:,0] = data[:,0]
+        T_OA[:,1] = data[:,1]
+        T_OA[:,2] = data[:,2]
+        T_CA[:,0] = data[:,0]    
+        T_CA[:,1] = data[:,3]
+        T_CA[:,2] = data[:,4]
+
+        documentation = Documentation("Acetone", " --", "0.0mmol/l", 10, "---",
+        1.46, 1.46, 0, 1, 1, np.array([9.294, 0.036]), np.array([9.294, 0.036]),
+        np.array([0.154, 0.001]), 532e-9, 19.0537e-6)
+
+        return zScanDataAnalyser(T_OA, T_CA, documentation)
 
 
     @property
@@ -243,31 +257,30 @@ class zScanDataAnalyser:
             now.day, now.month, now.year, now.hour, now.minute)
         header = "# Fit results\n# ---------------------\n# " + time + "\n#\n#\n"
 
-        fit_results = np.array([self.combined_fit, self.independent_CA_fit, self.normalised_CA_fit])
         caption = ["combined fit:\n",
             "independent closed aperture fit:\n",
             "closed aperture normalised to open aperture fit:\n"]
         text = ""
         i=0
 
-        for entry in fit_results:
+        for fit_result in [self.combined_fit, self.independent_CA_fit, self.normalised_CA_fit]:
             text += "Results of the " + caption[i]
             i += 1
 
-            if entry is not None:
-                n2 = entry[0] * 1e4  # in cm^2/W
+            if fit_result is not None:
+                n2 = fit_result[0] * 1e4  # in cm^2/W
                 n2_exp = self.get_power_of_ten(n2[0])
-                z0 = entry[1]
-                dPhi = entry[2]
-                if len(entry) > 3:
-                    dPsi = entry[3]
+                z0 = fit_result[1]
+                dPhi = fit_result[2]
+                if len(fit_result) > 3:
+                    dPsi = fit_result[3]
 
                 text += "n2: ({0:.3f} +- {1:.3f})e{2} cm^2/W\n".format(
                             n2[0]/10**n2_exp, n2[1]/10**n2_exp, n2_exp) + \
                         "z0: ({0:.3f} +- {1:.3f})mm\n".format(z0[0], z0[1]) + \
                         "dPhi: ({0:.3f} +- {1:.3f})".format(dPhi[0], dPhi[1])
 
-                if len(entry) > 3:
+                if len(fit_result) > 3:
                     text += "\ndPsi:({0:.3f} +- {1:.3f})".format(dPsi[0], dPsi[1])
 
             else:
@@ -291,9 +304,69 @@ class zScanDataAnalyser:
             fhandle.close()
 
 
+    def plot_data(self, directory, folder_num):
 
-    
+        T_OA = self.T_OA
+        T_CA = self.T_CA
+        T_CA_normalised = self.T_CA_normalised
 
+        fig0, axes0 = plt.subplots(1, 1, figsize=(10, 4))
+        fig1, axes1 = plt.subplots(1, 1, figsize=(10, 4))
+        fig2, axes2 = plt.subplots(1, 1, figsize=(10, 4))
+        axes = [axes0, axes1, axes2]
+        figures = [fig0, fig1, fig2]
+
+        axes[0].errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", color="red", alpha=0.8, label="OA")
+        axes[0].errorbar(T_CA[:,0], T_CA[:,1], yerr=T_CA[:,2], linestyle="", marker="x", color="black", alpha=0.8, label="CA")
+        axes[1].errorbar(T_CA[:,0], T_CA[:,1], yerr=T_CA[:,2], linestyle="", marker="x", color="black", alpha=0.8, label="CA")
+        axes[2].errorbar(T_CA_normalised[:,0], T_CA_normalised[:,1], yerr=T_CA_normalised[:,2], linestyle="", marker="x", color="black", alpha=0.8, label="CA/OA")
+
+        n2_header_string = ["", "", ""]
+        i = 0
+
+        for fit_result in [self.combined_fit, self.independent_CA_fit, self.normalised_CA_fit]:
+            if fit_result is not None:
+                n2 = fit_result[0] * 1e4  # in cm^2/W
+                n2_exp = self.get_power_of_ten(n2[0])
+                n2_header_string[i] = "\n$n_2$ = ({0:.2f} $\pm$ {1:.2f})e{2} cm$^2$/W".format(
+                                        n2[0]/10**n2_exp, n2[1]/10**n2_exp, n2_exp)
+                
+                z0 = fit_result[1]
+                dΦ = fit_result[2]
+                if len(fit_result) == 4:
+                    dΨ = fit_result[3]
+
+                pos_vals = np.linspace(T_OA[0,0]-.5, T_OA[-1,0]+.5, 200)
+                zR_for_fitting = self.documentation.zR * CONSTANTS_rayleighLength_correction_factor
+
+                if len(fit_result) == 4:
+                    T_OA_vals = T_OA_func(pos_vals, z0[0], zR_for_fitting, dΨ[0])
+                    T_CA_vals = T_CA_func(pos_vals, z0[0], zR_for_fitting, dΦ[0], dΨ[0])
+                    axes[i].plot(pos_vals, T_OA_vals, color="red")
+                    axes[i].plot(pos_vals, T_CA_vals, color="black")
+                else:
+                    T_CA_vals = T_CA_normalised(pos_vals, z0[0], zR_for_fitting, dΦ[0])
+                    axes[i].plot(pos_vals, T_CA_vals, color="black")
+
+                i += 1
+
+
+        header = self.documentation.get_plot_header()
+        for i in range(len(axes)):
+            axes[i].title(header + n2_header_string[i], fontsize=9)
+            axes[i].xlabel("z / mm")
+            axes[i].ylabel("Transmission")
+            axes[i].legend()
+            axes[i].grid()
+            try:
+                file = os.path.join(directory, "plot_{0:02}_{1}.pdf".format(folder_num, i))
+                figures[i].savefig(file, dpi=600)
+            except Exception as ex:
+                print("Storage of plot failed!!!!")
+                traceback.print_exc()
+                print("\n")
+
+        plt.show()
 
 
     def reinitialise(self):
@@ -363,4 +436,7 @@ def get_power_of_ten(value):
 
 
 if __name__ == '__main__':
-    pass
+
+    file = os.path.join(".", "test", "transmission_data_04.dat")
+    data_analyser = zScanDataAnalyser.init_from_file(file)
+
