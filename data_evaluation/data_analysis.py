@@ -153,31 +153,43 @@ class zScanDataAnalyser:
         self.combined_fit[3] = fit_dΨ
 
 
+    def ca_fit(self, xdata, ydata, sigma, guess, zR, result_array):
+        """ Only helper function for the functions self.independent_ca_fit() and
+            self.ca_normalised_wrt_oa_fit(). See the docstrings odf those functions.
+        """
+        try:
+            fitfunc = lambda z, z0, dΦ: T_CA_normalised_func(z, z0, zR, dΦ)
+            fit_z0, fit_dΦ = perform_fit(fitfunc, 
+                                         xdata,
+                                         ydata,
+                                         sigma=sigma,
+                                         guess=guess)
+
+        except Exception as ex:
+            print("Closed aperture data fit failed.")
+            traceback.print_exc()
+            print("\n")
+            return None
+
+        self.result_array = np.empty(shape=(3,2))
+        self.result_array[0] = self.compute_n2(fit_dΦ)
+        self.result_array[1] = fit_z0
+        self.result_array[2] = fit_dΦ
+
+
     def independent_ca_fit(self):
         """ The closed aperture data are fitted independently from the open aperture data as in
             self.combined_fit(). This fit retrieves z0 and dΦ. As for the fitfunction, dΨ = 0 is
             assumed.
         """
-
         zR_for_fitting = self.documentation.zR * CONSTANTS_rayleighLength_correction_factor
 
-        try:
-            fitfunc = lambda z, z0, dΦ: T_CA_normalised_func(z, z0, zR_for_fitting, dΦ)
-            fit_z0, fit_dΦ = perform_fit(fitfunc, 
-                                         self.T_CA[:,0],
-                                         self.T_CA[:,1],
-                                         sigma=self.T_CA[:,2],
-                                         guess=CONSTANTS_guess_CA)
-        except Exception as ex:
-            print("Independent closed aperture fit failed.")
-            traceback.print_exc()
-            print("\n")
-            return None
-
-        self.independent_CA_fit = np.empty(shape=(3,2))
-        self.independent_CA_fit[0] = self.compute_n2(fit_dΦ)
-        self.independent_CA_fit[1] = fit_z0
-        self.independent_CA_fit[2] = fit_dΦ
+        self.ca_fit(self.T_CA[:,0],
+                    self.T_CA[:,1],
+                    self.T_CA[:,2],
+                    CONSTANTS_guess_CA,
+                    zR_for_fitting,
+                    self.independent_CA_fit)
 
 
     def ca_normalised_wrt_oa_fit(self):
@@ -186,24 +198,12 @@ class zScanDataAnalyser:
         """
         zR_for_fitting = self.documentation.zR * CONSTANTS_rayleighLength_correction_factor
 
-        try:
-            fitfunc = lambda z, z0, dΦ: T_CA_normalised_func(z, z0, zR_for_fitting, dΦ)
-            fit_z0, fit_dΦ = perform_fit(fitfunc, 
-                                         self.T_CA_normalised[:,0],
-                                         self.T_CA_normalised[:,1],
-                                         sigma=self.T_CA_normalised[:,2],
-                                         guess=CONSTANTS_guess_CA)
-        except Exception as ex:
-            print("Normalised closed aperture data fit failed.")
-            traceback.print_exc()
-            print("\n")
-            return None
-
-        self.normalised_CA_fit = np.empty(shape=(3,2))
-        self.normalised_CA_fit[0] = self.compute_n2(fit_dΦ)
-        self.normalised_CA_fit[1] = fit_z0
-        self.normalised_CA_fit[2] = fit_dΦ
-
+        self.ca_fit(self.T_CA_normalised[:,0],
+                    self.T_CA_normalised[:,1],
+                    self.T_CA_normalised[:,2],
+                    CONSTANTS_guess_CA,
+                    zR_for_fitting,
+                    self.normalised_CA_fit)
 
 
     def compute_n2(self, dΦ):
@@ -289,6 +289,10 @@ class zScanDataAnalyser:
             print("\n")
         finally:
             fhandle.close()
+
+
+
+    
 
 
 
