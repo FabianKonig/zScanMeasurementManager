@@ -4,6 +4,7 @@ from scipy.optimize import curve_fit
 import math
 import os
 import traceback
+import datetime
 
 if __name__ == '__main__':
     import documentation
@@ -45,20 +46,12 @@ class zScanDataAnalyser:
         self.documentation = documentation
 
 
-        # Fit results and corresponding computed nonlinear refractive indices, all 1-dim numpy
-        # arrays of length 2, first entry being the value, second its error.
-        self.combined_fit_z0 = None
-        self.combined_fit_dΨ = None
-        self.combined_fit_dΦ = None
-        self.combined_fit_n2 = None
-
-        self.independent_CA_fit_z0 = None
-        self.independent_CA_fit_dΦ = None
-        self.independent_CA_fit_n2 = None
-
-        self.normalised_CA_fit_z0 = None
-        self.normalised_CA_fit_dΦ = None
-        self.normalised_CA_fit_n2 = None
+        # Fit results and corresponding computed nonlinear refractive indices, all 2-dim numpy
+        # arrays, the second dimension is of length 2, where the first entry denotes the value,
+        # second its error.
+        self.combined_fit = None          # n2, z0, dΦ, dΨ
+        self.independent_CA_fit = None    # n2, z0, dΦ
+        self.normalised_CA_fit = None     # n2, z0, dΦ
 
 
     @staticmethod
@@ -66,7 +59,7 @@ class zScanDataAnalyser:
         """ Initialise by passing in a file that has been stored by the zScanDataProcessor. The file
             will be parsed for all relevant data.
         """
-        pass  # Make parsing and then call __init__ with the parsed data.
+        pass  # Make parsing and then "return zScanDataAnalyser(with the parsed data)".
 
 
     @property
@@ -81,7 +74,7 @@ class zScanDataAnalyser:
         if self.T_CA is not None:
             assert self.T_CA.shape() == value.shape()
             self.T_CA_normalised = self.compute_T_CA_normalised_array()
-            
+
 
     @property
     def T_CA(self):
@@ -153,11 +146,11 @@ class zScanDataAnalyser:
             print("\n")
             return None
 
-
-        self.combined_fit_z0 = fit_z0
-        self.combined_fit_dΨ = fit_dΨ
-        self.combined_fit_dΦ = fit_dΦ
-        self.combined_fit_n2 = self.compute_n2(fit_dΦ)
+        self.combined_fit = np.empty(shape=(4,2))
+        self.combined_fit[0] = self.compute_n2(fit_dΦ)
+        self.combined_fit[1] = fit_z0
+        self.combined_fit[2] = fit_dΦ
+        self.combined_fit[3] = fit_dΨ
 
 
     def independent_ca_fit(self):
@@ -181,9 +174,10 @@ class zScanDataAnalyser:
             print("\n")
             return None
 
-        self.independent_CA_fit_z0 = fit_z0
-        self.independent_CA_fit_dΦ = fit_dΦ
-        self.independent_CA_fit_n2 = self.compute_n2(fit_dΦ)
+        self.independent_CA_fit = np.empty(shape=(3,2))
+        self.independent_CA_fit[0] = self.compute_n2(fit_dΦ)
+        self.independent_CA_fit[1] = fit_z0
+        self.independent_CA_fit[2] = fit_dΦ
 
 
     def ca_normalised_wrt_oa_fit(self):
@@ -205,9 +199,10 @@ class zScanDataAnalyser:
             print("\n")
             return None
 
-        self.normalised_CA_fit_z0 = fit_z0
-        self.normalised_CA_fit_dΦ = fit_dΦ
-        self.normalised_CA_fit_n2 = self.compute_n2(fit_dΦ)
+        self.normalised_CA_fit = np.empty(shape=(3,2))
+        self.normalised_CA_fit[0] = self.compute_n2(fit_dΦ)
+        self.normalised_CA_fit[1] = fit_z0
+        self.normalised_CA_fit[2] = fit_dΦ
 
 
 
@@ -232,12 +227,69 @@ class zScanDataAnalyser:
         I0 = np.empty(shape=(2))
         I0[0] = 2*P0[0] / (np.pi*w0**2)     # in W/m^2
         I0[1] = 2*P0[1] / (np.pi*w0**2)     # in W/m^2
-        k = 2*np.pi / λ_vac                     # in 1/m
+        k = 2*np.pi / λ_vac                 # in 1/m
         
         n2 = dΦ[0] / (k*I0[0]*eff_length)
         dn2 = np.sqrt( (dΦ[1]/(k*I0[0]*eff_length))**2 + (dΦ[0]*I0[1]/(k*I0[0]*eff_length)**2)**2)
         
         return np.array([n2, dn2])  # in m^2/W
+
+
+    def store_fit_results(self, directory, folder_num):
+        """ Stores all fit results into a file in the provided directory. """
+
+        now = datetime.datetime.today()
+        time = "{0:02d}.{1:02d}.{3:4d}  {3:02d}:{4:02d}".format(
+            now.day, now.month, now.year, now.hour, now.minute)
+        header = "# Fit results\n# ---------------------\n# " + time + "\n#\n#\n"
+
+        fit_results = np.array([self.combined_fit, self.independent_CA_fit, self.normalised_CA_fit])
+        caption = ["combined fit:\n",
+            "independent closed aperture fit:\n",
+            "closed aperture normalised to open aperture fit:\n"]
+        text = ""
+        i=0
+
+        for entry in fit_results:
+            text += "Results of the " + caption[i]
+            i += 1
+
+            if entry is not None:
+                n2 = entry[0] * 1e4  # in cm^2/W
+                n2_exp = self.get_power_of_ten(n2[0])
+                z0 = entry[1]
+                dPhi = entry[2]
+                if len(entry) > 3:
+                    dPsi = entry[3]
+
+                text += "n2: ({0:.3f} +- {1:.3f})e{2} cm^2/W\n".format(
+                            n2[0]/10**n2_exp, n2[1]/10**n2_exp, n2_exp) + \
+                        "z0: ({0:.3f} +- {1:.3f})mm\n".format(z0[0], z0[1]) + \
+                        "dPhi: ({0:.3f} +- {1:.3f})".format(dPhi[0], dPhi[1])
+
+                if len(entry) > 3:
+                    text += "\ndPsi:({0:.3f} +- {1:.3f})".format(dPsi[0], dPsi[1])
+
+            else:
+                text += "No results."
+
+            text += "#\n#\n"
+
+        text = header + text
+
+
+        try:
+            file = os.path.join(directory, "fit_results_{0:02}.dat".format(folder_num))
+            fhandle = open(file, 'w')
+            fhandle.write(text)
+
+        except Exception as ex:
+            print("Storage of fit results failed!")
+            traceback.print_exc()
+            print("\n")
+        finally:
+            fhandle.close()
+
 
 
     def reinitialise(self):
