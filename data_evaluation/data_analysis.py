@@ -20,7 +20,7 @@ CONSTANTS_rayleighLength_correction_factor = 1.9
 
 # Initial guess for fit parameters. The first entry denotes the beam waist position in mm
 CONSTANTS_guess_OA = [22,1]  # second entry: dΨ
-CONSTANTS_guess_CA = [22,1]  # second entry: dΦ
+CONSTANTS_guess_CA = [22,-1]  # second entry: dΦ
 
 CONSTANTS_pulse_length_FWHM = 15e-12  # laser pulse length in seconds
 

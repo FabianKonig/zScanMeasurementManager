@@ -6,6 +6,9 @@ import data_evaluation
 import stage_control
 import nidaq_control
 from math import isclose
+import signal
+import sys
+
 
 
 # TODO:
@@ -14,10 +17,10 @@ from math import isclose
 
 # - Get in touch with Julian.
 # - Dateien müsses geparsed werden können.
-# - Displacements of the aperture have some (minimal) effects. Try to centre the aperture. For that,
-#   close it to a tiny spot, then move it and maximise the tranmsitted power by observing the
-#   photodiode signal on the oscilloscope. Do it with a medium inside. Use a zero-aperture aperture
-#   that can be moved with screws.
+# - If Start measurement is clicked but the aperture field still shows a value larger than 50%,
+#   display a yes-no widget asking if you are sure to use this aperture value!
+# - Zuletzt benutzte Parameter in GUI speichern, wenn GUI geschlossen wird und bei Neustart wieder
+#   abrufen.
 
 # - Try to fit Julians "5.dat" measurement of RH6G in Ethylenglykol with both curves separately.
 # - Wie sehen Julians Messwerte zu ZnSe aus? Versuche sie zu fitten, um zu sehen, ob sie wirklich
@@ -94,6 +97,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.spinBox_samplingRate.valueChanged.connect(self.onNidaqParamsChange)
         self.spinBox_samplesPerChannel.valueChanged.connect(self.onNidaqParamsChange)
         self.spinBox_iterations.valueChanged.connect(self.onNidaqParamsChange)
+
+        signal.signal(signal.SIGINT, signal_handler)  # Ctrl-C event
+
 
 
     def compile_documentation(self):
@@ -180,23 +186,11 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
 
     def onClick_startMeasurement(self):
-        """ Assumption: Stages are located at their initial position!
-        """
-        # Assert that stages are either at their home position or at their maximum position with a
-        # precision of 0.02mm=20µm.
-        assert isclose(self.stage_controller.combined_position, 0, abs_tol=0.02) or \
-        isclose(self.stage_controller.combined_position,
-            self.stage_controller.total_travel_distance,
-            abs_tol=0.02)
+        """ Assumption: Stages are located at their initial position! """
 
-        # Make sure a sample has been specified, otherwise return to the main loop.
-        if self.lineEdit_sample.text() == "--": # default String
-            QtWidgets.QMessageBox.information(self, "Specify sample",
-            "Please specify the sample under examination.")
+        if self.assert_measurement_ready_to_start() != "everything good to go!":
             return None
-
-        # Assert that documentation is complete
-        self.doc.assert_completeness()
+        
 
         # abbreviation
         tot_num_of_pos = self.spinBox_numPositions.value()
@@ -254,6 +248,32 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         data_analyser.reinitialise()
 
         self.data_processor.reinitialise()
+
+
+    def assert_measurement_ready_to_start(self):
+        # Assert that stages are either at their home position or at their maximum position with a
+        # precision of 0.02mm=20µm.
+        assert isclose(self.stage_controller.combined_position, 0, abs_tol=0.02) or \
+        isclose(self.stage_controller.combined_position,
+            self.stage_controller.total_travel_distance,
+            abs_tol=0.02)
+
+        # Make sure a sample has been specified, otherwise return to the main loop.
+        if self.lineEdit_sample.text() == "--": # default String
+            QtWidgets.QMessageBox.information(self, "Specify sample",
+            "Please specify the sample under examination.")
+            return None
+
+        # Assert that documentation is complete
+        self.doc.assert_completeness()
+
+        return "everything good to go!"
+
+
+def signal_handler(signal, frame):
+    """ Causes all occupied hardware to be released before hard exit due to Ctrl-C. """
+    print("Hard exit of program.")
+    sys.exit(0)
 
 
 if __name__ == '__main__':
