@@ -47,7 +47,7 @@ class NidaqReader:
     def read_nidaq_one_channel_after_the_other(self):
         """ Same as read_nidaq, but I figured out that it is better to query each channel separately
             as otherwise there will be electronic reflections between the channels inside the Nidaq
-            introducing offset  voltages.
+            introducing offset voltages.
         """
 
         signals = np.empty(shape=(len(channels), self.num_samples_per_chan))
@@ -74,8 +74,8 @@ class NidaqReader:
 
     def get_nidaq_measurement_max_values(self):
         """ I figured out that the best way of obtaining reproducable data from the Nidaq
-            measurments is by acquiring approx 20000 data from with its maximum sample rate
-            (sample rate of 8333 and number of samples of 20000) and taking the maximum measured
+            measurements is by acquiring approx 70000 data from it with its maximum sample rate
+            (sample rate of 250k and number of samples of 70000) and taking the maximum measured
             value for each channel. This function thus queries the Nidaq signals, stores the maximum
             value of each channel and repeats this measurement self.iterations times.
 

@@ -14,8 +14,9 @@ import sys
 # TODO:
 # -----------------------------------
 # - Condensates of Light Anmeldung.
+# - Mach spatial filter! Der M^2 Faktor könnte der Grund für die zu große Rayleigh Länge sein! Die
+#   waist im Fokus des Teleskops beträgt ca. w0=12.70µm.
 
-# - Get in touch with Julian.
 # - Dateien müsses geparsed werden können.
 # - If Start measurement is clicked but the aperture field still shows a value larger than 50%,
 #   display a yes-no widget asking if you are sure to use this aperture value!

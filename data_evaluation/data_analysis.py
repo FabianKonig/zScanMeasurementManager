@@ -7,7 +7,9 @@ import traceback
 import datetime
 
 if __name__ == '__main__':
-    import documentation
+    import sys
+    sys.dont_write_bytecode = True
+    import documentation_manually as documentation
 else:
     from . import documentation
 
@@ -362,7 +364,7 @@ class zScanDataAnalyser:
             axes[i].grid()
             try:
                 file = os.path.join(directory, "plot_{0:02}_{1}.pdf".format(folder_num, i))
-                figures[i].savefig(file, dpi=600)
+                figures[i].savefig(file, dpi=600, bbox_inches='tight')
             except Exception as ex:
                 print("Storage of plot failed!!!!")
                 traceback.print_exc()
