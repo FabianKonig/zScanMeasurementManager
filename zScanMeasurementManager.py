@@ -1,41 +1,38 @@
+from PyQt5 import QtWidgets
+from math import isclose
 import sys
 import numpy as np
-from PyQt5 import QtWidgets
+import last_gui_settings
 import gui_design
-import data_evaluation
 import stage_control
 import nidaq_control
-from math import isclose
+import data_evaluation
 
 
 
 # TODO:
 # -----------------------------------
 # - Condensates of Light Anmeldung.
-
 # - Hadiseh: Theorie hinter Kerr Effekt zusammen durchgehen.
-# - Mach spatial filter! Der M^2 Faktor könnte der Grund für die zu große Rayleigh Länge sein! Die
-#   waist im Fokus des Teleskops beträgt ca. w0=12.70µm. Achtung: Erik meint die Linsen sind nicht
-#   sehr gut! Das heißt sie fokussieren schlechter, was größere Waist und damit größere Rayleigh
-#   Länge bedeutet! Miss die Waist im Fokus um zu wissen, wie die Rayleigh Länge wirklich aussieht!
-#   Kann vielleicht eine Kamera das Intensitätsprofil aufnehmen und auflösen? Wäre einfacher als
-#   Knife Edge Methode!
 
-# - Dateien müsses geparsed werden können.
-# - If Start measurement is clicked but the aperture field still shows a value larger than 50%,      Done. Check it!
-#   display a yes-no widget asking if you are sure to use this aperture value!
-# - Zuletzt benutzte Parameter in GUI speichern, wenn GUI geschlossen wird und bei Neustart wieder
-#   abrufen.
+# - Order a doublet lens for better focussing!
+# - Measure the beam diameter at the waist using the electronic translation stages.
+# - Use a pinhole for spatial filtering. The beam waist in the telescope focus should be around
+#   w0 = 12.70µm.
+# - At large frequencies the photodiodes have an offset. Take care of this!
 
-# - Try to fit Julians "5.dat" measurement of RH6G in Ethylenglykol with both curves separately.
-# - Wie sehen Julians Messwerte zu ZnSe aus? Versuche sie zu fitten, um zu sehen, ob sie wirklich
-#   den Kurven entsprechen.
+# - Dateien müssen geparsed werden können.
+
+# - Try to fit Julians "5.dat" measurement of RH6G in Ethylenglycole with both curves separately.
 
 # - Make a measurement with ZnSe and Rhodamine-Ethylenglykol and water.
 # - With those measurements, make sure the behaviour of Nitrobenzole is not due to alignment, but
 #   really only due to Nitrobenzole itself.
 # - What if you decrease the time the sample is exposed to radiation? Does the Rayleigh length decrease?
-#   Then it might be a thermal effect!
+#   Then it might be a thermal effect! -> The distance between Peak and Valley in ZnSe does not
+#   change with repetition rate. Placing the sample to the location where the refraction peak is,
+#   turning off the laser and turning it on again after 5 minutes: The peak is still at this position!
+#   Hence, this is not a thermal effect!
 
 # - A fit function to convert the reference photodiode signal to the input pulse energy is necessary.
 #   It should also take the pulse repetition rate into account! For high pulse rep rates, the photo
@@ -48,10 +45,10 @@ from math import isclose
 
 
 
-
 # Constants:
 CONSTANTS_beam_waist = 19.0537e-6  # waist of incident beam in vacuum in m
 CONSTANTS_wavelength = 532e-9      # wavelength of incident beam in vacuum in m
+
 
 
 
@@ -78,6 +75,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             " Make sure the stages can move unhindered!")
         
         self.stage_controller = stage_control.APT_Controller()
+
+        # New function: Load input values of last GUI access:
+        self.load_last_gui_settings()
 
 
     def defineSignalsSlots(self):
@@ -115,6 +115,32 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.doc.refr_index_ambient = self.doubleSpinBox_refrIndexAmbient.value()
         self.doc.λ_vac = CONSTANTS_wavelength
         self.doc.w0 = CONSTANTS_beam_waist
+
+
+    def load_last_gui_settings(self):
+        last_settings = last_gui_settings.get_last_settings()
+        if last_settings is not None:
+            self.update_gui_with_last_settings(last_settings)
+
+
+    def update_gui_with_last_settings(self, last_settings):
+        self.lineEdit_sample.setText(last_settings.sample)
+        self.lineEdit_solvent.setText(last_settings.solvent)
+        self.lineEdit_concentration.setText(last_settings.concentration)
+        self.spinBox_laserRepRate.setValue(last_settings.laser_rep_rate)
+        self.doubleSpinBox_geomSampleLength.setValue(last_settings.geom_sample_length)
+        self.doubleSpinBox_refrIndexSample.setValue(last_settings.refr_index_sample)
+        self.doubleSpinBox_refrIndexAmbient.setValue(last_settings.refr_index_ambient)
+        self.lineEdit_furtherNotes.setText(last_settings.furtherNotes)
+        self.spinBox_numPositions.setValue(last_settings.numPositions)
+        self.spinBox_samplingRate.setValue(last_settings.samplingRate)
+        self.spinBox_samplesPerChannel.setValue(last_settings.samplesPerChannel)
+        self.spinBox_iterations.setValue(last_settings.iterations)
+        self.doubleSpinBox_II0.setValue(last_settings.i_i0)
+        self.label_alphaValue.setText(last_settings.alpha)
+        self.label_effSampleLengthValue.setText(last_settings.eff_sample_length)
+        self.doubleSpinBox_attenuationPdRef.setValue(last_settings.attenuation_pd_ref)
+
 
 
     def onNidaqParamsChange(self):
@@ -155,11 +181,12 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
 
     def onClick_calibratePhotodiodes(self):
+        signals = self.nidaq_reader.get_nidaq_measurement_max_values()
+        
         calib_factors = list(self.data_processor.extract_calibration_factors(*signals))
         self.label_cOAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[0]))
         self.label_cCAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[1]))
         
-        signals = self.nidaq_reader.get_nidaq_measurement_max_values()
         pulse_energy = self.data_processor.extract_pulse_energy(
             signals[0] * self.doubleSpinBox_attenuationPdRef.value())
         self.doc.pulse_energy = pulse_energy
@@ -269,11 +296,11 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             return None
 
 
-        if self.doc.S > 0.25:
-            buttonReply = QMessageBox.question(self, "Large aperture",
+        if self.doc.S[0] > 0.25:
+            buttonReply = QtWidgets.QMessageBox.question(self, "Large aperture",
                 "The aperture transmission is larger than S = 25%. Do you still wish to start " + \
                 "the measurement?")
-            if buttonReply == QMessageBox.No:
+            if buttonReply == QtWidgets.QMessageBox.No:
                 return None
 
 
@@ -283,9 +310,35 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         return "everything good to go!"
 
 
+    def exit_handler(self):
+        # Persist last settings
+        last_settings = last_gui_settings.LastGuiSettings(
+            self.lineEdit_sample.text(),
+            self.lineEdit_solvent.text(),
+            self.lineEdit_concentration.text(),
+            self.spinBox_laserRepRate.value(),
+            self.doubleSpinBox_geomSampleLength.value(),
+            self.doubleSpinBox_refrIndexSample.value(),
+            self.doubleSpinBox_refrIndexAmbient.value(),
+            self.lineEdit_furtherNotes.text(),
+            self.spinBox_numPositions.value(),
+            self.spinBox_samplingRate.value(),
+            self.spinBox_samplesPerChannel.value(),
+            self.spinBox_iterations.value(),
+            self.doubleSpinBox_II0.value(),
+            self.label_alphaValue.text(),
+            self.label_effSampleLengthValue.text(),
+            self.doubleSpinBox_attenuationPdRef.value())
+
+        last_gui_settings.persist_last_settings(last_settings)
+        sys.exit(0)
+
+
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     window = Window()
+    app.aboutToQuit.connect(window.exit_handler)
     window.show()
-    sys.exit(app.exec_())
+    app.exec_()
+    
