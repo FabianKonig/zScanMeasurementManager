@@ -13,7 +13,7 @@ from math import isclose
 # -----------------------------------
 # - Condensates of Light Anmeldung.
 
-# - Hadiseh: Theorie hinter Kerr Effekt.
+# - Hadiseh: Theorie hinter Kerr Effekt zusammen durchgehen.
 # - Mach spatial filter! Der M^2 Faktor könnte der Grund für die zu große Rayleigh Länge sein! Die
 #   waist im Fokus des Teleskops beträgt ca. w0=12.70µm. Achtung: Erik meint die Linsen sind nicht
 #   sehr gut! Das heißt sie fokussieren schlechter, was größere Waist und damit größere Rayleigh
@@ -22,7 +22,7 @@ from math import isclose
 #   Knife Edge Methode!
 
 # - Dateien müsses geparsed werden können.
-# - If Start measurement is clicked but the aperture field still shows a value larger than 50%,
+# - If Start measurement is clicked but the aperture field still shows a value larger than 50%,      Done. Check it!
 #   display a yes-no widget asking if you are sure to use this aperture value!
 # - Zuletzt benutzte Parameter in GUI speichern, wenn GUI geschlossen wird und bei Neustart wieder
 #   abrufen.
@@ -267,6 +267,15 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             QtWidgets.QMessageBox.information(self, "Specify sample",
             "Please specify the sample under examination.")
             return None
+
+
+        if self.doc.S > 0.25:
+            buttonReply = QMessageBox.question(self, "Large aperture",
+                "The aperture transmission is larger than S = 25%. Do you still wish to start " + \
+                "the measurement?")
+            if buttonReply == QMessageBox.No:
+                return None
+
 
         # Assert that documentation is complete
         self.doc.assert_completeness()
