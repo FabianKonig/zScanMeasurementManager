@@ -6,8 +6,6 @@ import data_evaluation
 import stage_control
 import nidaq_control
 from math import isclose
-import signal
-import sys
 
 
 
@@ -98,9 +96,6 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.spinBox_samplingRate.valueChanged.connect(self.onNidaqParamsChange)
         self.spinBox_samplesPerChannel.valueChanged.connect(self.onNidaqParamsChange)
         self.spinBox_iterations.valueChanged.connect(self.onNidaqParamsChange)
-
-        signal.signal(signal.SIGINT, signal_handler)  # Ctrl-C event
-
 
 
     def compile_documentation(self):
@@ -270,11 +265,6 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
         return "everything good to go!"
 
-
-def signal_handler(signal, frame):
-    """ Causes all occupied hardware to be released before hard exit due to Ctrl-C. """
-    print("Hard exit of program.")
-    sys.exit(0)
 
 
 if __name__ == '__main__':
