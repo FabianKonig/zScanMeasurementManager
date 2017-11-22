@@ -12,8 +12,14 @@ from math import isclose
 # TODO:
 # -----------------------------------
 # - Condensates of Light Anmeldung.
+
+# - Hadiseh: Theorie hinter Kerr Effekt.
 # - Mach spatial filter! Der M^2 Faktor könnte der Grund für die zu große Rayleigh Länge sein! Die
-#   waist im Fokus des Teleskops beträgt ca. w0=12.70µm.
+#   waist im Fokus des Teleskops beträgt ca. w0=12.70µm. Achtung: Erik meint die Linsen sind nicht
+#   sehr gut! Das heißt sie fokussieren schlechter, was größere Waist und damit größere Rayleigh
+#   Länge bedeutet! Miss die Waist im Fokus um zu wissen, wie die Rayleigh Länge wirklich aussieht!
+#   Kann vielleicht eine Kamera das Intensitätsprofil aufnehmen und auflösen? Wäre einfacher als
+#   Knife Edge Methode!
 
 # - Dateien müsses geparsed werden können.
 # - If Start measurement is clicked but the aperture field still shows a value larger than 50%,
@@ -149,20 +155,22 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
 
     def onClick_calibratePhotodiodes(self):
+        calib_factors = list(self.data_processor.extract_calibration_factors(*signals))
+        self.label_cOAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[0]))
+        self.label_cCAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[1]))
+        
         signals = self.nidaq_reader.get_nidaq_measurement_max_values()
         pulse_energy = self.data_processor.extract_pulse_energy(
             signals[0] * self.doubleSpinBox_attenuationPdRef.value())
         self.doc.pulse_energy = pulse_energy
         self.label_pulseEnergyValue.setText("{0:.3f} +- {1:.3f}".format(*pulse_energy*1e6))
 
-        self.doc.eff_pulse_energy = self.data_processor.compute_effective_pulse_energy(
+        eff_pulse_energy = self.data_processor.compute_effective_pulse_energy(
             pulse_energy,
             self.doc.refr_index_sample,
             self.doc.refr_index_ambient)
-
-        calib_factors = list(self.data_processor.extract_calibration_factors(*signals))
-        self.label_cOAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[0]))
-        self.label_cCAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[1]))
+        self.doc.eff_pulse_energy = eff_pulse_energy
+        self.label_effPulseEnergyValue.setText("{0:.3f} +- {1:.3f}".format(*eff_pulse_energy*1e6))
 
         if self.labelApertureTransmittanceValue.text() == "":
             self.groupBox_Aperture.setEnabled(True)

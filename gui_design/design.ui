@@ -508,7 +508,7 @@
                <double>10000.000000000000000</double>
               </property>
               <property name="singleStep">
-               <double>100.000000000000000</double>
+               <double>10.000000000000000</double>
               </property>
               <property name="value">
                <double>100.000000000000000</double>
@@ -592,6 +592,20 @@
           </item>
           <item row="2" column="2">
            <widget class="QLabel" name="label_pulseEnergyValue">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLabel" name="label_effPulseEnergy">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;E&lt;span style=&quot; vertical-align:sub;&quot;&gt;Pulse, eff&lt;/span&gt; / µJ =&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2">
+           <widget class="QLabel" name="label_effPulseEnergyValue">
             <property name="text">
              <string/>
             </property>
