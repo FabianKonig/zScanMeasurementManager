@@ -14,7 +14,7 @@ CONSTANTS_calib_photodiode_pulse_energy = np.array([16.9274, 0.0212]) * 1e-6 / 1
 
 
 
-def average_ratio(data_1, data_2, calib_factor = None):
+def average_ratio_element_wise(data_1, data_2, calib_factor = None):
     """ Computes the statistical average of the element wise ratio of the two arrays data_1 and
         data_2. For this calculation, each element wise ratio value is assumed to be of the same
         significance such that the standard deviation of the average is considered to be the
@@ -52,6 +52,34 @@ def average_ratio(data_1, data_2, calib_factor = None):
         return np.array([calibrated_mean, calibrated_std])
 
     return np.array([mean, std])
+
+
+
+def average_ratio_array_wise(data_1, data_2, calib_factor = None):
+    """ Computes the ratio of the mean of data_1 and data_2 and considers the standard deviation.
+        This function basically is the same as average_ratio_element_wise in its behaviour. See
+        the corresponding docstring. This function makes more sense if data_1 and data_2 are
+        temporarily uncorrelated.
+    """
+
+    assert data_1.shape == data_2.shape
+    assert len(data_1.shape) == 1
+    assert len(data_2.shape) == 1
+
+    data1_mean, data1_std = data_1.mean(), data_1.std()
+    data2_mean, data2_std = data_2.mean(), data_2.std()
+
+    ratio = data1_mean / data2_mean
+    std = np.sqrt( (data1_std/data2_mean)**2 + (data1_mean*data2_std/data2_mean**2)**2 )
+
+    if calib_factor is not None:
+        assert calib_factor.shape == (2,)
+        calibrated_mean = ratio / calib_factor[0]
+        calibrated_std = np.sqrt(
+            (std / calib_factor[0])**2 + (ratio / calib_factor[0]**2 * calib_factor[1])**2)
+        return np.array([calibrated_mean, calibrated_std])
+
+    return np.array([ratio, std])
 
 
 
@@ -98,8 +126,8 @@ class zScanDataProcessor:
             calibration factor. Each entry itself is a 1-dim numpy array with the first entry being
             the average calibration factor and the second entry being its corresponding error.
         """
-        self.c_OA = average_ratio(oa_signal, ref_signal)
-        self.c_CA = average_ratio(ca_signal, ref_signal)
+        self.c_OA = average_ratio_array_wise(oa_signal, ref_signal)
+        self.c_CA = average_ratio_array_wise(ca_signal, ref_signal)
         self.S = 1
         self.combined_c_CA = self.c_CA * self.S
         return np.array([self.c_OA, self.c_CA])
@@ -116,7 +144,7 @@ class zScanDataProcessor:
         """
         assert self.c_CA is not None
         assert self.c_OA is not None
-        self.S = average_ratio(ca_signal, ref_signal, calib_factor=self.c_CA)
+        self.S = average_ratio_array_wise(ca_signal, ref_signal, calib_factor=self.c_CA)
         self.combined_c_CA[0] = self.c_CA[0] * self.S[0]
         self.combined_c_CA[1] = np.sqrt((self.c_CA[0]*self.S[1])**2 + (self.c_CA[1]*self.S[0])**2)
         return self.S
@@ -144,8 +172,8 @@ class zScanDataProcessor:
             self.T_OA = np.zeros(shape=(tot_num_of_pos, 3))
             self.T_CA = np.zeros(shape=(tot_num_of_pos, 3))
 
-        transmission_oa = average_ratio(oa_signal, ref_signal, self.c_OA)
-        transmission_ca = average_ratio(ca_signal, ref_signal, self.combined_c_CA)
+        transmission_oa = average_ratio_array_wise(oa_signal, ref_signal, self.c_OA)
+        transmission_ca = average_ratio_array_wise(ca_signal, ref_signal, self.combined_c_CA)
         self.T_OA[self.current_position_step] = np.array([position, *transmission_oa])
         self.T_CA[self.current_position_step] = np.array([position, *transmission_ca])
 

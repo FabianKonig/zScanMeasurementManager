@@ -14,10 +14,9 @@ channels = [pd_ref_channel, pd_oa_channel, pd_ca_channel]
 
 class NidaqReader:
 
-    def __init__(self, sampling_rate, num_samples_per_chan, iterations):
+    def __init__(self, sampling_rate, num_samples_per_chan):
         self.sampling_rate = sampling_rate
         self.num_samples_per_chan = num_samples_per_chan
-        self.iterations = iterations
 
 
     def read_nidaq(self):
@@ -31,8 +30,8 @@ class NidaqReader:
             for channel in channels:
                 task.ai_channels.add_ai_voltage_chan(
                     channel, name_to_assign_to_channel="",
-                    terminal_config=nidaqmx.constants.TerminalConfiguration.RSE, min_val=-10.0,
-                    max_val=1.0, units=nidaqmx.constants.VoltageUnits.VOLTS, custom_scale_name="")
+                    terminal_config=nidaqmx.constants.TerminalConfiguration.RSE, min_val=-0.5,
+                    max_val=10.0, units=nidaqmx.constants.VoltageUnits.VOLTS, custom_scale_name="")
 
             task.timing.cfg_samp_clk_timing(
                 self.sampling_rate,
@@ -57,8 +56,8 @@ class NidaqReader:
             with nidaqmx.Task() as task:
                 task.ai_channels.add_ai_voltage_chan(
                     channel, name_to_assign_to_channel="",
-                    terminal_config=nidaqmx.constants.TerminalConfiguration.RSE, min_val=-10.0,
-                    max_val=1.0, units=nidaqmx.constants.VoltageUnits.VOLTS, custom_scale_name="")
+                    terminal_config=nidaqmx.constants.TerminalConfiguration.RSE, min_val=-0.5,
+                    max_val=10.0, units=nidaqmx.constants.VoltageUnits.VOLTS, custom_scale_name="")
 
                 task.timing.cfg_samp_clk_timing(
                     self.sampling_rate,
@@ -72,25 +71,96 @@ class NidaqReader:
         return signals
 
 
-    def get_nidaq_measurement_max_values(self):
+    def get_peak_values(self):
+        """ This function queries the Nidaq once. It then takes the signal of each channel,
+            finds each peak in that signal and finds for each peak the maximum measured value.
+
+            Output:
+            2-dim numpy array. The first dimension denotes the channel, the second dimension stores
+            found peak values of that channel.
+        """
+
+        # Firstly, read out Nidaq.
+        signals = self.read_nidaq_one_channel_after_the_other()
+        assert len(signals) == len(channels)
+
+        # Allocate an array for each channel, each being as long as we could possibly find peaks.
+        # This length is the maximum possible repetition rate of the pulsed laser multiplied by the
+        # time the Nidaq is queried. Additional 100 for safety :)
+        max_possible_peaks = 1100 * self.num_samples_per_chan // self.sampling_rate + 100
+        peaks = np.empty(shape=(len(signals), max_possible_peaks), dtype=float)
+        found_peak_index = np.zeros(shape=len(signals), dtype=int) # actual number of found peaks
+
+        for channel_index in range(len(signals)):
+            channel_length = len(signals[channel_index])
+            assert channel_length == self.num_samples_per_chan
+
+            threshold = signals[channel_index].max() * 0.95
+
+            point_index = 0
+            number_of_found_peaks = 0
+
+            # Fo each measured point in the channel signal, test whether the point's value exceeds
+            # the threshold. If so, it is a candidate for a peak value.
+            while True:
+                value = signals[channel_index, point_index]
+
+                if  value > threshold:
+                    last_found_peak = value
+
+                    # A possible peak value is found. Test the next points whether they might be
+                    # even larger than the one that is already found. If so, update last_found_peak.
+                    # Examine all points like this until they fall below the threshold, meaning that
+                    # we have found the maximum value of this peak for sure. Then store it and 
+                    # go on finding the next peak in the upper while loop.
+                    while True:
+                        point_index += 1
+                        value = signals[channel_index, point_index]
+                        if value > last_found_peak:
+                             last_found_peak = value
+
+                        elif value < threshold or point_index >= channel_length:
+                            peaks[channel_index, found_peak_index[channel_index]] = last_found_peak
+                            found_peak_index[channel_index] += 1
+                            break
+
+                point_index += 1
+                if point_index >= channel_length:
+                    break
+
+        # Finally, store all found peaks in an array of the correct length, i.e. the minimum 
+        # number of found peaks in one of the channels.
+        min_num_of_found_peaks = found_peak_index.min()
+        result = np.empty(shape=(len(signals), min_num_of_found_peaks))
+
+        for i in range(min_num_of_found_peaks):
+            for channel_index in range(len(signals)):
+                result[channel_index, i] = peaks[channel_index, i]
+
+        return result
+
+
+
+
+    def get_nidaq_measurement_max_values(self, iterations):
         """ I figured out that the best way of obtaining reproducable data from the Nidaq
             measurements is by acquiring approx 70000 data from it with its maximum sample rate
             (sample rate of 250k and number of samples of 70000) and taking the maximum measured
             value for each channel. This function thus queries the Nidaq signals, stores the maximum
-            value of each channel and repeats this measurement self.iterations times.
+            value of each channel and repeats this measurement iterations times.
 
             Output: 
             2-dim numpy array with the first dimension denoting the channel and the second
-            dimension is self.iterations entries long, each storing the maximum value of that
+            dimension is iterations entries long, each storing the maximum value of that
             measurement. The order of the channels is 1: ref, 2: oa, 3: ca.
         """
         
-        max_signal_values = np.empty(shape=(len(channels), self.iterations))
+        max_signal_values = np.empty(shape=(len(channels), iterations))
 
-        for value_index in range(self.iterations):
+        for iteration_index in range(iterations):
             signals = self.read_nidaq_one_channel_after_the_other()
             for channel_index in range(len(channels)):
-                max_signal_values[channel_index, value_index] = signals[channel_index].max()
+                max_signal_values[channel_index, iteration_index] = signals[channel_index].max()
 
         return max_signal_values
 
@@ -148,16 +218,19 @@ if __name__ == '__main__':
     
     import matplotlib.pyplot as plt
 
-    nr = NidaqReader(250000, 120000, 8)
-    signals = nr.get_nidaq_measurement_max_values()
-    print(signals[0].mean(), signals[0].std())
-    print(signals[1].mean(), signals[1].std())
-    print(signals[2].mean(), signals[2].std())
-    print((signals[1] / signals[0]).mean(), (signals[1] / signals[0]).std())
-    print((signals[2] / signals[0]).mean(), (signals[2] / signals[0]).std())
+    nr = NidaqReader(250000, 250000)
+    peaks = nr.get_peak_values()
 
-    plt.plot(signals[0], alpha=0.5, linestyle="", marker="x", label="Ref")
-    plt.plot(signals[1], alpha=0.5, linestyle="", marker="x", label="OA")    
-    plt.plot(signals[2], alpha=0.5, linestyle="", marker="x", label="CA")
+    print(peaks)
+    print(peaks[0].mean(), peaks[0].std())
+    plt.plot(peaks[0], color="brown", linestyle="", marker="+")
+    plt.plot(peaks[1], color="brown", linestyle="", marker="+")
+    plt.plot(peaks[2], color="brown", linestyle="", marker="+")
+
+
+    #plt.plot(signals[0], alpha=0.5, linestyle="", marker="x", label="Ref")
+    #plt.plot(signals[1], alpha=0.5, linestyle="", marker="x", label="OA")    
+    #plt.plot(signals[2], alpha=0.5, linestyle="", marker="x", label="CA")
     plt.legend()
     plt.show()
+

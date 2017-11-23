@@ -67,8 +67,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
         self.nidaq_reader = nidaq_control.NidaqReader(
             self.spinBox_samplingRate.value(), 
-            self.spinBox_samplesPerChannel.value(), 
-            self.spinBox_iterations.value())
+            self.spinBox_samplesPerChannel.value())
 
         QtWidgets.QMessageBox.information(self, "Stage position initialisation",
             "The stages will now be moved home and subsequently to their initial positions." +
@@ -146,7 +145,6 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
     def onNidaqParamsChange(self):
         self.nidaq_reader.sampling_rate = self.spinBox_samplingRate.value()
         self.nidaq_reader.num_samples_per_chan = self.spinBox_samplesPerChannel.value()
-        self.nidaq_reader.iterations = self.spinBox_iterations.value()
 
 
     def reinitAlphaAndEffLength(self):
@@ -181,7 +179,8 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
 
     def onClick_calibratePhotodiodes(self):
-        signals = self.nidaq_reader.get_nidaq_measurement_max_values()
+        signals = self.nidaq_reader.get_nidaq_measurement_max_values(
+            self.spinBox_iterations.value())
         
         calib_factors = list(self.data_processor.extract_calibration_factors(*signals))
         self.label_cOAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[0]))
@@ -207,7 +206,8 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
 
     def onClick_measureApertureTransmission(self):
-        signals = self.nidaq_reader.get_nidaq_measurement_max_values()
+        signals = self.nidaq_reader.get_nidaq_measurement_max_values(
+            self.spinBox_iterations.value())
 
         S = self.data_processor.extract_aperture_transmission(signals[0], signals[2])
         self.doc.S = S
@@ -230,7 +230,8 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         # Possibilitly one of two
         # Move both stages in tiny steps:
         for pos_index in range(tot_num_of_pos):
-            signals = self.nidaq_reader.get_nidaq_measurement_max_values()
+            signals = self.nidaq_reader.get_nidaq_measurement_max_values(
+            self.spinBox_iterations.value())
             
             # Position with respect to beam:
             # If the physical stage position is zero, it is actually behind the focal spot (this is
@@ -250,7 +251,8 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         # Firstly, move the first stage, and only if necessary the second stage and so on:
         for position in np.linspace(self.stage_controller.total_travel_distance, 0, tot_num_of_pos):
             self.stage_controller.move_to_position(position)
-            signals = self.nidaq_reader.get_nidaq_measurement_max_values()
+            signals = self.nidaq_reader.get_nidaq_measurement_max_values(
+            self.spinBox_iterations.value())
             position_wrt_beam = self.stage_controller.total_travel_distance - \
                                     self.stage_controller.combined_position
             self.data_processor.extract_oa_ca_transmissions(position_wrt_beam, *signals,
