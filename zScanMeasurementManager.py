@@ -13,7 +13,6 @@ import data_evaluation
 # TODO:
 # -----------------------------------
 # - Condensates of Light Anmeldung.
-# - Hadiseh: Theorie hinter Kerr Effekt zusammen durchgehen.
 
 # - Order a doublet lens for better focussing!
 # - Measure the beam diameter at the waist using the electronic translation stages.
@@ -28,11 +27,6 @@ import data_evaluation
 # - Make a measurement with ZnSe and Rhodamine-Ethylenglykol and water.
 # - With those measurements, make sure the behaviour of Nitrobenzole is not due to alignment, but
 #   really only due to Nitrobenzole itself.
-# - What if you decrease the time the sample is exposed to radiation? Does the Rayleigh length decrease?
-#   Then it might be a thermal effect! -> The distance between Peak and Valley in ZnSe does not
-#   change with repetition rate. Placing the sample to the location where the refraction peak is,
-#   turning off the laser and turning it on again after 5 minutes: The peak is still at this position!
-#   Hence, this is not a thermal effect!
 
 # - A fit function to convert the reference photodiode signal to the input pulse energy is necessary.
 #   It should also take the pulse repetition rate into account! For high pulse rep rates, the photo

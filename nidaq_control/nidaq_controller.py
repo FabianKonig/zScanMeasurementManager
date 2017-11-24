@@ -71,13 +71,17 @@ class NidaqReader:
         return signals
 
 
-    def get_peak_values(self):
+    def peak_finder(self, rtn_peak_positions=False, rtn_raw_nidaq_signal=False):
         """ This function queries the Nidaq once. It then takes the signal of each channel,
             finds each peak in that signal and finds for each peak the maximum measured value.
 
             Output:
             2-dim numpy array. The first dimension denotes the channel, the second dimension stores
-            found peak values of that channel.
+            all peak values found for that channel.
+            If rtn_peak_positions==True: Returns a second 2-dim numpy array, the first dimension
+            denoting the channel, the second the peak position.
+            If rtn_raw_nidaq_signal==True: Returns a third 2-dim numpy array, the first dimension
+            denoting the channel, the second the entire measured Nidaq signal.
         """
 
         # Firstly, read out Nidaq.
@@ -90,6 +94,9 @@ class NidaqReader:
         max_possible_peaks = 1100 * self.num_samples_per_chan // self.sampling_rate + 100
         peaks = np.empty(shape=(len(signals), max_possible_peaks), dtype=float)
         found_peak_index = np.zeros(shape=len(signals), dtype=int) # actual number of found peaks
+
+        if rtn_peak_positions:
+            peak_positions = np.empty(shape=(len(signals), max_possible_peaks), dtype=int)
 
         for channel_index in range(len(signals)):
             channel_length = len(signals[channel_index])
@@ -106,7 +113,7 @@ class NidaqReader:
                 value = signals[channel_index, point_index]
 
                 if  value > threshold:
-                    last_found_peak = value
+                    last_found_peak, position = value, point_index
 
                     # A possible peak value is found. Test the next points whether they might be
                     # even larger than the one that is already found. If so, update last_found_peak.
@@ -115,12 +122,21 @@ class NidaqReader:
                     # go on finding the next peak in the upper while loop.
                     while True:
                         point_index += 1
+                        if point_index >= channel_length:
+                            break
+                            
                         value = signals[channel_index, point_index]
                         if value > last_found_peak:
-                             last_found_peak = value
+                             last_found_peak, position = value, point_index
 
-                        elif value < threshold or point_index >= channel_length:
+                        # check if we are far from the interesting region: threshold*0.5
+                        elif value < threshold*0.5 or point_index >= channel_length:
                             peaks[channel_index, found_peak_index[channel_index]] = last_found_peak
+                    
+                            if rtn_peak_positions:
+                                peak_positions[channel_index, found_peak_index[channel_index]] \
+                                    = position
+
                             found_peak_index[channel_index] += 1
                             break
 
@@ -131,15 +147,26 @@ class NidaqReader:
         # Finally, store all found peaks in an array of the correct length, i.e. the minimum 
         # number of found peaks in one of the channels.
         min_num_of_found_peaks = found_peak_index.min()
-        result = np.empty(shape=(len(signals), min_num_of_found_peaks))
+        peaks_result = np.empty(shape=(len(signals), min_num_of_found_peaks))
+
+        if rtn_peak_positions:
+            peak_positions_result = np.empty(shape=(len(signals), min_num_of_found_peaks))
 
         for i in range(min_num_of_found_peaks):
             for channel_index in range(len(signals)):
-                result[channel_index, i] = peaks[channel_index, i]
+                peaks_result[channel_index, i] = peaks[channel_index, i]
 
-        return result
+                if rtn_peak_positions:
+                    peak_positions_result[channel_index, i] = peak_positions[channel_index, i]
 
-
+        if rtn_peak_positions and rtn_raw_nidaq_signal:
+            return peaks_result, peak_positions_result, signals
+        elif rtn_peak_positions and not rtn_raw_nidaq_signal:
+            return peaks_result, peak_positions_result
+        elif not rtn_peak_positions and rtn_raw_nidaq_signal:
+            return peaks_result, signals
+        else:
+            return peaks_result
 
 
     def get_nidaq_measurement_max_values(self, iterations):
@@ -219,18 +246,23 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     nr = NidaqReader(250000, 250000)
-    peaks = nr.get_peak_values()
+    peaks, peak_positions, signals = nr.peak_finder(rtn_peak_positions=True, 
+                                                    rtn_raw_nidaq_signal=True)
+
+    #peaks = nr.peak_finder(rtn_peak_positions=False, rtn_raw_nidaq_signal=False)
+
 
     print(peaks)
+    print(peak_positions)    
     print(peaks[0].mean(), peaks[0].std())
-    plt.plot(peaks[0], color="brown", linestyle="", marker="+")
-    plt.plot(peaks[1], color="brown", linestyle="", marker="+")
-    plt.plot(peaks[2], color="brown", linestyle="", marker="+")
+    plt.plot(peak_positions[0], peaks[0], color="brown", linestyle="", marker="+", markersize=8)
+    plt.plot(peak_positions[1], peaks[1], color="brown", linestyle="", marker="+", markersize=8)
+    plt.plot(peak_positions[2], peaks[2], color="brown", linestyle="", marker="+", markersize=8)
 
 
-    #plt.plot(signals[0], alpha=0.5, linestyle="", marker="x", label="Ref")
-    #plt.plot(signals[1], alpha=0.5, linestyle="", marker="x", label="OA")    
-    #plt.plot(signals[2], alpha=0.5, linestyle="", marker="x", label="CA")
+    plt.plot(signals[0], alpha=0.5, linestyle="", marker="x", label="Ref")
+    plt.plot(signals[1], alpha=0.5, linestyle="", marker="x", label="OA")    
+    plt.plot(signals[2], alpha=0.5, linestyle="", marker="x", label="CA")
     plt.legend()
     plt.show()
 
