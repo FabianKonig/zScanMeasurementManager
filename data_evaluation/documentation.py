@@ -8,7 +8,7 @@ class Documentation:
 
     def __init__(self, sample, solvent, concentration, laser_rep_rate, furtherNotes,
         refr_index_sample, refr_index_ambient, alpha, geom_sample_length, eff_sample_length,
-        pulse_energy, eff_pulse_energy, S, λ_vac, w0):
+        pulse_energy, eff_pulse_energy, eff_peak_intensity, S, λ_vac, w0):
         
         self.sample = sample                            # string
         self.solvent = solvent                          # string
@@ -23,6 +23,7 @@ class Documentation:
 
         self.pulse_energy = pulse_energy                # in J, 1-dim np.array
         self.eff_pulse_energy = eff_pulse_energy        # in J, 1-dim np.array
+        self.eff_peak_intensity = eff_peak_intensity    # in W/m^2, 1-dim np.array
         self.S = S                                      # aperture transmission, 1-dim np.array
 
         self._λ_vac = λ_vac                             # in m, float, vacuum wavelength of beam
@@ -33,7 +34,7 @@ class Documentation:
     @staticmethod
     def empty(λ_vac, w0):
         return Documentation(None, None, None, None, None, None, None, None, None, None, None, None,
-            None, λ_vac, w0)
+            None, None, λ_vac, w0)
 
 
     @property
@@ -100,16 +101,21 @@ class Documentation:
                  "Concentration:            " + self.concentration + "\n" + \
                  "Laser rep. rate:          {0}Hz\n".format(self.laser_rep_rate) + \
                  "Further notes:            " + self.furtherNotes + "\n" + \
+                 "\n" + \
+                 "Aperture transm. S:       {0:.3f} +- {1:.3f}\n".format(self.S[0], self.S[1]) + \
+                 "Linear refractive index:  {0:.3f}\n".format(self.refr_index_sample) + \
+                 "Ambient refractive index: {0:.3f}\n".format(self.refr_index_ambient) + \
+                 "Geometric sample length:  {0:.3f}mm\n".format(self.geom_sample_length*1e3) + \
+                 "Effective sample length:  {0:.3f}mm\n".format(self.eff_sample_length*1e3) + \
+                 "alpha:                    {0:.3f} mm^-1\n".format(self.alpha*1e3) + \
+                 "\n" + \
                  "Pulse energy:             ({0:.3f} +- {1:.3f})µJ\n".format(
                     self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
                  "Eff. pulse energy:        ({0:.3f} +- {1:.3f})µJ\n".format(
                     self.eff_pulse_energy[0]*1e6, self.eff_pulse_energy[1]*1e6) + \
-                 "Aperture transm. S:       {0:.3f} +- {1:.3f}\n".format(self.S[0], self.S[1]) + \
-                 "Linear refractive index:  {0:.3f}\n".format(self.refr_index_sample) + \
-                 "Ambient refractive index: {0:.3f}\n".format(self.refr_index_ambient) + \
-                 "alpha:                    {0:.3f} mm^-1\n".format(self.alpha*1e3) + \
-                 "Geometric sample length:  {0:.3f}mm\n".format(self.geom_sample_length*1e3) + \
-                 "Effective sample length:  {0:.3f}mm\n".format(self.eff_sample_length*1e3) + \
+                 "Eff. peak intensity:      ({0:.0f} +- {1:.0f})MW/cm^2\n".format(
+                    self.eff_peak_intensity[0]*1e-10, self.eff_peak_intensity[1]*1e-10) + \
+                 "\n" + \
                  "Wavelength vacuum:        {0:.3f}nm\n".format(self.λ_vac*1e9) + \
                  "Beam waist:               {0:.3f}µm\n".format(self.w0*1e6) + \
                  "Rayleigh length vacuum:   {0:.3f}mm\n".format(self.zR*1e3) + \
@@ -124,8 +130,8 @@ class Documentation:
         header = "Sample: " + self.sample + \
                  ",     Solvent: " + self.solvent + \
                  ",     Concentration = " + self.concentration + "\n" + \
-                 "$E_{Pulse}^{eff}$" + " = ({0:.3f} $\pm$ {1:.3f})µJ".format(
-                    self.eff_pulse_energy[0]*1e6, self.eff_pulse_energy[1]*1e6) + \
+                 "$I_{0}^{eff}$" + " = ({0:.0f} $\pm$ {1:.0f})MW/cm$^2$".format(
+                    self.eff_peak_intensity[0]*1e-10, self.eff_peak_intensity[1]*1e-10) + \
                  ",     $f_{Laser}$" + " = {0}Hz".format(self.laser_rep_rate) + \
                  ",     S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
 
@@ -148,6 +154,7 @@ class Documentation:
         assert self.eff_sample_length is not None
         assert self.pulse_energy is not None
         assert self.eff_pulse_energy is not None
+        assert self.eff_peak_intensity is not None
         assert self.S is not None
         assert self.λ_vac is not None
         assert self.w0 is not None

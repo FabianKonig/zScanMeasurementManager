@@ -275,6 +275,31 @@ class zScanDataProcessor:
         return pulse_energy * transmission
 
 
+    def compute_effective_peak_intensity(self, eff_pulse_energy, pulse_length_fwhm, w0):
+        """ Computes the effective peak intensity.
+            Input:
+            eff_pulse_energy    1 dim numpy array of length 2, first entry being the eff. pulse
+                                energy, second entry its error, both in J.
+            pulse_length_fwhm   float, the pulse length in seconds.
+            w0                  float, beam waist at the focus in metre
+
+            Output:
+            effective peak intensity    1 dim numpy array of length 2, first entry being the peak
+                                        intensity, second its error, both in units of W/m^2
+            """
+
+        pulse_length = pulse_length_fwhm     # seconds        
+        eff_pulse_energy = eff_pulse_energy  # in J
+
+        P0 = np.array([eff_pulse_energy[0], eff_pulse_energy[1]]) / pulse_length  # in W
+        
+        I0 = np.empty(shape=(2))
+        I0[0] = 2*P0[0] / (np.pi*w0**2)     # in W/m^2
+        I0[1] = 2*P0[1] / (np.pi*w0**2)     # in W/m^2
+
+        return I0
+
+
     def compute_alpha(self, transmission, refr_index_sample, refr_index_ambient, geom_length):
         """ Computes the linear absorption coefficient alpha by taking Fresnel reflection losses
             at the boundaries of sample and ambient material and of ambient material and air into

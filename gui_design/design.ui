@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>652</width>
-    <height>782</height>
+    <width>589</width>
+    <height>793</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -537,6 +537,20 @@
        <item>
         <widget class="QWidget" name="widgetCalibrationValues" native="true">
          <layout class="QGridLayout" name="gridLayout">
+          <item row="3" column="2">
+           <widget class="QLabel" name="label_effPulseEnergyValue">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QLabel" name="label_peakIntensityEffective">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;I&lt;span style=&quot; vertical-align:sub;&quot;&gt;0&lt;/span&gt;&lt;span style=&quot; vertical-align:super;&quot;&gt;eff&lt;/span&gt; / MW/cm&lt;span style=&quot; vertical-align:super;&quot;&gt;-2&lt;/span&gt; =&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="1">
            <widget class="QLabel" name="label_cCA">
             <property name="sizePolicy">
@@ -550,6 +564,34 @@
             </property>
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_cCAValue">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QLabel" name="label_pulseEnergyValue">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QLabel" name="label_cOAValue">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLabel" name="label_effPulseEnergy">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;E&lt;span style=&quot; vertical-align:sub;&quot;&gt;Pulse, eff&lt;/span&gt; / µJ =&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -569,20 +611,6 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="2">
-           <widget class="QLabel" name="label_cOAValue">
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QLabel" name="label_cCAValue">
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
           <item row="2" column="1">
            <widget class="QLabel" name="label_pulseEnergy">
             <property name="text">
@@ -590,22 +618,8 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="2">
-           <widget class="QLabel" name="label_pulseEnergyValue">
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <widget class="QLabel" name="label_effPulseEnergy">
-            <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;E&lt;span style=&quot; vertical-align:sub;&quot;&gt;Pulse, eff&lt;/span&gt; / µJ =&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="2">
-           <widget class="QLabel" name="label_effPulseEnergyValue">
+          <item row="4" column="2">
+           <widget class="QLabel" name="label_peakIntensityEffectiveValue">
             <property name="text">
              <string/>
             </property>

@@ -24,8 +24,6 @@ CONSTANTS_rayleighLength_correction_factor = 1.9
 CONSTANTS_guess_OA = [22,1]  # second entry: dΨ
 CONSTANTS_guess_CA = [22,-1]  # second entry: dΦ
 
-CONSTANTS_pulse_length_FWHM = 15e-12  # laser pulse length in seconds
-
 
 
 class zScanDataAnalyser:
@@ -71,9 +69,7 @@ class zScanDataAnalyser:
         T_CA[:,1] = data[:,3]
         T_CA[:,2] = data[:,4]
 
-        doc = documentation.Documentation("Acetone", "--", "0.0mmol/l", 10, "---",
-        1.46, 1.46, 0, 1e-3, 1e-3, np.array([9.294, 0.036])*1e-6, np.array([9.294, 0.036])*1e-6,
-        np.array([0.154, 0.001]), 532e-9, 19.0537e-6)
+        # doc = TODO parse file
 
         return zScanDataAnalyser(T_OA, T_CA, doc)
 
@@ -231,19 +227,11 @@ class zScanDataAnalyser:
         n2: 1-dim numpy array of length 2, first entry being n2, second its error, both in units
             of m^2/W.
         """
-        pulse_length = CONSTANTS_pulse_length_FWHM    # seconds        
-        eff_pulse_energy = self.doc.eff_pulse_energy  # in J
         eff_length = self.doc.eff_sample_length       # in m
-        w0 = self.doc.w0                              # m
         λ_vac = self.doc.λ_vac                        # m
-
-
-        P0 = np.array([eff_pulse_energy[0], eff_pulse_energy[1]]) / pulse_length  # in W
+        I0 = self.doc.eff_peak_intensity              # in W/m^2
         
-        I0 = np.empty(shape=(2))
-        I0[0] = 2*P0[0] / (np.pi*w0**2)     # in W/m^2
-        I0[1] = 2*P0[1] / (np.pi*w0**2)     # in W/m^2
-        k = 2*np.pi / λ_vac                 # in 1/m
+        k = 2*np.pi / λ_vac                           # in 1/m
         
         n2 = dΦ[0] / (k*I0[0]*eff_length)
         dn2 = np.sqrt( (dΦ[1]/(k*I0[0]*eff_length))**2 + (dΦ[0]*I0[1]/(k*I0[0]*eff_length)**2)**2)

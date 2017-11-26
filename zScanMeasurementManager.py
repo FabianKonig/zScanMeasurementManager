@@ -40,8 +40,9 @@ import data_evaluation
 
 
 # Constants:
-CONSTANTS_beam_waist = 19.0537e-6  # waist of incident beam in vacuum in m
-CONSTANTS_wavelength = 532e-9      # wavelength of incident beam in vacuum in m
+CONSTANTS_beam_waist = 19.0537e-6     # waist of incident beam in vacuum in m
+CONSTANTS_wavelength = 532e-9         # wavelength of incident beam in vacuum in m
+CONSTANTS_pulse_length_FWHM = 15e-12  # laser pulse length in seconds
 
 
 
@@ -183,14 +184,23 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         pulse_energy = self.data_processor.extract_pulse_energy(
             signals[0] * self.doubleSpinBox_attenuationPdRef.value())
         self.doc.pulse_energy = pulse_energy
-        self.label_pulseEnergyValue.setText("{0:.3f} +- {1:.3f}".format(*pulse_energy*1e6))
+        self.label_pulseEnergyValue.setText("{0:.3f} +- {1:.3f}".format(*pulse_energy*1e6))  # in µJ
 
         eff_pulse_energy = self.data_processor.compute_effective_pulse_energy(
             pulse_energy,
             self.doc.refr_index_sample,
             self.doc.refr_index_ambient)
         self.doc.eff_pulse_energy = eff_pulse_energy
-        self.label_effPulseEnergyValue.setText("{0:.3f} +- {1:.3f}".format(*eff_pulse_energy*1e6))
+        self.label_effPulseEnergyValue.setText("{0:.3f} +- {1:.3f}".format(
+            *eff_pulse_energy*1e6))  # in units of µJ
+
+        eff_peak_intensity = self.data_processor.compute_effective_peak_intensity(
+            eff_pulse_energy,
+            CONSTANTS_pulse_length_FWHM,
+            self.doc.w0)
+        self.doc.eff_peak_intensity = eff_peak_intensity
+        self.label_peakIntensityEffectiveValue.setText("{0:.0f} +- {1:.0f}".format(
+            *eff_peak_intensity*1e-10))  # in units of MW/cm^2
 
         if self.labelApertureTransmittanceValue.text() == "":
             self.groupBox_Aperture.setEnabled(True)
