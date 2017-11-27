@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>652</width>
-    <height>782</height>
+    <width>589</width>
+    <height>793</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -49,7 +49,7 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QLineEdit" name="lineEdit_sampleMaterial">
+          <widget class="QLineEdit" name="lineEdit_sample">
            <property name="text">
             <string>--</string>
            </property>
@@ -76,9 +76,9 @@
           </widget>
          </item>
          <item row="0" column="0">
-          <widget class="QLabel" name="label_sampleMaterial">
+          <widget class="QLabel" name="label_sample">
            <property name="text">
-            <string>Sample material</string>
+            <string>Sample</string>
            </property>
           </widget>
          </item>
@@ -99,7 +99,7 @@
          <item row="1" column="0">
           <widget class="QLabel" name="label_concentration">
            <property name="text">
-            <string>Concentration / mmol/l</string>
+            <string>Concentration</string>
            </property>
           </widget>
          </item>
@@ -116,16 +116,6 @@
            </property>
           </spacer>
          </item>
-         <item row="1" column="1">
-          <widget class="QDoubleSpinBox" name="doubleSpinBox_concentration">
-           <property name="decimals">
-            <number>2</number>
-           </property>
-           <property name="maximum">
-            <double>10000.000000000000000</double>
-           </property>
-          </widget>
-         </item>
          <item row="1" column="4">
           <widget class="QSpinBox" name="spinBox_laserRepRate">
            <property name="minimum">
@@ -140,7 +130,7 @@
           </widget>
          </item>
          <item row="4" column="1">
-          <widget class="QDoubleSpinBox" name="doubleSpinBox_refrIndexMaterial">
+          <widget class="QDoubleSpinBox" name="doubleSpinBox_refrIndexSample">
            <property name="decimals">
             <number>2</number>
            </property>
@@ -202,7 +192,7 @@
           </widget>
          </item>
          <item row="4" column="3">
-          <widget class="QLabel" name="label_RefrIndexAmbient">
+          <widget class="QLabel" name="label_refrIndexAmbient">
            <property name="text">
             <string>Ambient refractive index</string>
            </property>
@@ -222,9 +212,9 @@
           </spacer>
          </item>
          <item row="4" column="0">
-          <widget class="QLabel" name="label_RefrIndexMaterial">
+          <widget class="QLabel" name="label_refrIndexSample">
            <property name="text">
-            <string>Refractive index material</string>
+            <string>Refractive index sample</string>
            </property>
           </widget>
          </item>
@@ -239,6 +229,13 @@
           <widget class="QLineEdit" name="lineEdit_furtherNotes">
            <property name="text">
             <string>---</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="lineEdit_concentration">
+           <property name="text">
+            <string>0.00 mol/l</string>
            </property>
           </widget>
          </item>
@@ -444,19 +441,19 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;          α / mm&lt;span style=&quot; vertical-align:super;&quot;&gt;-1&lt;/span&gt; =&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;α / m&lt;span style=&quot; vertical-align:super;&quot;&gt;-1&lt;/span&gt; =&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
           <item row="5" column="3">
-           <widget class="QLabel" name="label_effLength">
+           <widget class="QLabel" name="label_effSampleLength">
             <property name="text">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;L&lt;span style=&quot; vertical-align:sub;&quot;&gt;eff&lt;/span&gt; / mm =&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
           <item row="5" column="4">
-           <widget class="QLabel" name="label_effLengthValue">
+           <widget class="QLabel" name="label_effSampleLengthValue">
             <property name="text">
              <string>1.00</string>
             </property>
@@ -511,7 +508,7 @@
                <double>10000.000000000000000</double>
               </property>
               <property name="singleStep">
-               <double>100.000000000000000</double>
+               <double>10.000000000000000</double>
               </property>
               <property name="value">
                <double>100.000000000000000</double>
@@ -540,6 +537,20 @@
        <item>
         <widget class="QWidget" name="widgetCalibrationValues" native="true">
          <layout class="QGridLayout" name="gridLayout">
+          <item row="3" column="2">
+           <widget class="QLabel" name="label_effPulseEnergyValue">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QLabel" name="label_peakIntensityEffective">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;I&lt;span style=&quot; vertical-align:sub;&quot;&gt;0&lt;/span&gt;&lt;span style=&quot; vertical-align:super;&quot;&gt;eff&lt;/span&gt; / MW/cm&lt;span style=&quot; vertical-align:super;&quot;&gt;-2&lt;/span&gt; =&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="1">
            <widget class="QLabel" name="label_cCA">
             <property name="sizePolicy">
@@ -553,6 +564,34 @@
             </property>
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_cCAValue">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QLabel" name="label_pulseEnergyValue">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QLabel" name="label_cOAValue">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLabel" name="label_effPulseEnergy">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;E&lt;span style=&quot; vertical-align:sub;&quot;&gt;Pulse, eff&lt;/span&gt; / µJ =&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -572,20 +611,6 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="2">
-           <widget class="QLabel" name="label_cOAValue">
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QLabel" name="label_cCAValue">
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
           <item row="2" column="1">
            <widget class="QLabel" name="label_pulseEnergy">
             <property name="text">
@@ -593,8 +618,8 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="2">
-           <widget class="QLabel" name="label_pulseEnergyValue">
+          <item row="4" column="2">
+           <widget class="QLabel" name="label_peakIntensityEffectiveValue">
             <property name="text">
              <string/>
             </property>

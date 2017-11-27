@@ -1,34 +1,33 @@
+from PyQt5 import QtWidgets
+from math import isclose
 import sys
 import numpy as np
-from PyQt5 import QtWidgets
+import last_gui_settings
 import gui_design
-import data_analysis
 import stage_control
 import nidaq_control
-from math import isclose
+import data_evaluation
+
 
 
 # TODO:
 # -----------------------------------
-# - When changing the geometrical length, the effective length must be changed as well in GUI.          DONE. Check it!
 # - Condensates of Light Anmeldung.
-# - Get in touch with Julian.
-# - Displacements of the aperture have some (minimal) effects. Try to centre the aperture. For that,
-#   close it to a tiny spot, then move it and maximise the tranmsitted power by observing the
-#   photodiode signal on the oscilloscope. Do it with a medium inside. Use a zero-aperture aperture
-#   that can be moved with screws.
 
-# - Überarbeite das ganze Programm, insbesondere das Fitten.
+# - Check pulse energy calibration!
+# - Order a doublet lens for better focussing!
+# - Measure the beam diameter at the waist using the electronic translation stages.
+# - Use a pinhole for spatial filtering. The beam waist in the telescope focus should be around
+#   w0 = 12.70µm.
+# - At large frequencies the photodiodes have an offset. Take care of this!
 
-# - Try to fit Julians "5.dat" measurement of RH6G in Ethylenglykol with both curves separately.
-# - Wie sehen Julians Messwerte zu ZnSe aus? Versuche sie zu fitten, um zu sehen, ob sie wirklich
-#   den Kurven entsprechen.
+# - Dateien müssen geparsed werden können.
+
+# - Try to fit Julians "5.dat" measurement of RH6G in Ethylenglycole with both curves separately.
 
 # - Make a measurement with ZnSe and Rhodamine-Ethylenglykol and water.
 # - With those measurements, make sure the behaviour of Nitrobenzole is not due to alignment, but
 #   really only due to Nitrobenzole itself.
-# - What if you decrease the time the sample is exposed to radiation? Does the Rayleigh length decrease?
-#   Then it might be a thermal effect!
 
 # - A fit function to convert the reference photodiode signal to the input pulse energy is necessary.
 #   It should also take the pulse repetition rate into account! For high pulse rep rates, the photo
@@ -40,30 +39,31 @@ from math import isclose
 # - Take care of multithreading.
 
 
+
+# Constants:
+CONSTANTS_beam_waist = 19.0537e-6     # waist of incident beam in vacuum in m
+CONSTANTS_wavelength = 532e-9         # wavelength of incident beam in vacuum in m
+CONSTANTS_pulse_length_FWHM = 15e-12  # laser pulse length in seconds
+
+
+
+
 class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
     def __init__(self):
         super().__init__()    # call __init__ of QtWidgets.QMainWindow
         self.setupUi(self)    # call setupUI of gui_design.Ui_MainWindow (generated with QtDesigner)
         self.defineSignalsSlots()
 
+        self.doc = data_evaluation.Documentation.empty(CONSTANTS_wavelength, CONSTANTS_beam_waist)
+        self.doc.alpha = 0  # initially
+        self.doc.eff_sample_length = self.doubleSpinBox_geomSampleLength.value()*1e-3
+        self.compile_documentation()
 
-        self.data_analyser = data_analysis.zScanDataAnalyser(
-            self.spinBox_numPositions.value(),
-            self.lineEdit_sampleMaterial.text(),
-            self.lineEdit_solvent.text(),
-            self.doubleSpinBox_concentration.value(),
-            self.spinBox_laserRepRate.value(),
-            self.lineEdit_furtherNotes.text(),
-            self.doubleSpinBox_refrIndexMaterial.value(),
-            self.doubleSpinBox_refrIndexAmbient.value(),
-            self.doubleSpinBox_geomSampleLength.value(),
-            float(self.label_alphaValue.text()))
-
+        self.data_processor = data_evaluation.zScanDataProcessor()
 
         self.nidaq_reader = nidaq_control.NidaqReader(
             self.spinBox_samplingRate.value(), 
-            self.spinBox_samplesPerChannel.value(), 
-            self.spinBox_iterations.value())
+            self.spinBox_samplesPerChannel.value())
 
         QtWidgets.QMessageBox.information(self, "Stage position initialisation",
             "The stages will now be moved home and subsequently to their initial positions." +
@@ -71,88 +71,137 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         
         self.stage_controller = stage_control.APT_Controller()
 
+        # New function: Load input values of last GUI access:
+        self.load_last_gui_settings()
 
 
     def defineSignalsSlots(self):
+        self.pushButton_computeAlpha.clicked.connect(self.onClick_computeAlpha)
         self.pushButton_calibratePDs.clicked.connect(self.onClick_calibratePhotodiodes)
         self.pushButton_measureAperture.clicked.connect(self.onClick_measureApertureTransmission)
         self.pushButton_startMeasurement.clicked.connect(self.onClick_startMeasurement)
-        self.pushButton_computeAlpha.clicked.connect(self.onClick_computeAlpha)
 
-        self.lineEdit_sampleMaterial.textChanged.connect(self.onNotesChange)
-        self.lineEdit_solvent.textChanged.connect(self.onNotesChange)
-        self.doubleSpinBox_concentration.valueChanged.connect(self.onNotesChange)
-        self.spinBox_laserRepRate.valueChanged.connect(self.onNotesChange)
-        self.spinBox_numPositions.valueChanged.connect(self.onNotesChange)
-        self.lineEdit_furtherNotes.textChanged.connect(self.onNotesChange)
-        self.doubleSpinBox_geomSampleLength.valueChanged.connect(self.onNotesChange)
-        self.doubleSpinBox_geomSampleLength.valueChanged.connect(self.onGeomLengthChange)
+        self.lineEdit_sample.textChanged.connect(self.compile_documentation)
+        self.lineEdit_solvent.textChanged.connect(self.compile_documentation)
+        self.lineEdit_concentration.textChanged.connect(self.compile_documentation)
+        self.spinBox_laserRepRate.valueChanged.connect(self.compile_documentation)
+        self.doubleSpinBox_geomSampleLength.valueChanged.connect(self.compile_documentation)
+        self.lineEdit_furtherNotes.textChanged.connect(self.compile_documentation)
+        self.doubleSpinBox_refrIndexSample.valueChanged.connect(self.compile_documentation)
+        self.doubleSpinBox_refrIndexAmbient.valueChanged.connect(self.compile_documentation)
+
+        self.doubleSpinBox_geomSampleLength.valueChanged.connect(self.reinitAlphaAndEffLength)
+        self.doubleSpinBox_refrIndexSample.valueChanged.connect(self.reinitAlphaAndEffLength)
+        self.doubleSpinBox_refrIndexAmbient.valueChanged.connect(self.reinitAlphaAndEffLength)
 
         self.spinBox_samplingRate.valueChanged.connect(self.onNidaqParamsChange)
         self.spinBox_samplesPerChannel.valueChanged.connect(self.onNidaqParamsChange)
         self.spinBox_iterations.valueChanged.connect(self.onNidaqParamsChange)
 
-        self.doubleSpinBox_refrIndexMaterial.valueChanged.connect(self.onNotesChange)
-        self.doubleSpinBox_refrIndexAmbient.valueChanged.connect(self.onNotesChange)
+
+    def compile_documentation(self):
+        self.doc.sample = self.lineEdit_sample.text()
+        self.doc.solvent = self.lineEdit_solvent.text()
+        self.doc.concentration = self.lineEdit_concentration.text()
+        self.doc.laser_rep_rate = self.spinBox_laserRepRate.value()
+        self.doc.geom_sample_length = self.doubleSpinBox_geomSampleLength.value()*1e-3
+        self.doc.furtherNotes = self.lineEdit_furtherNotes.text()
+        self.doc.refr_index_sample = self.doubleSpinBox_refrIndexSample.value()
+        self.doc.refr_index_ambient = self.doubleSpinBox_refrIndexAmbient.value()
+        self.doc.λ_vac = CONSTANTS_wavelength
+        self.doc.w0 = CONSTANTS_beam_waist
 
 
-    def onNotesChange(self):
-        self.data_analyser.sample_material = self.lineEdit_sampleMaterial.text()
-        self.data_analyser.solvent = self.lineEdit_solvent.text()
-        self.data_analyser.concentration = self.doubleSpinBox_concentration.value()
-        self.data_analyser.laser_rep_rate = self.spinBox_laserRepRate.value()
-        self.data_analyser.tot_num_of_pos = self.spinBox_numPositions.value()
-        self.data_analyser.furtherNotes = self.lineEdit_furtherNotes.text()
-        self.data_analyser.refr_index_material = self.doubleSpinBox_refrIndexMaterial.value()
-        self.data_analyser.refr_index_ambient = self.doubleSpinBox_refrIndexAmbient.value()
-        self.data_analyser.geom_length = self.doubleSpinBox_geomSampleLength.value()
+    def load_last_gui_settings(self):
+        last_settings = last_gui_settings.get_last_settings()
+        if last_settings is not None:
+            self.update_gui_with_last_settings(last_settings)
+
+
+    def update_gui_with_last_settings(self, last_settings):
+        self.lineEdit_sample.setText(last_settings.sample)
+        self.lineEdit_solvent.setText(last_settings.solvent)
+        self.lineEdit_concentration.setText(last_settings.concentration)
+        self.spinBox_laserRepRate.setValue(last_settings.laser_rep_rate)
+        self.doubleSpinBox_geomSampleLength.setValue(last_settings.geom_sample_length)
+        self.doubleSpinBox_refrIndexSample.setValue(last_settings.refr_index_sample)
+        self.doubleSpinBox_refrIndexAmbient.setValue(last_settings.refr_index_ambient)
+        self.lineEdit_furtherNotes.setText(last_settings.furtherNotes)
+        self.spinBox_numPositions.setValue(last_settings.numPositions)
+        self.spinBox_samplingRate.setValue(last_settings.samplingRate)
+        self.spinBox_samplesPerChannel.setValue(last_settings.samplesPerChannel)
+        self.spinBox_iterations.setValue(last_settings.iterations)
+        self.doubleSpinBox_II0.setValue(last_settings.i_i0)
+        self.label_alphaValue.setText(last_settings.alpha)
+        self.label_effSampleLengthValue.setText(last_settings.eff_sample_length)
+        self.doubleSpinBox_attenuationPdRef.setValue(last_settings.attenuation_pd_ref)
+
 
 
     def onNidaqParamsChange(self):
         self.nidaq_reader.sampling_rate = self.spinBox_samplingRate.value()
         self.nidaq_reader.num_samples_per_chan = self.spinBox_samplesPerChannel.value()
-        self.nidaq_reader.iterations = self.spinBox_iterations.value()
 
 
-    def onGeomLengthChange(self):
-        self.label_effLengthValue.setText("{0:.3f}".format(self.doubleSpinBox_geomSampleLength.value()))
-        self.doubleSpinBox_II0.setValue(1.)
+    def reinitAlphaAndEffLength(self):
+        """ If the geometrical sample length, or one of the refractive indices has been changed by
+            the user, alpha and effective length have to be computed again with these new values.
+            Before having done so, alpha is set to 0 again and the effective length to the geometric
+            length.
+        """
+        self.label_effSampleLengthValue.setText("{0:.3f}".format(
+            self.doubleSpinBox_geomSampleLength.value()))
+        self.doc.eff_sample_length = self.doubleSpinBox_geomSampleLength.value()
+
         self.label_alphaValue.setText("{0:.3f}".format(0.))
-        self.data_analyser.alpha = 0.
+        self.doc.alpha = 0
 
 
     def onClick_computeAlpha(self):
         transmission = self.doubleSpinBox_II0.value()
-        refr_index_material = self.doubleSpinBox_refrIndexMaterial.value()
-        refr_index_ambient = self.doubleSpinBox_refrIndexAmbient.value()
-        geom_length = self.doubleSpinBox_geomSampleLength.value()  # given in mm
+        refr_index_sample = self.doc.refr_index_sample
+        refr_index_ambient = self.doc.refr_index_ambient
+        geom_sample_length = self.doc.geom_sample_length  # in m
 
-        transmission_glass_air = 1 - ((refr_index_ambient-1)/(refr_index_ambient+1))**2
-        transmission_ambient_material = 1 - ((refr_index_ambient-refr_index_material)/(refr_index_ambient+refr_index_material))**2
-        # each transmission is squared because the light has to transmit each boundary twice:
-        expected_transmission = transmission_ambient_material**2 * transmission_glass_air**2
-
-        # the transmission through the medium (after being corrected by Fresnel transmission)
-        transmission_medium = transmission / expected_transmission
-
-        alpha = -np.log(transmission_medium) / geom_length  # in 1/mm
-
-        self.label_alphaValue.setText("{0:.3f}".format(alpha))
-        self.data_analyser.alpha = alpha
-        eff_length = self.data_analyser.compute_effective_length() * 1e3  # in mm
-        self.label_effLengthValue.setText("{0:.3f}".format(eff_length))
+        alpha = self.data_processor.compute_alpha(transmission, refr_index_sample,
+            refr_index_ambient, geom_sample_length)  # in 1/m
+        self.doc.alpha = alpha
+        self.label_alphaValue.setText("{0:.3f}".format(alpha))  # in 1/m
+        
+        eff_sample_length = self.data_processor.compute_effective_length(geom_sample_length,
+            alpha)  # in m
+        self.doc.eff_sample_length = eff_sample_length
+        self.label_effSampleLengthValue.setText("{0:.3f}".format(eff_sample_length * 1e3))  # in mm
 
 
     def onClick_calibratePhotodiodes(self):
-        signals = self.nidaq_reader.get_nidaq_measurement_max_values()
-        pulse_energy = self.data_analyser.extract_pulse_energy(
-            signals[0] * self.doubleSpinBox_attenuationPdRef.value())
-        self.label_pulseEnergyValue.setText("{0:.3f} +- {1:.3f}".format(*pulse_energy*1e6))
-
-        calib_factors = list(self.data_analyser.extract_calibration_factors(*signals))
+        signals = self.nidaq_reader.get_nidaq_measurement_max_values(
+            self.spinBox_iterations.value())
+        
+        calib_factors = list(self.data_processor.extract_calibration_factors(*signals))
         self.label_cOAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[0]))
         self.label_cCAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[1]))
+        
+        pulse_energy = self.data_processor.extract_pulse_energy(
+            signals[0] * self.doubleSpinBox_attenuationPdRef.value())
+        self.doc.pulse_energy = pulse_energy
+        self.label_pulseEnergyValue.setText("{0:.3f} +- {1:.3f}".format(*pulse_energy*1e6))  # in µJ
 
+        eff_pulse_energy = self.data_processor.compute_effective_pulse_energy(
+            pulse_energy,
+            self.doc.refr_index_sample,
+            self.doc.refr_index_ambient)
+        self.doc.eff_pulse_energy = eff_pulse_energy
+        self.label_effPulseEnergyValue.setText("{0:.3f} +- {1:.3f}".format(
+            *eff_pulse_energy*1e6))  # in units of µJ
+
+        eff_peak_intensity = self.data_processor.compute_effective_peak_intensity(
+            eff_pulse_energy,
+            CONSTANTS_pulse_length_FWHM,
+            self.doc.w0)
+        self.doc.eff_peak_intensity = eff_peak_intensity
+        self.label_peakIntensityEffectiveValue.setText("{0:.0f} +- {1:.0f}".format(
+            *eff_peak_intensity*1e-10))  # in units of MW/cm^2
 
         if self.labelApertureTransmittanceValue.text() == "":
             self.groupBox_Aperture.setEnabled(True)
@@ -162,39 +211,32 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
 
     def onClick_measureApertureTransmission(self):
-        signals = self.nidaq_reader.get_nidaq_measurement_max_values()
+        signals = self.nidaq_reader.get_nidaq_measurement_max_values(
+            self.spinBox_iterations.value())
 
-        s = list(self.data_analyser.extract_aperture_transmission(signals[0], signals[2]))
-        self.labelApertureTransmittanceValue.setText("{0:.3f} +- {1:.3f}".format(*s))
+        S = self.data_processor.extract_aperture_transmission(signals[0], signals[2])
+        self.doc.S = S
+        self.labelApertureTransmittanceValue.setText("{0:.3f} +- {1:.3f}".format(*list(S)))
 
         self.groupBox_Measurement.setEnabled(True)
 
 
     def onClick_startMeasurement(self):
-        """ Assumption: Stages are located at their initial position!
-        """
-        # Assert that stages are either at their home position or at their maximum position with a
-        # precision of 0.02mm=20µm.
-        assert isclose(self.stage_controller.combined_position, 0, abs_tol=0.02) or \
-        isclose(self.stage_controller.combined_position,
-            self.stage_controller.total_travel_distance,
-            abs_tol=0.02)
+        """ Assumption: Stages are located at their initial position! """
 
-
-        # Make sure the material of the measurement has been typed in, otherwise return to the main loop.
-        if self.data_analyser.sample_material == "--": # default String
-            QtWidgets.QMessageBox.information(self, "Specify material",
-            "Please specify the sample material.")
+        if self.assert_measurement_ready_to_start() != "everything good to go!":
             return None
+        
 
         # abbreviation
-        tot_num_of_pos = self.data_analyser.tot_num_of_pos
+        tot_num_of_pos = self.spinBox_numPositions.value()
 
         """
         # Possibilitly one of two
         # Move both stages in tiny steps:
         for pos_index in range(tot_num_of_pos):
-            signals = self.nidaq_reader.get_nidaq_measurement_max_values()
+            signals = self.nidaq_reader.get_nidaq_measurement_max_values(
+            self.spinBox_iterations.value())
             
             # Position with respect to beam:
             # If the physical stage position is zero, it is actually behind the focal spot (this is
@@ -203,30 +245,107 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             position_wrt_beam = self.stage_controller.total_travel_distance - \
                                     self.stage_controller.combined_position
 
-            self.data_analyser.extract_oa_ca_transmissions(position_wrt_beam, *signals)
+            self.data_processor.extract_oa_ca_transmissions(position_wrt_beam, *signals,
+                tot_num_of_pos)
             # Don't move the last time because stages are already at their maximum positions:
             if pos_index < tot_num_of_pos-1:
                 self.stage_controller.move_in_steps(tot_num_of_pos, "backward")
         """
         
-        # Possibilitly two of two
+        # Possibility two of two
         # Firstly, move the first stage, and only if necessary the second stage and so on:
         for position in np.linspace(self.stage_controller.total_travel_distance, 0, tot_num_of_pos):
             self.stage_controller.move_to_position(position)
-            signals = self.nidaq_reader.get_nidaq_measurement_max_values()
+            signals = self.nidaq_reader.get_nidaq_measurement_max_values(
+            self.spinBox_iterations.value())
             position_wrt_beam = self.stage_controller.total_travel_distance - \
                                     self.stage_controller.combined_position
-            self.data_analyser.extract_oa_ca_transmissions(position_wrt_beam, *signals)
-        
+            self.data_processor.extract_oa_ca_transmissions(position_wrt_beam, *signals,
+                tot_num_of_pos)
 
-        self.data_analyser.evaluate_measurement_and_reinitialise(self.checkBox_wantFit.isChecked())
+
+        storage_directory, folder_num = self.doc.get_new_directory_for_storage()
+
+        data_file_header = self.doc.get_data_file_header()
+        self.data_processor.store_transmission_data(storage_directory, folder_num, data_file_header)
+        
         self.stage_controller.initialise_stages()
 
+
+        # data postprocessing:
+        data_analyser = data_evaluation.zScanDataAnalyser(self.data_processor.T_OA,
+                                                          self.data_processor.T_CA,
+                                                          self.doc)
+
+        if self.checkBox_wantFit.isChecked():
+            data_analyser.perform_combined_fit()
+            data_analyser.perform_independent_ca_fit()
+            data_analyser.perform_ca_normalised_wrt_oa_fit()
+            data_analyser.store_fit_results(storage_directory, folder_num)
+        data_analyser.plot_data(storage_directory, folder_num)
+        data_analyser.reinitialise()
+
+        self.data_processor.reinitialise()
+
+
+    def assert_measurement_ready_to_start(self):
+        # Assert that stages are either at their home position or at their maximum position with a
+        # precision of 0.02mm=20µm.
+        assert isclose(self.stage_controller.combined_position, 0, abs_tol=0.02) or \
+        isclose(self.stage_controller.combined_position,
+            self.stage_controller.total_travel_distance,
+            abs_tol=0.02)
+
+        # Make sure a sample has been specified, otherwise return to the main loop.
+        if self.lineEdit_sample.text() == "--": # default String
+            QtWidgets.QMessageBox.information(self, "Specify sample",
+            "Please specify the sample under examination.")
+            return None
+
+
+        if self.doc.S[0] > 0.25:
+            buttonReply = QtWidgets.QMessageBox.question(self, "Large aperture",
+                "The aperture transmission is larger than S = 25%. Do you still wish to start " + \
+                "the measurement?")
+            if buttonReply == QtWidgets.QMessageBox.No:
+                return None
+
+
+        # Assert that documentation is complete
+        self.doc.assert_completeness()
+
+        return "everything good to go!"
+
+
+    def exit_handler(self):
+        # Persist last settings
+        last_settings = last_gui_settings.LastGuiSettings(
+            self.lineEdit_sample.text(),
+            self.lineEdit_solvent.text(),
+            self.lineEdit_concentration.text(),
+            self.spinBox_laserRepRate.value(),
+            self.doubleSpinBox_geomSampleLength.value(),
+            self.doubleSpinBox_refrIndexSample.value(),
+            self.doubleSpinBox_refrIndexAmbient.value(),
+            self.lineEdit_furtherNotes.text(),
+            self.spinBox_numPositions.value(),
+            self.spinBox_samplingRate.value(),
+            self.spinBox_samplesPerChannel.value(),
+            self.spinBox_iterations.value(),
+            self.doubleSpinBox_II0.value(),
+            self.label_alphaValue.text(),
+            self.label_effSampleLengthValue.text(),
+            self.doubleSpinBox_attenuationPdRef.value())
+
+        last_gui_settings.persist_last_settings(last_settings)
+        sys.exit(0)
 
 
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     window = Window()
+    app.aboutToQuit.connect(window.exit_handler)
     window.show()
-    sys.exit(app.exec_())
+    app.exec_()
+    
