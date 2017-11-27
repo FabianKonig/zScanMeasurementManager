@@ -14,6 +14,7 @@ import data_evaluation
 # -----------------------------------
 # - Condensates of Light Anmeldung.
 
+# - Check pulse energy calibration!
 # - Order a doublet lens for better focussing!
 # - Measure the beam diameter at the waist using the electronic translation stages.
 # - Use a pinhole for spatial filtering. The beam waist in the telescope focus should be around

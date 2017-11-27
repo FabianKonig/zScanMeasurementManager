@@ -8,7 +8,7 @@ import os
 # Calibration of reference photodiode signal into pulse energy in J/V (due to factor of 1e-6)
 # Factor of 1/100 because the calibration factor was measured with an OD2 neutral density filter in
 # front of the reference photodiode.
-CONSTANTS_calib_photodiode_pulse_energy = np.array([16.9274, 0.0212]) * 1e-6 / 100
+CONSTANTS_calib_photodiode_pulse_energy = np.array([2.8749, 0.0030]) * 1e-6 / 100
 
 
 

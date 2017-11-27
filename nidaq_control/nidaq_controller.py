@@ -245,19 +245,17 @@ if __name__ == '__main__':
     
     import matplotlib.pyplot as plt
 
-    nr = NidaqReader(250000, 250000)
-    peaks, peak_positions, signals = nr.peak_finder(rtn_peak_positions=True, 
-                                                    rtn_raw_nidaq_signal=True)
+    nr = NidaqReader(250000, 70000)
+    #peaks, peak_positions, signals = nr.peak_finder(rtn_peak_positions=True, 
+    #                                                rtn_raw_nidaq_signal=True)
 
-    #peaks = nr.peak_finder(rtn_peak_positions=False, rtn_raw_nidaq_signal=False)
+    signals = nr.get_nidaq_measurement_max_values(iterations=8)
 
-
-    print(peaks)
-    print(peak_positions)    
-    print(peaks[0].mean(), peaks[0].std())
-    plt.plot(peak_positions[0], peaks[0], color="brown", linestyle="", marker="+", markersize=8)
-    plt.plot(peak_positions[1], peaks[1], color="brown", linestyle="", marker="+", markersize=8)
-    plt.plot(peak_positions[2], peaks[2], color="brown", linestyle="", marker="+", markersize=8)
+    print(signals[0].mean(), signals[0].std(ddof=1))
+    
+    #plt.plot(peak_positions[0], peaks[0], color="brown", linestyle="", marker="+", markersize=8)
+    #plt.plot(peak_positions[1], peaks[1], color="brown", linestyle="", marker="+", markersize=8)
+    #plt.plot(peak_positions[2], peaks[2], color="brown", linestyle="", marker="+", markersize=8)
 
 
     plt.plot(signals[0], alpha=0.5, linestyle="", marker="x", label="Ref")
