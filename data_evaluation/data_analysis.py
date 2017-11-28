@@ -5,6 +5,7 @@ import math
 import os
 import traceback
 import datetime
+import re
 
 if __name__ == '__main__':
     import sys
@@ -69,8 +70,8 @@ class zScanDataAnalyser:
         T_CA[:,1] = data[:,3]
         T_CA[:,2] = data[:,4]
 
-        # doc = TODO parse file
-
+        doc = documentation.Documentation.init_from_file(file)
+        
         return zScanDataAnalyser(T_OA, T_CA, doc)
 
 
@@ -426,12 +427,17 @@ def get_power_of_ten(value):
 
 if __name__ == '__main__':
 
-    file = os.path.join(".", "Test", "example_data_01.dat")
-    directory = os.path.join(".", "Test")
+    # find the transmission data file in the current working directory:
+    for line in os.listdir():
+        res = re.search("transmission_data_(\d*).dat", line)
+        if res:
+            file, folder_num = res.group(), int(res.group(1))
+
+    directory = os.getcwd()
     data_analyser = zScanDataAnalyser.init_from_file(file)
     data_analyser.perform_combined_fit()
     data_analyser.perform_independent_ca_fit()
     data_analyser.perform_ca_normalised_wrt_oa_fit()
-    data_analyser.store_fit_results(directory, 1)
-    data_analyser.plot_data(directory, 1)
+    data_analyser.store_fit_results(directory, folder_num)
+    data_analyser.plot_data(directory, folder_num)
     data_analyser.reinitialise()

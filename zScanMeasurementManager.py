@@ -13,16 +13,7 @@ import data_evaluation
 # TODO:
 # -----------------------------------
 # - Condensates of Light Anmeldung.
-
-# - Check pulse energy calibration!
-# - Order a doublet lens for better focussing!
-# - Measure the beam diameter at the waist using the electronic translation stages.
-# - Use a pinhole for spatial filtering. The beam waist in the telescope focus should be around
-#   w0 = 12.70µm.
 # - At large frequencies the photodiodes have an offset. Take care of this!
-
-# - Dateien müssen geparsed werden können.
-
 # - Try to fit Julians "5.dat" measurement of RH6G in Ethylenglycole with both curves separately.
 
 # - Make a measurement with ZnSe and Rhodamine-Ethylenglykol and water.

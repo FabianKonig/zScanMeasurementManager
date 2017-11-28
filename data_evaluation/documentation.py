@@ -1,6 +1,7 @@
 import datetime
 import os
 import numpy as np
+import re
 
 
 
@@ -35,6 +36,104 @@ class Documentation:
     def empty(λ_vac, w0):
         return Documentation(None, None, None, None, None, None, None, None, None, None, None, None,
             None, None, λ_vac, w0)
+
+
+    @staticmethod
+    def init_from_file(file):
+
+        attributes = {}
+
+        with open(file, 'r', encoding='iso-8859-1') as f:
+            for line in f:
+                result = re.search("Sample: *(.*)", line)
+                if result:
+                    attributes["sample"] = result.group(1)
+                    continue
+
+                result = re.search("Solvent: *(.*)", line)
+                if result:
+                    attributes["solvent"] = result.group(1)
+                    continue
+
+                result = re.search("Concentration: *(.*)", line)
+                if result:
+                    attributes["concentration"] = result.group(1)
+                    continue
+
+                result = re.search("Laser rep. rate: *(\d*)Hz", line)
+                if result:
+                    attributes["laser_rep_rate"] = float(result.group(1))
+                    continue
+
+                result = re.search("Further notes: *(.*)", line)
+                if result:
+                    attributes["furtherNotes"] = result.group(1)
+                    continue
+
+                result = re.search("Aperture transm. S: *([\d.]*) \+\- ([\d.]*)", line)
+                if result:
+                    attributes["S"] = np.array([float(result.group(1)), float(result.group(2))])
+                    continue
+
+                result = re.search("Linear refractive index: *(.*)", line)
+                if result:
+                    attributes["refr_index_sample"] = float(result.group(1))
+                    continue
+
+                result = re.search("Ambient refractive index: *(.*)", line)
+                if result:
+                    attributes["refr_index_ambient"] = float(result.group(1))
+                    continue
+
+                result = re.search("Geometric sample length: *(.*)mm", line)
+                if result:
+                    attributes["geom_sample_length"] = float(result.group(1))*1e-3
+                    continue
+
+                result = re.search("Effective sample length: *(.*)mm", line)
+                if result:
+                    attributes["eff_sample_length"] = float(result.group(1))*1e-3
+                    continue
+
+                result = re.search("alpha: *(.*) mm\^\-1", line)
+                if result:
+                    attributes["alpha"] = float(result.group(1))*1e3
+                    continue
+
+                result = re.search("Pulse energy: *\(([\d.]*) \+\- ([\d.]*)\)µJ", line)
+                if result:
+                    attributes["pulse_energy"] = np.array([float(result.group(1)), 
+                                                           float(result.group(2))]) * 1e-6
+                    continue
+
+                result = re.search("Eff. pulse energy: *\(([\d.]*) \+\- ([\d.]*)\)µJ", line)
+                if result:
+                    attributes["eff_pulse_energy"] = np.array([float(result.group(1)), 
+                                                               float(result.group(2))]) * 1e-6
+                    continue
+
+                result = re.search("Eff. peak intensity: *\(([\d.]*) \+\- ([\d.]*)\)MW/cm\^2", line)
+                if result:
+                    attributes["eff_peak_intensity"] = np.array([float(result.group(1)), 
+                                                                 float(result.group(2))]) * 1e10
+                    continue
+
+                result = re.search("Wavelength vacuum: *([\d.]*)nm", line)
+                if result:
+                    attributes["λ_vac"] = float(result.group(1))*1e-9
+                    continue
+
+                result = re.search("Beam waist: *([\d.]*)µm", line)
+                if result:
+                    attributes["w0"] = float(result.group(1))*1e-6
+                    continue
+
+        doc = Documentation.empty(attributes["λ_vac"], attributes["w0"])
+
+        for key in attributes:
+            setattr(doc, key, attributes[key])
+
+        return doc
 
 
     @property
@@ -102,7 +201,7 @@ class Documentation:
                  "Laser rep. rate:          {0}Hz\n".format(self.laser_rep_rate) + \
                  "Further notes:            " + self.furtherNotes + "\n" + \
                  "\n" + \
-                 "Aperture transm. S:       {0:.3f} +- {1:.3f}\n".format(self.S[0], self.S[1]) + \
+                 "Aperture transm. S:       {0:.4f} +- {1:.4f}\n".format(self.S[0], self.S[1]) + \
                  "Linear refractive index:  {0:.3f}\n".format(self.refr_index_sample) + \
                  "Ambient refractive index: {0:.3f}\n".format(self.refr_index_ambient) + \
                  "Geometric sample length:  {0:.3f}mm\n".format(self.geom_sample_length*1e3) + \
