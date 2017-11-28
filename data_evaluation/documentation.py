@@ -234,7 +234,7 @@ class Documentation:
                  ",     $f_{Laser}$" + " = {0}Hz".format(self.laser_rep_rate) + \
                  ",     S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
 
-        if self.furtherNotes != "---": #default value
+        if self.furtherNotes != "---":  # default value
             header += "\nFurther notes: " + self.furtherNotes
 
         return header

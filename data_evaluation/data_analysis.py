@@ -19,11 +19,11 @@ else:
 # Constants:
 
 # Correction factor in order to obtain a better fit:
-CONSTANTS_rayleighLength_correction_factor = 1.9
+CONSTANTS_rayleighLength_correction_factor = 1.0
 
 # Initial guess for fit parameters. The first entry denotes the beam waist position in mm
-CONSTANTS_guess_OA = [22,1]  # second entry: dΨ
-CONSTANTS_guess_CA = [22,-1]  # second entry: dΦ
+CONSTANTS_guess_OA = [23,1]  # second entry: dΨ
+CONSTANTS_guess_CA = [23,1]  # second entry: dΦ
 
 
 

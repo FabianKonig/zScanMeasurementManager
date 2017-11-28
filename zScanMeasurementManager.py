@@ -11,23 +11,11 @@ import data_evaluation
 
 
 # TODO:
-# -----------------------------------
-# - Condensates of Light Anmeldung.
+# -----------------------------------# 
+# - make laser rep rate an integer, not float
 # - At large frequencies the photodiodes have an offset. Take care of this!
 # - Try to fit Julians "5.dat" measurement of RH6G in Ethylenglycole with both curves separately.
 
-# - Make a measurement with ZnSe and Rhodamine-Ethylenglykol and water.
-# - With those measurements, make sure the behaviour of Nitrobenzole is not due to alignment, but
-#   really only due to Nitrobenzole itself.
-
-# - A fit function to convert the reference photodiode signal to the input pulse energy is necessary.
-#   It should also take the pulse repetition rate into account! For high pulse rep rates, the photo
-#   diode signals increase, however, the power actually decreases! Make this calibration measurement!
-#   A change of the pulse rep rate should erase pulse energy label that might have been measured
-#   before changing the pulse rep rate.
-# - When the measurement is started, the measurement parameters section should be disabled.
-#   At the moment no problem as the GUI freezes anyway.
-# - Take care of multithreading.
 
 
 
@@ -91,6 +79,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
 
     def compile_documentation(self):
+        if self.lineEdit_furtherNotes.text() == "":
+            self.lineEdit_furtherNotes.setText("---")  # default value
+
         self.doc.sample = self.lineEdit_sample.text()
         self.doc.solvent = self.lineEdit_solvent.text()
         self.doc.concentration = self.lineEdit_concentration.text()
@@ -142,7 +133,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         """
         self.label_effSampleLengthValue.setText("{0:.3f}".format(
             self.doubleSpinBox_geomSampleLength.value()))
-        self.doc.eff_sample_length = self.doubleSpinBox_geomSampleLength.value()
+        self.doc.eff_sample_length = self.doubleSpinBox_geomSampleLength.value() * 1e-3
 
         self.label_alphaValue.setText("{0:.3f}".format(0.))
         self.doc.alpha = 0

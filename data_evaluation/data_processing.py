@@ -326,7 +326,7 @@ class zScanDataProcessor:
         # the transmission through the medium (after being corrected by Fresnel transmission)
         transmission_medium = transmission / expected_transmission
 
-        if transmission_medium > 1:
+        if transmission_medium >= 1:
             print("alpha would be negative. It is being set to zero manually.")
             return 0
 
