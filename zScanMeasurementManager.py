@@ -14,7 +14,10 @@ import data_evaluation
 # -----------------------------------
 # - At large frequencies the photodiodes have an offset. Take care of this!
 # - Try to fit Julians "5.dat" measurement of RH6G in Ethylenglycole with both curves separately.
-
+# - A preselect box for different materials would be helpful: Refractive index, alpha,
+#   geom sample length, ambient refractive index...
+# - Mittels regex nur checken, ob der Ordner existiert OHNE zu beruecksichtigen, dass ich womoeglich
+#   schon weitere Informationen an den Ordnernamen angehaengt habe.
 
 
 

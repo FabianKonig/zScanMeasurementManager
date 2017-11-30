@@ -62,7 +62,7 @@ class Documentation:
 
                 result = re.search("Laser rep. rate: *(\d*)Hz", line)
                 if result:
-                    attributes["laser_rep_rate"] = float(result.group(1))
+                    attributes["laser_rep_rate"] = int(result.group(1))
                     continue
 
                 result = re.search("Further notes: *(.*)", line)
