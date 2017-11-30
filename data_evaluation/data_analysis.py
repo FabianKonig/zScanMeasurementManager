@@ -44,6 +44,7 @@ class zScanDataAnalyser:
         self._T_OA = T_OA
         self._T_CA = T_CA
         self.T_CA_normalised = self.compute_T_CA_normalised_array()
+        self.T_CA_reconstructed = self.compute_T_CA_reconstructed_array()
         self.doc = doc
 
 
@@ -53,6 +54,7 @@ class zScanDataAnalyser:
         self.combined_fit = None          # n2, z0, dΦ, dΨ
         self.independent_CA_fit = None    # n2, z0, dΦ
         self.normalised_CA_fit = None     # n2, z0, dΦ
+        self.reconstructed_CA_fit = None  # n2, z0, dΦ
 
 
     @staticmethod
@@ -87,6 +89,7 @@ class zScanDataAnalyser:
         if self.T_CA is not None and value is not None:
             assert self.T_CA.shape == value.shape
             self.T_CA_normalised = self.compute_T_CA_normalised_array()
+            self.T_CA_reconstructed = self.compute_T_CA_reconstructed_array()
 
 
     @property
@@ -101,6 +104,7 @@ class zScanDataAnalyser:
         if self.T_OA is not None and value is not None:
             assert self.T_OA.shape == value.shape
             self.T_CA_normalised = self.compute_T_CA_normalised_array()
+            self.T_CA_reconstructed = self.compute_T_CA_reconstructed_array()
 
 
     def compute_T_CA_normalised_array(self):
@@ -120,6 +124,24 @@ class zScanDataAnalyser:
             (T_CA[:,2]/T_OA[:,1])**2 + (T_CA[:,1]*T_OA[:,2] / T_OA[:,1]**2)**2 )
 
         return T_CA_normalised
+
+
+    def compute_T_CA_reconstructed_array(self):
+        """ Reconstructs from self.T_CA and self.T_OA the purely refractive data (i.e. closed
+            aperture data minus open aperture data).
+            Returns that array.
+        """
+        T_OA = self.T_OA
+        T_CA = self.T_CA
+        assert T_OA is not None
+        assert T_CA is not None
+
+        T_CA_reconstructed = np.empty(shape=T_OA.shape)
+        T_CA_reconstructed[:,0] = T_OA[:,0]
+        T_CA_reconstructed[:,1] = T_CA[:,1] - T_OA[:,1] + 1
+        T_CA_reconstructed[:,2] = np.sqrt( T_CA[:,2]**2 + T_OA[:,2]**2 )
+
+        return T_CA_reconstructed
 
 
     def perform_combined_fit(self):
@@ -208,7 +230,7 @@ class zScanDataAnalyser:
 
     def perform_ca_normalised_wrt_oa_fit(self):
         """ This function fits the closed aperture data which are normalised with respect to the
-            open aperture data and retrieves from this fit zo and dΦ.
+            open aperture data and retrieves from this fit z0 and dΦ.
         """
         zR_for_fitting = self.doc.zR * CONSTANTS_rayleighLength_correction_factor * 1e3  #mm
 
@@ -217,6 +239,18 @@ class zScanDataAnalyser:
                                                      self.T_CA_normalised[:,2],
                                                      CONSTANTS_guess_CA,
                                                      zR_for_fitting)
+
+    def perform_ca_reconstructed_fit(self):
+        """ This function fits the closed aperture data which are reconstructed by subtracting the
+            open aperture data from it and retrieves from this fit z0 and dΦ.
+        """
+        zR_for_fitting = self.doc.zR * CONSTANTS_rayleighLength_correction_factor * 1e3  #mm
+
+        self.reconstructed_CA_fit = self.perform_ca_fit(self.T_CA_reconstructed[:,0],
+                                                        self.T_CA_reconstructed[:,1],
+                                                        self.T_CA_reconstructed[:,2],
+                                                        CONSTANTS_guess_CA,
+                                                        zR_for_fitting)
 
 
     def compute_n2(self, dΦ):
@@ -250,11 +284,13 @@ class zScanDataAnalyser:
 
         caption = ["combined fit:\n",
             "independent closed aperture fit:\n",
-            "closed aperture normalised to open aperture fit:\n"]
+            "closed aperture normalised to open aperture fit:\n",
+            "reconstructed pure refraction data fit (CA-OA+1):\n"]
         text = ""
         i=0
 
-        for fit_result in [self.combined_fit, self.independent_CA_fit, self.normalised_CA_fit]:
+        for fit_result in [self.combined_fit, self.independent_CA_fit, self.normalised_CA_fit,
+                           self.reconstructed_CA_fit]:
             text += "Results of the " + caption[i]
             i += 1
 
@@ -300,12 +336,14 @@ class zScanDataAnalyser:
         T_OA = self.T_OA
         T_CA = self.T_CA
         T_CA_normalised = self.T_CA_normalised
+        T_CA_reconstructed = self.T_CA_reconstructed
 
         fig0, axes0 = plt.subplots(1, 1, figsize=(8.5, 5.5))
         fig1, axes1 = plt.subplots(1, 1, figsize=(8.5, 5.5))
         fig2, axes2 = plt.subplots(1, 1, figsize=(8.5, 5.5))
-        axes = [axes0, axes1, axes2]
-        figures = [fig0, fig1, fig2]
+        fig3, axes3 = plt.subplots(1, 1, figsize=(8.5, 5.5))
+        axes = [axes0, axes1, axes2, axes3]
+        figures = [fig0, fig1, fig2, fig3]
 
         axes[0].errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", color="red", alpha=0.8, label="OA")
         axes[0].errorbar(T_CA[:,0], T_CA[:,1], yerr=T_CA[:,2], linestyle="", marker="x", color="black", alpha=0.8, label="CA")
@@ -313,11 +351,14 @@ class zScanDataAnalyser:
         axes[1].errorbar(T_CA[:,0], T_CA[:,1], yerr=T_CA[:,2], linestyle="", marker="x", color="black", alpha=0.8, label="CA")
         axes[2].errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", color="red", alpha=0.8, label="OA")
         axes[2].errorbar(T_CA_normalised[:,0], T_CA_normalised[:,1], yerr=T_CA_normalised[:,2], linestyle="", marker="x", color="black", alpha=0.8, label="CA/OA")
+        axes[3].errorbar(T_OA[:,0], T_OA[:,1], yerr=T_OA[:,2], linestyle="", marker="x", color="red", alpha=0.8, label="OA")
+        axes[3].errorbar(T_CA_reconstructed[:,0], T_CA_reconstructed[:,1], yerr=T_CA_reconstructed[:,2], linestyle="", marker="x", color="black", alpha=0.8, label="CA-OA+1")
 
-        n2_header_string = ["", "", ""]
+        n2_header_string = ["", "", "", ""]
         i = 0
 
-        for fit_result in [self.combined_fit, self.independent_CA_fit, self.normalised_CA_fit]:
+        for fit_result in [self.combined_fit, self.independent_CA_fit, self.normalised_CA_fit,
+                           self.reconstructed_CA_fit]:
             if fit_result is not None:
                 n2 = fit_result[0] * 1e4  # in cm^2/W
                 n2_exp = get_power_of_ten(n2[0])
@@ -355,7 +396,7 @@ class zScanDataAnalyser:
                 file = os.path.join(directory, "plot_{0:02}_{1}.pdf".format(folder_num, i))
                 figures[i].savefig(file, dpi=600, bbox_inches='tight')
             except Exception as ex:
-                print("Storage of plot failed!!!!")
+                print("Storage of plot {1} failed!!!!".format(i))
                 traceback.print_exc()
                 print("\n")
 
@@ -438,6 +479,7 @@ if __name__ == '__main__':
     data_analyser.perform_combined_fit()
     data_analyser.perform_independent_ca_fit()
     data_analyser.perform_ca_normalised_wrt_oa_fit()
+    data_analyser.perform_ca_reconstructed_fit()
     data_analyser.store_fit_results(directory, folder_num)
     data_analyser.plot_data(directory, folder_num)
     data_analyser.reinitialise()

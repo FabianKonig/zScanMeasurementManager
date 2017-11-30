@@ -11,8 +11,7 @@ import data_evaluation
 
 
 # TODO:
-# -----------------------------------# 
-# - make laser rep rate an integer, not float
+# -----------------------------------
 # - At large frequencies the photodiodes have an offset. Take care of this!
 # - Try to fit Julians "5.dat" measurement of RH6G in Ethylenglycole with both curves separately.
 
@@ -263,6 +262,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             data_analyser.perform_combined_fit()
             data_analyser.perform_independent_ca_fit()
             data_analyser.perform_ca_normalised_wrt_oa_fit()
+            data_analyser.perform_ca_reconstructed_fit()
             data_analyser.store_fit_results(storage_directory, folder_num)
         data_analyser.plot_data(storage_directory, folder_num)
         data_analyser.reinitialise()
