@@ -16,8 +16,6 @@ import data_evaluation
 # - Try to fit Julians "5.dat" measurement of RH6G in Ethylenglycole with both curves separately.
 # - A preselect box for different materials would be helpful: Refractive index, alpha,
 #   geom sample length, ambient refractive index...
-# - Mittels regex nur checken, ob der Ordner existiert OHNE zu beruecksichtigen, dass ich womoeglich
-#   schon weitere Informationen an den Ordnernamen angehaengt habe.
 
 
 
@@ -81,6 +79,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
 
     def compile_documentation(self):
+        if self.lineEdit_solvent.text() == "":
+            self.lineEdit_solvent.setText("--")  # default value
+
         if self.lineEdit_furtherNotes.text() == "":
             self.lineEdit_furtherNotes.setText("---")  # default value
 
@@ -288,9 +289,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             return None
 
 
-        if self.doc.S[0] > 0.25:
+        if self.doc.S[0] > 0.40:
             buttonReply = QtWidgets.QMessageBox.question(self, "Large aperture",
-                "The aperture transmission is larger than S = 25%. Do you still wish to start " + \
+                "The aperture transmission is larger than S = 40%. Do you still wish to start " + \
                 "the measurement?")
             if buttonReply == QtWidgets.QMessageBox.No:
                 return None

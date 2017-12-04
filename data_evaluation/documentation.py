@@ -1,7 +1,8 @@
+import numpy as np
 import datetime
 import os
-import numpy as np
 import re
+import glob
 
 
 
@@ -173,20 +174,43 @@ class Documentation:
         for i in range(1, 100):
             directory = directory0 + "_{0:02}".format(i)
 
-            if not os.path.exists(directory):
+            if not Documentation.exists_dir(directory):
                 break
 
         return directory, i
 
 
     def get_new_directory_for_storage(self):
-
         directory, folder_num = self.define_directory()
 
-        if not os.path.exists(directory):
+        if not Documentation.exists_dir(directory):
             os.makedirs(directory)
 
         return directory, folder_num
+
+
+    @staticmethod
+    def exists_dir(directory):
+        """ Checks whether the given directory exists. Returns True even if a directory exists
+            with the given name and an additional suffix: full_directory = directory + "AnySuffix".
+            Input:
+            directory    String
+
+            Output: 
+            True or False, depending on whether the directory exists or not.
+        """
+
+        # Get the number of directories that match the pattern: directory + "*".
+        pattern_match_number = len(glob.glob(directory + "*"))
+
+        # In our case, each directory (which includes a folder number) should exist at maximum once,
+        # as we want each folder number to occur only once in order to aid as an identifier.
+        assert pattern_match_number == 0 or pattern_match_number == 1
+
+        if pattern_match_number == 0:
+            return False
+        elif pattern_match_number == 1:
+            return True
 
 
     def get_data_file_header(self):

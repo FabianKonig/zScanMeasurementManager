@@ -32,7 +32,6 @@ class LastGuiSettings:
         self.attenuation_pd_ref = attenuation_pd_ref
 
 
-
 def get_last_settings():
     try:
         with open(CONSTANTS_gui_settings_persistence_file, 'rb') as input:
