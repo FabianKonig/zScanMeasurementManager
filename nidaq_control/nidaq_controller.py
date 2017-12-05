@@ -68,6 +68,31 @@ class NidaqReader:
                     task.read(number_of_samples_per_channel=self.num_samples_per_chan))
                 channel_index += 1
 
+
+        # correct for possible channel offsets:
+        signals = self.correct_offset(signals)
+
+        return signals
+
+
+    def correct_offset(self, signals):
+        """ At large repetition rates, the photdiode signals do not have sufficient time to fall
+            down to zero until the next pulse is incident. This causes an offset for the signals,
+            artifically incresing the peak values. I epmirically figured out, thatit is sufficient
+            to modify the signals such that their minimum value is zero. This does neglect the
+            first 2000 points of a NIDAQ measurement where there is some weird electronics going on
+            which causes the signals to be very low.
+            Input:
+            signals, a 2-dim numpy array, the first dimension denoting the channel, the second
+                     denotes the measurment point
+            
+            Output:
+            signals (as in input) with minimum value being zero (neglecting the first 2000 points).
+        """
+
+        for i in range(len(signals)):
+            signals[i] = signals[i] - signals[i, 2000::].min()
+
         return signals
 
 
@@ -249,18 +274,20 @@ if __name__ == '__main__':
     #peaks, peak_positions, signals = nr.peak_finder(rtn_peak_positions=True, 
     #                                                rtn_raw_nidaq_signal=True)
 
-    signals = nr.get_nidaq_measurement_max_values(iterations=8)
+    signals = nr.read_nidaq_one_channel_after_the_other()
 
-    print(signals[0].mean(), signals[0].std(ddof=1))
-    
     #plt.plot(peak_positions[0], peaks[0], color="brown", linestyle="", marker="+", markersize=8)
     #plt.plot(peak_positions[1], peaks[1], color="brown", linestyle="", marker="+", markersize=8)
     #plt.plot(peak_positions[2], peaks[2], color="brown", linestyle="", marker="+", markersize=8)
 
 
-    plt.plot(signals[0], alpha=0.5, linestyle="", marker="x", label="Ref")
-    plt.plot(signals[1], alpha=0.5, linestyle="", marker="x", label="OA")    
-    plt.plot(signals[2], alpha=0.5, linestyle="", marker="x", label="CA")
-    plt.legend()
-    plt.show()
+    print(signals[0,2000::].min())
+    print(signals[1,2000::].min())
+    print(signals[2,2000::].min())
+
+    #plt.plot(signals[0]-signals[0,2000::].min()+(-.000177219), alpha=0.5, linestyle="", marker="x", label="Ref")
+    #plt.plot(signals[1], alpha=0.5, linestyle="", marker="x", label="OA")    
+    #plt.plot(signals[2], alpha=0.5, linestyle="", marker="x", label="CA")
+    #plt.legend()
+    #plt.show()
 
