@@ -51,7 +51,7 @@ class zScanDataAnalyser:
         # Fit results and corresponding computed nonlinear refractive indices, all 2-dim numpy
         # arrays, the second dimension is of length 2, where the first entry denotes the value,
         # second its error.
-        self.combined_fit = None          # n2, z0, dΦ, q0
+        self.combined_fit = None          # n2, z0, dΦ, alpha2, q0
         self.independent_CA_fit = None    # n2, z0, dΦ
         self.normalised_CA_fit = None     # n2, z0, dΦ
         self.reconstructed_CA_fit = None  # n2, z0, dΦ
@@ -181,11 +181,12 @@ class zScanDataAnalyser:
             print("\n")
             return None
 
-        self.combined_fit = np.empty(shape=(4,2))
+        self.combined_fit = np.empty(shape=(5,2))
         self.combined_fit[0] = self.compute_n2(fit_dΦ)
         self.combined_fit[1] = fit_z0
         self.combined_fit[2] = fit_dΦ
-        self.combined_fit[3] = fit_q0
+        self.combined_fit[3] = self.compute_alpha2(fit_q0)
+        self.combined_fit[4] = fit_q0
 
 
     def perform_ca_fit(self, xdata, ydata, sigma, guess, zR):
@@ -274,22 +275,22 @@ class zScanDataAnalyser:
         return np.array([n2, dn2])  # in m^2/W
 
 
-    def compute_β(self, q0):
+    def compute_alpha2(self, q0):
         """
         Input:
         q0: 1-dim numpy array of length 2, first entry being the fitted q0, second entry its error.
  
         Output:
-        β: 1-dim numpy array of length 2, first entry being β, second its error, both in units
-           of m/W.
+        alpha2: 1-dim numpy array of length 2, first entry being alpha2, second its error, both in
+                units of m/W.
         """
         eff_length = self.doc.eff_sample_length     # in m
         I0 = self.doc.eff_peak_intensity            # in W/m^2
 
-        β = q0[0] / (I0*eff_length)
-        dβ = np.sqrt( (q0[1]/(I0[0]*eff_length))**2 + (q0[0]*I0[1]/(I0[0]**2*eff_length))**2 )
+        alpha2 = q0[0] / (I0[0]*eff_length)
+        dalpha2 = np.sqrt( (q0[1]/(I0[0]*eff_length))**2 + (q0[0]*I0[1]/(I0[0]**2*eff_length))**2 )
 
-        return np.array([β, dβ])  # in m/W
+        return np.array([alpha2, dalpha2])  # in m/W
 
 
     def store_fit_results(self, directory, folder_num):
@@ -317,8 +318,10 @@ class zScanDataAnalyser:
                 n2_exp = get_power_of_ten(n2[0])
                 z0 = fit_result[1]
                 dPhi = fit_result[2]
-                if len(fit_result) > 3:
-                    q0 = fit_result[3]
+                if len(fit_result) > 3:  # combined fit
+                    alpha2 = fit_result[3] * 1e2  # in cm/W
+                    alpha2_exp = get_power_of_ten(alpha2[0])
+                    q0 = fit_result[4]
 
                 text += "n2: ({0:.3f} +- {1:.3f})e{2} cm^2/W\n".format(
                             n2[0]/10**n2_exp, n2[1]/10**n2_exp, n2_exp) + \
@@ -326,10 +329,12 @@ class zScanDataAnalyser:
                         "dPhi: ({0:.3f} +- {1:.3f})".format(dPhi[0], dPhi[1])
 
                 if len(fit_result) > 3:
-                    text += "\nq0:({0:.3f} +- {1:.3f})".format(q0[0], q0[1])
+                    text += "\nalpha2: ({0:.3f} +- {1:.3f})e{2} cm/W\n".format(
+                                alpha2[0]/10**alpha2_exp, alpha2[1]/10**alpha2_exp, alpha2_exp) + \
+                            "q0:({0:.3f} +- {1:.3f})".format(q0[0], q0[1])
 
             else:
-                text += "No results."
+                text += "No results."  # combined fit
 
             text += "\n\n"
 
@@ -373,6 +378,7 @@ class zScanDataAnalyser:
         axes[3].errorbar(T_CA_reconstructed[:,0], T_CA_reconstructed[:,1], yerr=T_CA_reconstructed[:,2], linestyle="", marker="x", color="black", alpha=0.8, label="CA-OA+1")
 
         n2_header_string = ["", "", "", ""]
+        alpha2_header_string = ["", "", "", ""]
         i = 0
 
         for fit_result in [self.combined_fit, self.independent_CA_fit, self.normalised_CA_fit,
@@ -385,13 +391,18 @@ class zScanDataAnalyser:
                 
                 z0 = fit_result[1]
                 dΦ = fit_result[2]
-                if len(fit_result) == 4:
-                    q0 = fit_result[3]
+                if len(fit_result) == 5:  # combined fit plot
+                    alpha2 = fit_result[3] * 1e2  # in cm/W
+                    alpha2_exp = get_power_of_ten(alpha2[0])
+                    alpha2_header_string[i] = r"   $\alpha_2$" + \
+                                    " = ({0:.2f} $\pm$ {1:.2f})e{2} cm/W".format(
+                                    alpha2[0]/10**alpha2_exp, alpha2[1]/10**alpha2_exp, alpha2_exp)
+                    q0 = fit_result[4]
 
                 pos_vals = np.linspace(T_OA[0,0]-.5, T_OA[-1,0]+.5, 200)
                 zR_for_fitting = self.doc.zR * CONSTANTS_rayleighLength_correction_factor * 1e3 #mm
 
-                if len(fit_result) == 4:
+                if len(fit_result) == 5:  # combined fit plot
                     T_OA_vals = T_OA_func(pos_vals, z0[0], zR_for_fitting, q0[0])
                     T_CA_vals = T_CA_func(pos_vals, z0[0], zR_for_fitting, dΦ[0], q0[0])
                     axes[i].plot(pos_vals, T_OA_vals, color="red")
@@ -405,7 +416,7 @@ class zScanDataAnalyser:
 
         header = self.doc.get_plot_header()
         for i in range(len(axes)):
-            axes[i].set_title(header + n2_header_string[i], fontsize=9)
+            axes[i].set_title(header + n2_header_string[i] + alpha2_header_string[i], fontsize=9)
             axes[i].set_xlabel("z / mm")
             axes[i].set_ylabel("Transmission")
             axes[i].legend()
