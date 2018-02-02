@@ -269,9 +269,27 @@ class zScanDataAnalyser:
         k = 2*np.pi / λ_vac                           # in 1/m
         
         n2 = dΦ[0] / (k*I0[0]*eff_length)
-        dn2 = np.sqrt( (dΦ[1]/(k*I0[0]*eff_length))**2 + (dΦ[0]*I0[1]/(k*I0[0]*eff_length)**2)**2)
+        dn2 = np.sqrt( (dΦ[1]/(k*I0[0]*eff_length))**2 + (dΦ[0]*I0[1]/(k*I0[0]**2*eff_length))**2 )
         
         return np.array([n2, dn2])  # in m^2/W
+
+
+    def compute_β(self, q0):
+        """
+        Input:
+        q0: 1-dim numpy array of length 2, first entry being the fitted q0, second entry its error.
+ 
+        Output:
+        β: 1-dim numpy array of length 2, first entry being β, second its error, both in units
+           of m/W.
+        """
+        eff_length = self.doc.eff_sample_length     # in m
+        I0 = self.doc.eff_peak_intensity            # in W/m^2
+
+        β = q0[0] / (I0*eff_length)
+        dβ = np.sqrt( (q0[1]/(I0[0]*eff_length))**2 + (q0[0]*I0[1]/(I0[0]**2*eff_length))**2 )
+
+        return np.array([β, dβ])  # in m/W
 
 
     def store_fit_results(self, directory, folder_num):
