@@ -22,7 +22,7 @@ else:
 CONSTANTS_rayleighLength_correction_factor = 1.0
 
 # Initial guess for fit parameters. The first entry denotes the beam waist position in mm
-CONSTANTS_guess_OA = [23,1]  # second entry: dΨ
+CONSTANTS_guess_OA = [23,1]  # second entry: q0
 CONSTANTS_guess_CA = [23,1]  # second entry: dΦ
 
 
@@ -51,7 +51,7 @@ class zScanDataAnalyser:
         # Fit results and corresponding computed nonlinear refractive indices, all 2-dim numpy
         # arrays, the second dimension is of length 2, where the first entry denotes the value,
         # second its error.
-        self.combined_fit = None          # n2, z0, dΦ, dΨ
+        self.combined_fit = None          # n2, z0, dΦ, q0
         self.independent_CA_fit = None    # n2, z0, dΦ
         self.normalised_CA_fit = None     # n2, z0, dΦ
         self.reconstructed_CA_fit = None  # n2, z0, dΦ
@@ -145,7 +145,7 @@ class zScanDataAnalyser:
 
 
     def perform_combined_fit(self):
-        """ First, the open aperture data are fitted and z0 and dΨ are retrieved from this fit.
+        """ First, the open aperture data are fitted and z0 and q0 are retrieved from this fit.
             Then, the closed aperture data are fitted using the results from the first fit. dΦ is
             retrieved from that fit.
         """
@@ -154,8 +154,8 @@ class zScanDataAnalyser:
 
         # Fit open aperture data.    
         try:
-            fitfunc = lambda z, z0, dΨ: T_OA_func(z, z0, zR_for_fitting, dΨ)
-            fit_z0, fit_dΨ = perform_fit(fitfunc, 
+            fitfunc = lambda z, z0, q0: T_OA_func(z, z0, zR_for_fitting, q0)
+            fit_z0, fit_q0 = perform_fit(fitfunc, 
                                          self.T_OA[:,0],
                                          self.T_OA[:,1],
                                          sigma=self.T_OA[:,2],
@@ -169,7 +169,7 @@ class zScanDataAnalyser:
 
         # Now, fit closed aperture data using the results from the open aperture data fit.
         try:
-            fitfunc = lambda z, dΦ: T_CA_func(z, fit_z0[0], zR_for_fitting, dΦ, fit_dΨ[0])
+            fitfunc = lambda z, dΦ: T_CA_func(z, fit_z0[0], zR_for_fitting, dΦ, fit_q0[0])
             fit_dΦ, = perform_fit(fitfunc, 
                                  self.T_CA[:,0],
                                  self.T_CA[:,1],
@@ -185,12 +185,12 @@ class zScanDataAnalyser:
         self.combined_fit[0] = self.compute_n2(fit_dΦ)
         self.combined_fit[1] = fit_z0
         self.combined_fit[2] = fit_dΦ
-        self.combined_fit[3] = fit_dΨ
+        self.combined_fit[3] = fit_q0
 
 
     def perform_ca_fit(self, xdata, ydata, sigma, guess, zR):
         """ Only helper function for the functions self.independent_ca_fit() and
-            self.ca_normalised_wrt_oa_fit(). See the docstrings odf those functions.
+            self.ca_normalised_wrt_oa_fit(). See the docstrings of those functions.
         """
         try:
             fitfunc = lambda z, z0, dΦ: T_CA_normalised_func(z, z0, zR, dΦ)
@@ -216,7 +216,7 @@ class zScanDataAnalyser:
 
     def perform_independent_ca_fit(self):
         """ The closed aperture data are fitted independently from the open aperture data as in
-            self.combined_fit(). This fit retrieves z0 and dΦ. As for the fitfunction, dΨ = 0 is
+            self.combined_fit(). This fit retrieves z0 and dΦ. As for the fitfunction, q0 = 0 is
             assumed.
         """
         zR_for_fitting = self.doc.zR * CONSTANTS_rayleighLength_correction_factor * 1e3  #mm
@@ -300,7 +300,7 @@ class zScanDataAnalyser:
                 z0 = fit_result[1]
                 dPhi = fit_result[2]
                 if len(fit_result) > 3:
-                    dPsi = fit_result[3]
+                    q0 = fit_result[3]
 
                 text += "n2: ({0:.3f} +- {1:.3f})e{2} cm^2/W\n".format(
                             n2[0]/10**n2_exp, n2[1]/10**n2_exp, n2_exp) + \
@@ -308,7 +308,7 @@ class zScanDataAnalyser:
                         "dPhi: ({0:.3f} +- {1:.3f})".format(dPhi[0], dPhi[1])
 
                 if len(fit_result) > 3:
-                    text += "\ndPsi:({0:.3f} +- {1:.3f})".format(dPsi[0], dPsi[1])
+                    text += "\nq0:({0:.3f} +- {1:.3f})".format(q0[0], q0[1])
 
             else:
                 text += "No results."
@@ -368,14 +368,14 @@ class zScanDataAnalyser:
                 z0 = fit_result[1]
                 dΦ = fit_result[2]
                 if len(fit_result) == 4:
-                    dΨ = fit_result[3]
+                    q0 = fit_result[3]
 
                 pos_vals = np.linspace(T_OA[0,0]-.5, T_OA[-1,0]+.5, 200)
                 zR_for_fitting = self.doc.zR * CONSTANTS_rayleighLength_correction_factor * 1e3 #mm
 
                 if len(fit_result) == 4:
-                    T_OA_vals = T_OA_func(pos_vals, z0[0], zR_for_fitting, dΨ[0])
-                    T_CA_vals = T_CA_func(pos_vals, z0[0], zR_for_fitting, dΦ[0], dΨ[0])
+                    T_OA_vals = T_OA_func(pos_vals, z0[0], zR_for_fitting, q0[0])
+                    T_CA_vals = T_CA_func(pos_vals, z0[0], zR_for_fitting, dΦ[0], q0[0])
                     axes[i].plot(pos_vals, T_OA_vals, color="red")
                     axes[i].plot(pos_vals, T_CA_vals, color="black")
                 else:
@@ -415,13 +415,17 @@ class zScanDataAnalyser:
 
 
 # Fit functions:
-def T_OA_func(z, z0, zR, dΨ):
+def T_OA_func(z, z0, zR, q0):
     x = (z-z0)/zR
-    return 1 - 2*(x**2+3)*dΨ / ((x**2+9) * (x**2+1))
+    res = 0
+    for m in range(0,100): # stopping the summation after 100 steps is sufficient.
+        res += (-q0)**m / ( (m+1)**1.5 * (1+x**2) )
+
+    return 1+res
  
-def T_CA_func(z, z0, zR, dΦ, dΨ):
+def T_CA_func(z, z0, zR, dΦ, q0):
     x = (z-z0)/zR
-    return T_OA_func(z, z0, zR, dΨ) + 4*x*dΦ / ((x**2+9) * (x**2+1))
+    return T_OA_func(z, z0, zR, q0) + 4*x*dΦ / ((x**2+9) * (x**2+1))
 
 def T_CA_normalised_func(z, z0, zR, dΦ):
     x = (z-z0)/zR
