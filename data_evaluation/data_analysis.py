@@ -448,9 +448,8 @@ def T_OA_func(z, z0, zR, q0):
     x = (z-z0)/zR
     res = 0
     for m in range(0,100): # stopping the summation after 100 steps is sufficient.
-        res += (-q0)**m / ( (m+1)**1.5 * (1+x**2) )
-
-    return 1+res
+        res += (-q0)**m / ( (m+1)**1.5 * (1+x**2)**m )
+    return res
  
 def T_CA_func(z, z0, zR, dΦ, q0):
     x = (z-z0)/zR
