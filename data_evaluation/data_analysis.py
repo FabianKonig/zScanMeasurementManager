@@ -323,15 +323,15 @@ class zScanDataAnalyser:
                     alpha2_exp = get_power_of_ten(alpha2[0])
                     q0 = fit_result[4]
 
-                text += "n2: ({0:.3f} +- {1:.3f})e{2} cm^2/W\n".format(
+                text += "n2: ({0:.4f} +- {1:.4f})e{2} cm^2/W\n".format(
                             n2[0]/10**n2_exp, n2[1]/10**n2_exp, n2_exp) + \
-                        "z0: ({0:.3f} +- {1:.3f})mm\n".format(z0[0], z0[1]) + \
-                        "dPhi: ({0:.3f} +- {1:.3f})".format(dPhi[0], dPhi[1])
+                        "z0: ({0:.4f} +- {1:.4f})mm\n".format(z0[0], z0[1]) + \
+                        "dPhi: ({0:.4f} +- {1:.4f})".format(dPhi[0], dPhi[1])
 
                 if len(fit_result) > 3:
-                    text += "\nalpha2: ({0:.3f} +- {1:.3f})e{2} cm/W\n".format(
+                    text += "\nalpha2: ({0:.4f} +- {1:.4f})e{2} cm/W\n".format(
                                 alpha2[0]/10**alpha2_exp, alpha2[1]/10**alpha2_exp, alpha2_exp) + \
-                            "q0:({0:.3f} +- {1:.3f})".format(q0[0], q0[1])
+                            "q0:({0:.4f} +- {1:.4f})".format(q0[0], q0[1])
 
             else:
                 text += "No results."  # combined fit
