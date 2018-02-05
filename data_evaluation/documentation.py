@@ -230,7 +230,7 @@ class Documentation:
                  "Ambient refractive index: {0:.3f}\n".format(self.refr_index_ambient) + \
                  "Geometric sample length:  {0:.3f}mm\n".format(self.geom_sample_length*1e3) + \
                  "Effective sample length:  {0:.3f}mm\n".format(self.eff_sample_length*1e3) + \
-                 "alpha:                    {0:.3f} mm^-1\n".format(self.alpha*1e3) + \
+                 "alpha:                    {0:.8f} mm^-1\n".format(self.alpha*1e-3) + \
                  "\n" + \
                  "Pulse energy:             ({0:.3f} +- {1:.3f})µJ\n".format(
                     self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
