@@ -399,7 +399,7 @@ class zScanDataAnalyser:
                                     alpha2[0]/10**alpha2_exp, alpha2[1]/10**alpha2_exp, alpha2_exp)
                     q0 = fit_result[4]
 
-                pos_vals = np.linspace(T_OA[0,0]-.5, T_OA[-1,0]+.5, 200)
+                pos_vals = np.linspace(T_OA[0,0]-.5, T_OA[-1,0]+.5, 500)
                 zR_for_fitting = self.doc.zR * CONSTANTS_rayleighLength_correction_factor * 1e3 #mm
 
                 if len(fit_result) == 5:  # combined fit plot
@@ -447,7 +447,13 @@ class zScanDataAnalyser:
 def T_OA_func(z, z0, zR, q0):
     x = (z-z0)/zR
     res = 0
-    for m in range(0,100): # stopping the summation after 100 steps is sufficient.
+    for m in range(0, 2): # only summation over m=0,1 seems to be sufficient for most applications
+                          # (2 seems to be a very good compromise: If q<1, the series converges
+                          #  and a large m would be better, but 2 yields already very good results.
+                          #  The function actually is only approximated for q<<1. For q~1, the
+                          #  function looks quite distorted and the series diverges for q>1. In
+                          #  these cases m_max=1 seems to give quite reasonable results without the
+                          #  series beginning to diverge!)
         res += (-q0)**m / ( (m+1)**1.5 * (1+x**2)**m )
     return res
  
