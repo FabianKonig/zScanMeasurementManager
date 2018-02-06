@@ -78,7 +78,7 @@ class NidaqReader:
     def correct_offset(self, signals):
         """ At large repetition rates, the photdiode signals do not have sufficient time to fall
             down to zero until the next pulse is incident. This causes an offset for the signals,
-            artifically incresing the peak values. I epmirically figured out, thatit is sufficient
+            artifically increasing the peak values. I epmirically figured out, that it is sufficient
             to modify the signals such that their minimum value is zero. This does neglect the
             first 2000 points of a NIDAQ measurement where there is some weird electronics going on
             which causes the signals to be very low.

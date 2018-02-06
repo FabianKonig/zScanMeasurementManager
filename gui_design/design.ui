@@ -309,7 +309,7 @@
        <item>
         <widget class="QSpinBox" name="spinBox_samplesPerChannel">
          <property name="minimum">
-          <number>1000</number>
+          <number>3000</number>
          </property>
          <property name="maximum">
           <number>500000</number>

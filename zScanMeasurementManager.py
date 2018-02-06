@@ -119,6 +119,8 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.label_effSampleLengthValue.setText(last_settings.eff_sample_length)
         self.doubleSpinBox_attenuationPdRef.setValue(last_settings.attenuation_pd_ref)
 
+        self.doc.alpha = float(self.label_alphaValue.text())
+        self.doc.eff_sample_length = float(self.label_effSampleLengthValue.text())*1e-3
 
 
     def onNidaqParamsChange(self):

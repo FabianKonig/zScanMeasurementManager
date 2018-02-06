@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'design.ui'
+# Form implementation generated from reading ui file './gui_design/design.ui'
 #
 # Created by: PyQt5 UI code generator 5.9
 #
@@ -142,7 +142,7 @@ class Ui_MainWindow(object):
         self.label_samplesPerChannel.setObjectName("label_samplesPerChannel")
         self.horizontalLayout_3.addWidget(self.label_samplesPerChannel)
         self.spinBox_samplesPerChannel = QtWidgets.QSpinBox(self.groupBox_nidaqParams)
-        self.spinBox_samplesPerChannel.setMinimum(1000)
+        self.spinBox_samplesPerChannel.setMinimum(3000)
         self.spinBox_samplesPerChannel.setMaximum(500000)
         self.spinBox_samplesPerChannel.setSingleStep(1000)
         self.spinBox_samplesPerChannel.setProperty("value", 70000)
