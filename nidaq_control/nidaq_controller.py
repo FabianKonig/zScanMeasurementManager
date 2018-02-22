@@ -30,7 +30,7 @@ class NidaqReader:
             for channel in channels:
                 task.ai_channels.add_ai_voltage_chan(
                     channel, name_to_assign_to_channel="",
-                    terminal_config=nidaqmx.constants.TerminalConfiguration.RSE, min_val=-0.5,
+                    terminal_config=nidaqmx.constants.TerminalConfiguration.RSE, min_val=-10.0,
                     max_val=10.0, units=nidaqmx.constants.VoltageUnits.VOLTS, custom_scale_name="")
 
             task.timing.cfg_samp_clk_timing(
@@ -56,7 +56,7 @@ class NidaqReader:
             with nidaqmx.Task() as task:
                 task.ai_channels.add_ai_voltage_chan(
                     channel, name_to_assign_to_channel="",
-                    terminal_config=nidaqmx.constants.TerminalConfiguration.RSE, min_val=-0.5,
+                    terminal_config=nidaqmx.constants.TerminalConfiguration.RSE, min_val=-10.0,
                     max_val=10.0, units=nidaqmx.constants.VoltageUnits.VOLTS, custom_scale_name="")
 
                 task.timing.cfg_samp_clk_timing(
@@ -281,13 +281,13 @@ if __name__ == '__main__':
     #plt.plot(peak_positions[2], peaks[2], color="brown", linestyle="", marker="+", markersize=8)
 
 
-    print(signals[0,2000::].min())
-    print(signals[1,2000::].min())
-    print(signals[2,2000::].min())
+    plt.plot(signals[0,2000::])
+    plt.plot(signals[1,2000::])
+    plt.plot(signals[2,2000::])
 
     #plt.plot(signals[0]-signals[0,2000::].min()+(-.000177219), alpha=0.5, linestyle="", marker="x", label="Ref")
     #plt.plot(signals[1], alpha=0.5, linestyle="", marker="x", label="OA")    
     #plt.plot(signals[2], alpha=0.5, linestyle="", marker="x", label="CA")
     #plt.legend()
-    #plt.show()
+    plt.show()
 
