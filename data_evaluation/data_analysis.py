@@ -68,7 +68,7 @@ class zScanDataAnalyser:
         T_OA[:,0] = data[:,0]
         T_OA[:,1] = data[:,1]
         T_OA[:,2] = data[:,2]
-        T_CA[:,0] = data[:,0]    
+        T_CA[:,0] = data[:,0]
         T_CA[:,1] = data[:,3]
         T_CA[:,2] = data[:,4]
 
