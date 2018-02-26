@@ -78,13 +78,13 @@ class NidaqReader:
     def correct_offset(self, signals):
         """ At large repetition rates, the photdiode signals do not have sufficient time to fall
             down to zero until the next pulse is incident. This causes an offset for the signals,
-            artifically increasing the peak values. I epmirically figured out, that it is sufficient
+            artifically increasing the peak values. I empirically figured out, that it is sufficient
             to modify the signals such that their minimum value is zero. This does neglect the
             first 2000 points of a NIDAQ measurement where there is some weird electronics going on
             which causes the signals to be very low.
             Input:
             signals, a 2-dim numpy array, the first dimension denoting the channel, the second
-                     denotes the measurment point
+                     denotes the measurement point
             
             Output:
             signals (as in input) with minimum value being zero (neglecting the first 2000 points).
@@ -225,7 +225,7 @@ class NidaqReader:
             where one or more of the measured signals drop below a certian threshold with respect to
             their channel's max value. Example: If, for any given measurement of reference diode,
             closed aperture and open aperture diode, the measured value of, e.g., the open aperture
-            photodiode signal drops below threshold*maximum(entire measured set of open aperture
+            photodiode signal drops below threshold*maximum (entire measured set of open aperture
             signal), this measurement is discarded.
 
             Input:
