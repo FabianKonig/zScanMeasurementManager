@@ -68,6 +68,8 @@ class NidaqReader:
                     task.read(number_of_samples_per_channel=self.num_samples_per_chan))
                 channel_index += 1
 
+        # When using the transimpedance amplifier, the signals are negative. We make them positive:
+        signals = np.abs(signals)
 
         # correct for possible channel offsets:
         signals = self.correct_offset(signals)
@@ -275,6 +277,10 @@ if __name__ == '__main__':
     #                                                rtn_raw_nidaq_signal=True)
 
     signals = nr.read_nidaq_one_channel_after_the_other()
+    max_vals = nr.get_nidaq_measurement_max_values(3)
+    # max_vals[2,:] += 0.4
+
+    print(max_vals[2].mean(), max_vals[2].std(ddof=1))
 
     #plt.plot(peak_positions[0], peaks[0], color="brown", linestyle="", marker="+", markersize=8)
     #plt.plot(peak_positions[1], peaks[1], color="brown", linestyle="", marker="+", markersize=8)
@@ -284,6 +290,8 @@ if __name__ == '__main__':
     plt.plot(signals[0,2000::])
     plt.plot(signals[1,2000::])
     plt.plot(signals[2,2000::])
+
+
 
     #plt.plot(signals[0]-signals[0,2000::].min()+(-.000177219), alpha=0.5, linestyle="", marker="x", label="Ref")
     #plt.plot(signals[1], alpha=0.5, linestyle="", marker="x", label="OA")    
