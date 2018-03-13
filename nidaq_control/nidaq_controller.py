@@ -196,25 +196,37 @@ class NidaqReader:
             return peaks_result
 
 
-    def get_nidaq_measurement_max_values(self, iterations):
+    def get_nidaq_measurement_max_values(self, iterations, pmt_root_exponents):
         """ I figured out that the best way of obtaining reproducable data from the Nidaq
             measurements is by acquiring approx 70000 data from it with its maximum sample rate
             (sample rate of 250k and number of samples of 70000) and taking the maximum measured
             value for each channel. This function thus queries the Nidaq signals, stores the maximum
             value of each channel and repeats this measurement iterations times.
 
+            Input:
+            iterations, integer. Number of measurements
+            pmt_root_exponents, 1-dim numpy array of length 2, first entrie being the root exponent
+                                of the OA photo multiplier tube (PMT), the second of the CA PMT.
+
             Output: 
             2-dim numpy array with the first dimension denoting the channel and the second
             dimension is iterations entries long, each storing the maximum value of that
             measurement. The order of the channels is 1: ref, 2: oa, 3: ca.
         """
-        
+        assert pmt_root_exponents.shape == (1) and len(pmt_root_exponents) == 2
+
         max_signal_values = np.empty(shape=(len(channels), iterations))
 
         for iteration_index in range(iterations):
             signals = self.read_nidaq_one_channel_after_the_other()
+            
             for channel_index in range(len(channels)):
-                max_signal_values[channel_index, iteration_index] = signals[channel_index].max()
+                max_val = signals[channel_index].max()
+
+                if(pmt_root_exponents > 0):
+                    max_val = self.correct_PMT_nonlinearity(max_val, pmt_root_exponents[channel_index-1])
+
+                max_signal_values[channel_index, iteration_index] = max_val
 
         return max_signal_values
 
@@ -267,6 +279,14 @@ class NidaqReader:
         return signals
 
 
+    def correct_PMT_nonlinearity(self, value, root_exponent):
+        """ Correct for the root behaviour of the PMT signal with respect to the incident intensity.
+        """
+
+        return value**(1./root_exponent)
+
+
+
 
 if __name__ == '__main__':
     
@@ -276,20 +296,20 @@ if __name__ == '__main__':
     #peaks, peak_positions, signals = nr.peak_finder(rtn_peak_positions=True, 
     #                                                rtn_raw_nidaq_signal=True)
 
-    signals = nr.read_nidaq_one_channel_after_the_other()
-    max_vals = nr.get_nidaq_measurement_max_values(3)
-    # max_vals[2,:] += 0.4
-
-    print(max_vals[2].mean(), max_vals[2].std(ddof=1))
+    #signals = nr.read_nidaq_one_channel_after_the_other()
+    max_vals = nr.get_nidaq_measurement_max_values(5)
+    
+    print(max_vals[0].mean(), "\t", max_vals[0].std(ddof=1), "\t", max_vals[1].mean(), "\t",
+        max_vals[1].std(ddof=1), "\t", max_vals[2].mean(), "\t", max_vals[2].std(ddof=1))
 
     #plt.plot(peak_positions[0], peaks[0], color="brown", linestyle="", marker="+", markersize=8)
     #plt.plot(peak_positions[1], peaks[1], color="brown", linestyle="", marker="+", markersize=8)
     #plt.plot(peak_positions[2], peaks[2], color="brown", linestyle="", marker="+", markersize=8)
 
 
-    plt.plot(signals[0,2000::])
-    plt.plot(signals[1,2000::])
-    plt.plot(signals[2,2000::])
+    #plt.plot(signals[0,2000::])
+    #plt.plot(signals[1,2000::])
+    #plt.plot(signals[2,2000::])
 
 
 
@@ -297,5 +317,5 @@ if __name__ == '__main__':
     #plt.plot(signals[1], alpha=0.5, linestyle="", marker="x", label="OA")    
     #plt.plot(signals[2], alpha=0.5, linestyle="", marker="x", label="CA")
     #plt.legend()
-    plt.show()
+    #plt.show()
 
