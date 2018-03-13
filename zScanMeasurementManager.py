@@ -75,6 +75,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.spinBox_samplesPerChannel.valueChanged.connect(self.onNidaqParamsChange)
         self.spinBox_iterations.valueChanged.connect(self.onNidaqParamsChange)
 
+        self.doubleSpinBox_oa_pmt_exponent.valueChanged.connect(self.onPMTExponentChange)
+        self.doubleSpinBox_ca_pmt_exponent.valueChanged.connect(self.onPMTExponentChange)
+
 
     def compile_documentation(self):
         if self.lineEdit_solvent.text() == "":
@@ -118,6 +121,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.label_alphaValue.setText(last_settings.alpha)
         self.label_effSampleLengthValue.setText(last_settings.eff_sample_length)
         self.doubleSpinBox_attenuationPdRef.setValue(last_settings.attenuation_pd_ref)
+        self.doubleSpinBox_attenuationSample.setValue(last_settings.attenuation_sample)
+        self.doubleSpinBox_oa_pmt_exponent.setValue(last_settings.oa_pmt_exponent)
+        self.doubleSpinBox_ca_pmt_exponent.setValue(last_settings.ca_pmt_exponent)
 
         self.doc.alpha = float(self.label_alphaValue.text())
         self.doc.eff_sample_length = float(self.label_effSampleLengthValue.text())*1e-3
@@ -141,6 +147,17 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.label_alphaValue.setText("{0:.3f}".format(0.))
         self.doc.alpha = 0
 
+    def onPMTExponentChange(self):
+        """ If the oa or ca PMT exponents have been changed, then erase all prior recorded values.
+        """
+
+        self.label_cOAValue.clear()
+        self.label_cCAValue.clear()
+        self.groupBox_Aperture.setEnabled(False)
+        self.labelApertureTransmittanceValue.clear()
+        self.groupBox_Measurement.setEnabled(False)
+
+
 
     def onClick_computeAlpha(self):
         transmission = self.doubleSpinBox_II0.value()
@@ -161,14 +178,18 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
     def onClick_calibratePhotodiodes(self):
         signals = self.nidaq_reader.get_nidaq_measurement_max_values(
-            self.spinBox_iterations.value())
+                self.spinBox_iterations.value(), 
+                [self.doubleSpinBox_oa_pmt_exponent.value(), self.doubleSpinBox_ca_pmt_exponent.value()]
+                )
         
         calib_factors = list(self.data_processor.extract_calibration_factors(*signals))
         self.label_cOAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[0]))
         self.label_cCAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[1]))
         
         pulse_energy = self.data_processor.extract_pulse_energy(
-            signals[0] * self.doubleSpinBox_attenuationPdRef.value())
+            signals[0] * (self.doubleSpinBox_attenuationPdRef.value()
+            / self.doubleSpinBox_attenuationSample.value())
+            )
         self.doc.pulse_energy = pulse_energy
         self.label_pulseEnergyValue.setText("{0:.3f} +- {1:.3f}".format(*pulse_energy*1e6))  # in µJ
 
@@ -177,7 +198,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             self.doc.refr_index_sample,
             self.doc.refr_index_ambient)
         self.doc.eff_pulse_energy = eff_pulse_energy
-        self.label_effPulseEnergyValue.setText("{0:.3f} +- {1:.3f}".format(
+        self.label_effPulseEnergyValue.setText("{0:.6f} +- {1:.6f}".format(
             *eff_pulse_energy*1e6))  # in units of µJ
 
         eff_peak_intensity = self.data_processor.compute_effective_peak_intensity(
@@ -185,7 +206,7 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             CONSTANTS_pulse_length_FWHM,
             self.doc.w0)
         self.doc.eff_peak_intensity = eff_peak_intensity
-        self.label_peakIntensityEffectiveValue.setText("{0:.0f} +- {1:.0f}".format(
+        self.label_peakIntensityEffectiveValue.setText("{0:.3f} +- {1:.3f}".format(
             *eff_peak_intensity*1e-10))  # in units of MW/cm^2
 
         if self.labelApertureTransmittanceValue.text() == "":
@@ -197,7 +218,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
     def onClick_measureApertureTransmission(self):
         signals = self.nidaq_reader.get_nidaq_measurement_max_values(
-            self.spinBox_iterations.value())
+                self.spinBox_iterations.value(), 
+                [self.doubleSpinBox_oa_pmt_exponent.value(), self.doubleSpinBox_ca_pmt_exponent.value()]
+                )
 
         S = self.data_processor.extract_aperture_transmission(signals[0], signals[2])
         self.doc.S = S
@@ -221,7 +244,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         # Move both stages in tiny steps:
         for pos_index in range(tot_num_of_pos):
             signals = self.nidaq_reader.get_nidaq_measurement_max_values(
-            self.spinBox_iterations.value())
+                self.spinBox_iterations.value(), 
+                [self.oa_pmt_exponent.value(), self.ca_pmt_exponent.value()]
+                )
             
             # Position with respect to beam:
             # If the physical stage position is zero, it is actually behind the focal spot (this is
@@ -242,7 +267,10 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         for position in np.linspace(self.stage_controller.total_travel_distance, 0, tot_num_of_pos):
             self.stage_controller.move_to_position(position)
             signals = self.nidaq_reader.get_nidaq_measurement_max_values(
-            self.spinBox_iterations.value())
+                self.spinBox_iterations.value(), 
+                [self.doubleSpinBox_oa_pmt_exponent.value(), self.doubleSpinBox_ca_pmt_exponent.value()]
+                )
+
             position_wrt_beam = self.stage_controller.total_travel_distance - \
                                     self.stage_controller.combined_position
             self.data_processor.extract_oa_ca_transmissions(position_wrt_beam, *signals,
@@ -321,7 +349,10 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
             self.doubleSpinBox_II0.value(),
             self.label_alphaValue.text(),
             self.label_effSampleLengthValue.text(),
-            self.doubleSpinBox_attenuationPdRef.value())
+            self.doubleSpinBox_attenuationPdRef.value(),
+            self.doubleSpinBox_attenuationSample.value(),
+            self.doubleSpinBox_oa_pmt_exponent.value(),
+            self.doubleSpinBox_ca_pmt_exponent.value())
 
         last_gui_settings.persist_last_settings(last_settings)
         sys.exit(0)

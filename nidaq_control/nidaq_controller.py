@@ -213,7 +213,7 @@ class NidaqReader:
             dimension is iterations entries long, each storing the maximum value of that
             measurement. The order of the channels is 1: ref, 2: oa, 3: ca.
         """
-        assert pmt_root_exponents.shape == (1) and len(pmt_root_exponents) == 2
+        assert len(pmt_root_exponents) == 2
 
         max_signal_values = np.empty(shape=(len(channels), iterations))
 
@@ -223,7 +223,7 @@ class NidaqReader:
             for channel_index in range(len(channels)):
                 max_val = signals[channel_index].max()
 
-                if(pmt_root_exponents > 0):
+                if(channel_index == 1 or channel_index == 2):
                     max_val = self.correct_PMT_nonlinearity(max_val, pmt_root_exponents[channel_index-1])
 
                 max_signal_values[channel_index, iteration_index] = max_val
@@ -296,26 +296,27 @@ if __name__ == '__main__':
     #peaks, peak_positions, signals = nr.peak_finder(rtn_peak_positions=True, 
     #                                                rtn_raw_nidaq_signal=True)
 
-    #signals = nr.read_nidaq_one_channel_after_the_other()
-    max_vals = nr.get_nidaq_measurement_max_values(5)
+    signals = nr.read_nidaq_one_channel_after_the_other()
+    max_vals = nr.get_nidaq_measurement_max_values(5, [1, 1])
     
     print(max_vals[0].mean(), "\t", max_vals[0].std(ddof=1), "\t", max_vals[1].mean(), "\t",
         max_vals[1].std(ddof=1), "\t", max_vals[2].mean(), "\t", max_vals[2].std(ddof=1))
+
+    print(max_vals[0].std(ddof=1)/max_vals[0].mean(),
+        max_vals[1].std(ddof=1)/max_vals[1].mean(), 
+        max_vals[2].std(ddof=1)/max_vals[2].mean())
 
     #plt.plot(peak_positions[0], peaks[0], color="brown", linestyle="", marker="+", markersize=8)
     #plt.plot(peak_positions[1], peaks[1], color="brown", linestyle="", marker="+", markersize=8)
     #plt.plot(peak_positions[2], peaks[2], color="brown", linestyle="", marker="+", markersize=8)
 
-
-    #plt.plot(signals[0,2000::])
-    #plt.plot(signals[1,2000::])
-    #plt.plot(signals[2,2000::])
-
-
+    plt.plot(signals[0,2000::], color="green", label="Ref")
+    plt.plot(signals[1,2000::], color="blue", label="OA")
+    plt.plot(signals[2,2000::], color="yellow", label="CA")
 
     #plt.plot(signals[0]-signals[0,2000::].min()+(-.000177219), alpha=0.5, linestyle="", marker="x", label="Ref")
     #plt.plot(signals[1], alpha=0.5, linestyle="", marker="x", label="OA")    
     #plt.plot(signals[2], alpha=0.5, linestyle="", marker="x", label="CA")
-    #plt.legend()
-    #plt.show()
+    plt.legend()
+    plt.show()
 

@@ -12,7 +12,8 @@ CONSTANTS_gui_settings_persistence_file = os.path.join('.',
 class LastGuiSettings:
     def __init__(self, sample, solvent, concentration, laser_rep_rate, geom_sample_length,
         refr_index_sample, refr_index_ambient, furtherNotes, numPositions, samplingRate,
-        samplesPerChannel, iterations, i_i0, alpha, eff_sample_length, attenuation_pd_ref):
+        samplesPerChannel, iterations, i_i0, alpha, eff_sample_length, attenuation_pd_ref,
+        attenuation_sample, oa_pmt_exponent, ca_pmt_exponent):
 
         self.sample = sample
         self.solvent = solvent
@@ -30,6 +31,9 @@ class LastGuiSettings:
         self.alpha = alpha
         self.eff_sample_length = eff_sample_length
         self.attenuation_pd_ref = attenuation_pd_ref
+        self.attenuation_sample = attenuation_sample
+        self.oa_pmt_exponent = oa_pmt_exponent
+        self.ca_pmt_exponent = ca_pmt_exponent
 
 
 def get_last_settings():

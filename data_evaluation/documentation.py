@@ -232,11 +232,11 @@ class Documentation:
                  "Effective sample length:  {0:.3f}mm\n".format(self.eff_sample_length*1e3) + \
                  "alpha:                    {0:.8f} mm^-1\n".format(self.alpha*1e-3) + \
                  "\n" + \
-                 "Pulse energy:             ({0:.3f} +- {1:.3f})µJ\n".format(
+                 "Pulse energy:             ({0:.6f} +- {1:.6f})µJ\n".format(
                     self.pulse_energy[0]*1e6, self.pulse_energy[1]*1e6) + \
-                 "Eff. pulse energy:        ({0:.3f} +- {1:.3f})µJ\n".format(
+                 "Eff. pulse energy:        ({0:.6f} +- {1:.6f})µJ\n".format(
                     self.eff_pulse_energy[0]*1e6, self.eff_pulse_energy[1]*1e6) + \
-                 "Eff. peak intensity:      ({0:.0f} +- {1:.0f})MW/cm^2\n".format(
+                 "Eff. peak intensity:      ({0:.3f} +- {1:.3f})MW/cm^2\n".format(
                     self.eff_peak_intensity[0]*1e-10, self.eff_peak_intensity[1]*1e-10) + \
                  "\n" + \
                  "Wavelength vacuum:        {0:.3f}nm\n".format(self.λ_vac*1e9) + \
@@ -253,7 +253,7 @@ class Documentation:
         header = "Sample: " + self.sample + \
                  ",     Solvent: " + self.solvent + \
                  ",     Concentration = " + self.concentration + "\n" + \
-                 "$I_{0}^{eff}$" + " = ({0:.0f} $\pm$ {1:.0f})MW/cm$^2$".format(
+                 "$I_{0}^{eff}$" + " = ({0:.3f} $\pm$ {1:.3f})MW/cm$^2$".format(
                     self.eff_peak_intensity[0]*1e-10, self.eff_peak_intensity[1]*1e-10) + \
                  ",     $f_{Laser}$" + " = {0}Hz".format(self.laser_rep_rate) + \
                  ",     S = ({0:.2f} $\pm$ {1:.2f})%".format(self.S[0]*100, self.S[1]*100)
