@@ -126,8 +126,8 @@ class zScanDataProcessor:
             calibration factor. Each entry itself is a 1-dim numpy array with the first entry being
             the average calibration factor and the second entry being its corresponding error.
         """
-        self.c_OA = average_ratio_array_wise(oa_signal, ref_signal)
-        self.c_CA = average_ratio_array_wise(ca_signal, ref_signal)
+        self.c_OA = average_ratio_element_wise(oa_signal, ref_signal)
+        self.c_CA = average_ratio_element_wise(ca_signal, ref_signal)
         self.S = 1
         self.combined_c_CA = self.c_CA * self.S
         return np.array([self.c_OA, self.c_CA])
@@ -144,7 +144,7 @@ class zScanDataProcessor:
         """
         assert self.c_CA is not None
         assert self.c_OA is not None
-        self.S = average_ratio_array_wise(ca_signal, ref_signal, calib_factor=self.c_CA)
+        self.S = average_ratio_element_wise(ca_signal, ref_signal, calib_factor=self.c_CA)
         self.combined_c_CA[0] = self.c_CA[0] * self.S[0]
         self.combined_c_CA[1] = np.sqrt((self.c_CA[0]*self.S[1])**2 + (self.c_CA[1]*self.S[0])**2)
         return self.S
@@ -172,8 +172,8 @@ class zScanDataProcessor:
             self.T_OA = np.zeros(shape=(tot_num_of_pos, 3))
             self.T_CA = np.zeros(shape=(tot_num_of_pos, 3))
 
-        transmission_oa = average_ratio_array_wise(oa_signal, ref_signal, self.c_OA)
-        transmission_ca = average_ratio_array_wise(ca_signal, ref_signal, self.combined_c_CA)
+        transmission_oa = average_ratio_element_wise(oa_signal, ref_signal, self.c_OA)
+        transmission_ca = average_ratio_element_wise(ca_signal, ref_signal, self.combined_c_CA)
         self.T_OA[self.current_position_step] = np.array([position, *transmission_oa])
         self.T_CA[self.current_position_step] = np.array([position, *transmission_ca])
 

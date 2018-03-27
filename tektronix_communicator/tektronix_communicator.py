@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 
 
 
+# Time of oscillations of the normal ThorLabs photodiodes.
+CONSTANT_TIMEOFOSCILLATIONS = 1e-6
+
 
 class TektronixCommunicator:
 
@@ -76,12 +79,11 @@ class TektronixCommunicator:
 
     def getSignalAfterPhotodiodeOscillations(self, waveform, times):
         """ Find the position of the photodiode signal when the oscillations have stopped. """
-        TIMEOFOSCILLATIONS = 1e-6
-
+        
         maxPos, = np.where(waveform==waveform.max())
         maxPos = int(maxPos[0])
 
-        requiredSteps = TIMEOFOSCILLATIONS // self.xincr
+        requiredSteps = CONSTANT_TIMEOFOSCILLATIONS // self.xincr
 
         return waveform[maxPos+requiredSteps]
         
