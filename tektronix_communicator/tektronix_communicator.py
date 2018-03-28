@@ -2,6 +2,7 @@ import visa
 import numpy as np
 from struct import unpack
 import matplotlib.pyplot as plt
+import traceback
 
 
 
@@ -73,27 +74,38 @@ class TektronixCommunicator:
             start = (1+i) * headerlength + i*self.acqlen
             stop = (1+i)*(headerlength+self.acqlen)
 
-            wave = data[start:stop]
+            wave = self.data[start:stop]
             self.waveforms[i+1] = (wave - self.channelSettings[i,1]) * self.channelSettings[i,0]  + self.channelSettings[i,2]
 
 
-    def getSignalAfterPhotodiodeOscillations(self, waveform, times):
+    def getSignalAfterPhotodiodeOscillations(self, waveform):
         """ Find the position of the photodiode signal when the oscillations have stopped. """
         
         maxPos, = np.where(waveform==waveform.max())
         maxPos = int(maxPos[0])
 
         requiredSteps = CONSTANT_TIMEOFOSCILLATIONS // self.xincr
+        pos = int(maxPos+requiredSteps)
 
-        return waveform[maxPos+requiredSteps]
-        
+        if pos < self.acqlen:
+            return waveform[int(maxPos+requiredSteps)]
+        else:
+            return waveform[-1]
+
 
     def getOsciValues(self):
-        self.acquireCurves()
+        while(True):
+            try:
+                self.acquireCurves()
+                break
+            except Exception as ex:
+                print("An exception occurred, try again")
+                #traceback.print_exc()
+
         self.processCurves()
 
         max_signals = np.empty(shape=(len(self.channels)), dtype=float)
-        max_signals[0] = self.waveforms[1].max()                                      # Channel 1
+        max_signals[0] = self.waveforms[1].max() - self.waveforms[1].min()            # Channel 1
         max_signals[1] = self.getSignalAfterPhotodiodeOscillations(self.waveforms[2]) # Channel 2
         max_signals[2] = self.getSignalAfterPhotodiodeOscillations(self.waveforms[3]) # Channel 4
 
@@ -106,13 +118,13 @@ class TektronixCommunicator:
             dimension is iterations entries long, each storing the maximum value of that
             measurement. The order of the channels is 1: ref, 2: oa, 3: ca.
         """
-        max_signal_values = np.empty(shape=(len(self.channels), iterations))
+        max_signal_values = np.zeros(shape=(len(self.channels), iterations))
 
-        for iteration_index in iterations:
+        for iteration_index in range(iterations):
             osciVals = self.getOsciValues()
             # iterate through self.channels from right to left [CA, OA, REF], such that the result is [REF, OA, CA].
             for channel_index in range(-1,-len(self.channels)-1,-1):
-                max_signal_values[channel_index, iteration_index] = osciVals[channel_index]
+                max_signal_values[np.abs(channel_index)-1, iteration_index] = osciVals[channel_index]
 
         return max_signal_values
 
@@ -130,15 +142,22 @@ if __name__ == '__main__':
     sc = scopeCommunicator
 
 
-    plt.plot(0, max_signals[0], marker="o", color=colors[0])
-    plt.plot(0, max_signals[1], marker="o", color=colors[1])
-    plt.plot(0, max_signals[2], marker="o", color=colors[2])
+    plt.axhline(max_signals[0], marker="o", color=colors[0])
+    plt.axhline(max_signals[1], marker="o", color=colors[1])
+    plt.axhline(max_signals[2], marker="o", color=colors[2])
 
     for i in range(len(sc.channels)):
         plt.plot(sc.waveforms[0], sc.waveforms[i+1], color=colors[i], zorder=5-i)
 
     plt.grid()
     plt.show()
+
+    data = sc.getSignalPeaks(8)
+    data[1] = data[1] / data[0]
+    data[2] = data[2] / data[0]
+    print(data[0].mean(), data[0].std(ddof=1)/data[0].mean())
+    print(data[1].mean(), data[1].std(ddof=1)/data[1].mean())
+    print(data[2].mean(), data[2].std(ddof=1)/data[2].mean())
 
 
 
@@ -169,7 +188,7 @@ def findSettledPositionDEPRECATED(wave):
                 passed = False
                 break
             else:
-            passed = True
+                passed = True
             
         if passed:
             break
