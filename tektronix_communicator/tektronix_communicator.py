@@ -3,6 +3,7 @@ import numpy as np
 from struct import unpack
 import matplotlib.pyplot as plt
 import traceback
+import warnings
 
 
 
@@ -24,7 +25,9 @@ class TektronixCommunicator:
 
     def acquireCurves(self):
         rm = visa.ResourceManager()
-        scope = rm.open_resource('USB0::0x0699::0x0501::C012801::INSTR')
+        with warnings.catch_warnings(): # Ignore the visa io warning
+            warnings.simplefilter("ignore")
+            scope = rm.open_resource('USB0::0x0699::0x0501::C012801::INSTR')
         scope.write('DATA:ENC RPB') # encoding
         scope.write('DATA:WIDTH 1')
         scope.write('Data:Stop 1e20') # read the entire time axis.
@@ -81,9 +84,7 @@ class TektronixCommunicator:
     def getSignalAfterPhotodiodeOscillations(self, waveform):
         """ Find the position of the photodiode signal when the oscillations have stopped. """
         
-        maxPos, = np.where(waveform==waveform.max())
-        maxPos = int(maxPos[0])
-
+        maxPos = self.getPositionOfMaximum(waveform)
         requiredSteps = CONSTANT_TIMEOFOSCILLATIONS // self.xincr
         pos = int(maxPos+requiredSteps)
 
@@ -99,13 +100,16 @@ class TektronixCommunicator:
                 self.acquireCurves()
                 break
             except Exception as ex:
-                print("An exception occurred, try again")
+                print("\nAn exception occurred, try again!!!!\n")
                 #traceback.print_exc()
 
         self.processCurves()
 
+        # correct channel 1 for its offset:
+        self.correctForOffset(self.waveforms[1])
+
         max_signals = np.empty(shape=(len(self.channels)), dtype=float)
-        max_signals[0] = self.waveforms[1].max() - self.waveforms[1].min()            # Channel 1
+        max_signals[0] = self.computeLocalAverage(self.waveforms[1], pos="max")  # Channel 1
         max_signals[1] = self.getSignalAfterPhotodiodeOscillations(self.waveforms[2]) # Channel 2
         max_signals[2] = self.getSignalAfterPhotodiodeOscillations(self.waveforms[3]) # Channel 4
 
@@ -129,6 +133,30 @@ class TektronixCommunicator:
         return max_signal_values
 
 
+    def computeLocalAverage(self, wave, pos):
+        """ compute the local average of a waveform around the given position. For this, a certain
+            amount of data points after position are taken into consideration. If position=="max",
+            the local average around the maximum position of wave is returned.
+        """
+        AMOUNT_NEXT_DATA_POINTS = 10
+
+        assert isinstance(pos, int) or pos == "max"
+
+        if pos == "max":
+            pos = self.getPositionOfMaximum(wave)
+        return wave[pos : pos+AMOUNT_NEXT_DATA_POINTS].mean()
+
+
+    def getPositionOfMaximum(self, waveform):
+        maxPos, = np.where(waveform==waveform.max())
+        return int(maxPos[0])
+
+
+    def correctForOffset(self, wave):
+        """ Correct for the offset which is assumed at the beginning of the trace. In place
+            modification and also return value. """
+        wave = wave - self.computeLocalAverage(wave, pos=0)
+        return wave
 
 
 
@@ -147,17 +175,20 @@ if __name__ == '__main__':
     plt.axhline(max_signals[2], marker="o", color=colors[2])
 
     for i in range(len(sc.channels)):
-        plt.plot(sc.waveforms[0], sc.waveforms[i+1], color=colors[i], zorder=5-i)
+        if i==0:
+            plt.plot(sc.waveforms[0], sc.waveforms[i+1], color=colors[i], zorder=5-i)
+        else:
+            plt.plot(sc.waveforms[0], sc.waveforms[i+1], color=colors[i], zorder=5-i)
 
     plt.grid()
     plt.show()
 
-    data = sc.getSignalPeaks(8)
+    data = sc.getSignalPeaks(5)
     data[1] = data[1] / data[0]
     data[2] = data[2] / data[0]
-    print(data[0].mean(), data[0].std(ddof=1)/data[0].mean())
-    print(data[1].mean(), data[1].std(ddof=1)/data[1].mean())
-    print(data[2].mean(), data[2].std(ddof=1)/data[2].mean())
+    print("Ref: ", data[0].mean(), data[0].std(ddof=1)/data[0].mean())
+    print("OA:  ", data[1].mean(), data[1].std(ddof=1)/data[1].mean())
+    print("CA:  ", data[2].mean(), data[2].std(ddof=1)/data[2].mean())
 
 
 
