@@ -7,6 +7,7 @@ import gui_design
 import stage_control
 import nidaq_control
 import data_evaluation
+import tektronix_communicator
 
 
 
@@ -41,6 +42,8 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         self.nidaq_reader = nidaq_control.NidaqReader(
             self.spinBox_samplingRate.value(), 
             self.spinBox_samplesPerChannel.value())
+
+        self.scope_control = tektronix_communicator.TektronixCommunicator()
 
         QtWidgets.QMessageBox.information(self, "Stage position initialisation",
             "The stages will now be moved home and subsequently to their initial positions." +
@@ -177,10 +180,12 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
 
     def onClick_calibratePhotodiodes(self):
-        signals = self.nidaq_reader.get_nidaq_measurement_max_values(
-                self.spinBox_iterations.value(), 
-                [self.doubleSpinBox_oa_pmt_exponent.value(), self.doubleSpinBox_ca_pmt_exponent.value()]
-                )
+        #signals = self.nidaq_reader.get_nidaq_measurement_max_values(
+        #        self.spinBox_iterations.value(), 
+        #        [self.doubleSpinBox_oa_pmt_exponent.value(), self.doubleSpinBox_ca_pmt_exponent.value()]
+        #        )
+
+        signals = self.scope_control.getSignalPeaks(self.spinBox_iterations.value())
         
         calib_factors = list(self.data_processor.extract_calibration_factors(*signals))
         self.label_cOAValue.setText("{0:.3f} +- {1:.3f}".format(*calib_factors[0]))
@@ -217,10 +222,12 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
 
 
     def onClick_measureApertureTransmission(self):
-        signals = self.nidaq_reader.get_nidaq_measurement_max_values(
-                self.spinBox_iterations.value(), 
-                [self.doubleSpinBox_oa_pmt_exponent.value(), self.doubleSpinBox_ca_pmt_exponent.value()]
-                )
+        #signals = self.nidaq_reader.get_nidaq_measurement_max_values(
+        #        self.spinBox_iterations.value(), 
+        #        [self.doubleSpinBox_oa_pmt_exponent.value(), self.doubleSpinBox_ca_pmt_exponent.value()]
+        #        )
+
+        signals = self.scope_control.getSignalPeaks(self.spinBox_iterations.value())
 
         S = self.data_processor.extract_aperture_transmission(signals[0], signals[2])
         self.doc.S = S
@@ -266,10 +273,12 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         # Firstly, move the first stage, and only if necessary the second stage and so on:
         for position in np.linspace(self.stage_controller.total_travel_distance, 0, tot_num_of_pos):
             self.stage_controller.move_to_position(position)
-            signals = self.nidaq_reader.get_nidaq_measurement_max_values(
-                self.spinBox_iterations.value(), 
-                [self.doubleSpinBox_oa_pmt_exponent.value(), self.doubleSpinBox_ca_pmt_exponent.value()]
-                )
+            #signals = self.nidaq_reader.get_nidaq_measurement_max_values(
+            #    self.spinBox_iterations.value(), 
+            #    [self.doubleSpinBox_oa_pmt_exponent.value(), self.doubleSpinBox_ca_pmt_exponent.value()]
+            #    )
+
+            signals = self.scope_control.getSignalPeaks(self.spinBox_iterations.value())
 
             position_wrt_beam = self.stage_controller.total_travel_distance - \
                                     self.stage_controller.combined_position
