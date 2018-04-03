@@ -81,9 +81,9 @@ class APT_Controller:
             max_pos = axis_info[1]
 
             if motor.serial_number == 83822061:
-                max_pos = 22
-            elif motor.serial_number == 83825266:
                 max_pos = 23
+            elif motor.serial_number == 83825266:
+                max_pos = 22
 
             motor.set_stage_axis_info(axis_info[0], max_pos, axis_info[2], axis_info[3])
 

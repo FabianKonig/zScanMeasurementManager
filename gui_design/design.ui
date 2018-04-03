@@ -252,7 +252,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QGroupBox" name="groupBox_nidaqParams">
+     <widget class="QGroupBox" name="groupBox_acquisitionParams">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
         <horstretch>0</horstretch>
@@ -260,11 +260,14 @@
        </sizepolicy>
       </property>
       <property name="title">
-       <string>Nidaq acquisition parameters</string>
+       <string>Acquisition parameters</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_6">
        <item row="0" column="1">
         <widget class="QSpinBox" name="spinBox_samplingRate">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimum">
           <number>1000</number>
          </property>
@@ -307,6 +310,9 @@
        </item>
        <item row="0" column="3">
         <widget class="QLabel" name="label_samplesPerChannel">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="text">
           <string>Samples/channel</string>
          </property>
@@ -331,6 +337,9 @@
        </item>
        <item row="0" column="4">
         <widget class="QSpinBox" name="spinBox_samplesPerChannel">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="minimum">
           <number>3000</number>
          </property>
@@ -347,6 +356,9 @@
        </item>
        <item row="0" column="0">
         <widget class="QLabel" name="label_samplingRate">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="text">
           <string>Sampling rate</string>
          </property>
@@ -354,6 +366,9 @@
        </item>
        <item row="1" column="0">
         <widget class="QLabel" name="label_oa_pmt_exponent">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="text">
           <string>OA PMT exponent</string>
          </property>
@@ -361,6 +376,9 @@
        </item>
        <item row="1" column="1">
         <widget class="QDoubleSpinBox" name="doubleSpinBox_oa_pmt_exponent">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="decimals">
           <number>3</number>
          </property>
@@ -390,6 +408,9 @@
        </item>
        <item row="1" column="3">
         <widget class="QLabel" name="labe_ca_pmt_exponent">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="text">
           <string>CA PMT exponent</string>
          </property>
@@ -397,6 +418,9 @@
        </item>
        <item row="1" column="4">
         <widget class="QDoubleSpinBox" name="doubleSpinBox_ca_pmt_exponent">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="decimals">
           <number>3</number>
          </property>

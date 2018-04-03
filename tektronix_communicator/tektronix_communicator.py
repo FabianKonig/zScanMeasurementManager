@@ -98,19 +98,19 @@ class TektronixCommunicator:
         while(True):
             try:
                 self.acquireCurves()
+                self.processCurves()
                 break
             except Exception as ex:
-                print("\nAn exception occurred, try again!!!!\n")
-                #traceback.print_exc()
+                print("\nTektronixCommunicator encountered an exception, will try again!!!!\n")
+                #traceback.print_exc() Doesn't work with Visa IO error
 
-        self.processCurves()
-
-        # correct channel 1 for its offset:
-        self.correctForOffset(self.waveforms[1])
+        # correct channel 1 and 2 for their offsets:
+        self.waveforms[1] = self.correctForOffset(self.waveforms[1])
+        self.waveforms[2] = self.correctForOffset(self.waveforms[2])
 
         max_signals = np.empty(shape=(len(self.channels)), dtype=float)
         max_signals[0] = self.computeLocalAverage(self.waveforms[1], pos="max")  # Channel 1
-        max_signals[1] = self.getSignalAfterPhotodiodeOscillations(self.waveforms[2]) # Channel 2
+        max_signals[1] = self.computeLocalAverage(self.waveforms[2], pos="max")  # Channel 2
         max_signals[2] = self.getSignalAfterPhotodiodeOscillations(self.waveforms[3]) # Channel 4
 
         return max_signals
@@ -138,7 +138,7 @@ class TektronixCommunicator:
             amount of data points after position are taken into consideration. If position=="max",
             the local average around the maximum position of wave is returned.
         """
-        AMOUNT_NEXT_DATA_POINTS = 10
+        AMOUNT_NEXT_DATA_POINTS = 40
 
         assert isinstance(pos, int) or pos == "max"
 
@@ -153,10 +153,8 @@ class TektronixCommunicator:
 
 
     def correctForOffset(self, wave):
-        """ Correct for the offset which is assumed at the beginning of the trace. In place
-            modification and also return value. """
-        wave = wave - self.computeLocalAverage(wave, pos=0)
-        return wave
+        """ Correct for the offset which is assumed at the beginning of the trace."""
+        return wave - self.computeLocalAverage(wave, pos=0)
 
 
 
@@ -166,8 +164,8 @@ if __name__ == '__main__':
     colors = ["orange", "blue", "green", "red"]
 
     scopeCommunicator = TektronixCommunicator()
-    max_signals = scopeCommunicator.getOsciValues()
     sc = scopeCommunicator
+    max_signals = sc.getOsciValues()
 
 
     plt.axhline(max_signals[0], marker="o", color=colors[0])
@@ -175,10 +173,7 @@ if __name__ == '__main__':
     plt.axhline(max_signals[2], marker="o", color=colors[2])
 
     for i in range(len(sc.channels)):
-        if i==0:
-            plt.plot(sc.waveforms[0], sc.waveforms[i+1], color=colors[i], zorder=5-i)
-        else:
-            plt.plot(sc.waveforms[0], sc.waveforms[i+1], color=colors[i], zorder=5-i)
+        plt.plot(sc.waveforms[0], sc.waveforms[i+1], color=colors[i], zorder=5-i)
 
     plt.grid()
     plt.show()
