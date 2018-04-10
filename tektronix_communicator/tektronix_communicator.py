@@ -21,25 +21,37 @@ class TektronixCommunicator:
         self.xincr = None
         self.acqlen = None
         self.waveforms = None
+        self.scope = None
 
 
-    def acquireCurves(self):
+    def allocate_scope(self):
         rm = visa.ResourceManager()
         with warnings.catch_warnings(): # Ignore the visa io warning
             warnings.simplefilter("ignore")
-            scope = rm.open_resource('USB0::0x0699::0x0501::C012801::INSTR')
-        scope.write('DATA:ENC RPB') # encoding
-        scope.write('DATA:WIDTH 1')
-        scope.write('Data:Stop 1e20') # read the entire time axis.
+            self.scope = rm.open_resource('USB0::0x0699::0x0501::C012801::INSTR')
+
+    def deallocate_scope(self):
+        self.scope.close()
+        self.scope=None
+
+
+    def acquireCurves(self):
+        #rm = visa.ResourceManager()
+        #with warnings.catch_warnings(): # Ignore the visa io warning
+        #    warnings.simplefilter("ignore")
+        #    scope = rm.open_resource('USB0::0x0699::0x0501::C012801::INSTR')
+        self.scope.write('DATA:ENC RPB') # encoding
+        self.scope.write('DATA:WIDTH 1')
+        self.scope.write('Data:Stop 1e20') # read the entire time axis.
 
         # get the y-axis settings of each channel
         i = 0
         for channel in self.channels:
-            scope.write("SELect:" + channel + " ON") #activate channel on oscilloscope, otherwise error
-            scope.write("DATA:SOU " + channel)
-            self.channelSettings[i,0] = float(scope.query('WFMPRE:YMULT?'))
-            self.channelSettings[i,1] = float(scope.query('WFMPRE:YOFF?'))
-            self.channelSettings[i,2] = float(scope.query('WFMPRE:YZERO?'))
+            self.scope.write("SELect:" + channel + " ON") #activate channel on oscilloscope, otherwise error
+            self.scope.write("DATA:SOU " + channel)
+            self.channelSettings[i,0] = float(self.scope.query('WFMPRE:YMULT?'))
+            self.channelSettings[i,1] = float(self.scope.query('WFMPRE:YOFF?'))
+            self.channelSettings[i,2] = float(self.scope.query('WFMPRE:YZERO?'))
             i+=1
 
         # set "Source" to all channels that are included in self.channels
@@ -52,18 +64,17 @@ class TektronixCommunicator:
             else:
                 channelsString += ", " + channel
         
-        scope.write("DATA:SOU " + channelsString)
+        self.scope.write("DATA:SOU " + channelsString)
 
         # get the x-axis settings
-        self.xincr = float(scope.query('WFMPRE:XINCR?'))
-        self.acqlen = int(scope.query("HORizontal:ACQLENGTH?")) # length of a dataset
+        self.xincr = float(self.scope.query('WFMPRE:XINCR?'))
+        self.acqlen = int(self.scope.query("HORizontal:ACQLENGTH?")) # length of a dataset
 
         # Acquire the curves
-        scope.write('CURVENext?')   
-        data = scope.read_raw()
+        self.scope.write('CURVENext?')   
+        data = self.scope.read_raw()
         self.data = np.array(unpack('%sB' % len(data), data))
 
-        scope.close()
 
 
     def processCurves(self):
@@ -95,6 +106,13 @@ class TektronixCommunicator:
 
 
     def getOsciValues(self):
+
+        deallocate_necessary = False
+        
+        if self.scope is None:
+            deallocate_necessary = True
+            self.allocate_scope()
+
         while(True):
             try:
                 self.acquireCurves()
@@ -103,6 +121,9 @@ class TektronixCommunicator:
             except Exception as ex:
                 print("\nTektronixCommunicator encountered an exception, will try again!!!!\n")
                 #traceback.print_exc() Doesn't work with Visa IO error
+
+        if deallocate_necessary:
+            self.deallocate_scope()
 
         # correct channel 1 and 2 for their offsets:
         self.waveforms[1] = self.correctForOffset(self.waveforms[1])
@@ -124,11 +145,15 @@ class TektronixCommunicator:
         """
         max_signal_values = np.zeros(shape=(len(self.channels), iterations))
 
+        self.allocate_scope()
+
         for iteration_index in range(iterations):
             osciVals = self.getOsciValues()
             # iterate through self.channels from right to left [CA, OA, REF], such that the result is [REF, OA, CA].
             for channel_index in range(-1,-len(self.channels)-1,-1):
                 max_signal_values[np.abs(channel_index)-1, iteration_index] = osciVals[channel_index]
+
+        self.deallocate_scope()
 
         return max_signal_values
 
@@ -165,8 +190,12 @@ if __name__ == '__main__':
 
     scopeCommunicator = TektronixCommunicator()
     sc = scopeCommunicator
-    max_signals = sc.getOsciValues()
+    data = sc.getSignalPeaks(5)
 
+    #print("{0:.5f}    {1:.5f}".format(data[0].mean(), data[0].std(ddof=1)))
+
+    
+    max_signals = sc.getOsciValues()
 
     plt.axhline(max_signals[0], marker="o", color=colors[0])
     plt.axhline(max_signals[1], marker="o", color=colors[1])
