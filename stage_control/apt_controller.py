@@ -143,6 +143,8 @@ class APT_Controller:
 
 
     def move_in_steps(self, tot_num_of_pos, direction):
+        """ This function assumes that the current position belongs to tot_num_of_pos. Hence, the
+            step size is calculated for tot_num_of_pos-1 steps. """
 
         assert tot_num_of_pos > 1
 
@@ -219,10 +221,10 @@ if __name__ == '__main__':
 
     assert isclose(total_max_stage_positions, 22+23, abs_tol=0.05)
 
-    total_steps = range(45)
+    total_num_of_positions = 23
 
     import time
     start = time.time() 
-    for i in total_steps:
-        aptc.move_in_steps(len(total_steps), "backward")
+    for _ in range(total_num_of_positions-1):
+        aptc.move_in_steps(total_num_of_positions, "backward")
     print((time.time() - start) / 60)
