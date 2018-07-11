@@ -4,6 +4,7 @@ from struct import unpack
 import matplotlib.pyplot as plt
 import traceback
 import warnings
+import time
 
 
 
@@ -40,6 +41,7 @@ class TektronixCommunicator:
         #with warnings.catch_warnings(): # Ignore the visa io warning
         #    warnings.simplefilter("ignore")
         #    scope = rm.open_resource('USB0::0x0699::0x0501::C012801::INSTR')
+        print("write 1")
         self.scope.write('DATA:ENC RPB') # encoding
         self.scope.write('DATA:WIDTH 1')
         self.scope.write('Data:Stop 1e20') # read the entire time axis.
@@ -47,6 +49,7 @@ class TektronixCommunicator:
         # get the y-axis settings of each channel
         i = 0
         for channel in self.channels:
+            print("write 2")
             self.scope.write("SELect:" + channel + " ON") #activate channel on oscilloscope, otherwise error
             self.scope.write("DATA:SOU " + channel)
             self.channelSettings[i,0] = float(self.scope.query('WFMPRE:YMULT?'))
@@ -64,15 +67,21 @@ class TektronixCommunicator:
             else:
                 channelsString += ", " + channel
         
+        print("write 3")
         self.scope.write("DATA:SOU " + channelsString)
 
         # get the x-axis settings
+        print("x axis settings query")
         self.xincr = float(self.scope.query('WFMPRE:XINCR?'))
         self.acqlen = int(self.scope.query("HORizontal:ACQLENGTH?")) # length of a dataset
 
         # Acquire the curves
-        self.scope.write('CURVENext?')   
+        print("wirte curvenext")
+        self.scope.write('CURVENext?')
+        time.sleep(0.2)
+        print("read raw")
         data = self.scope.read_raw()
+        time.sleep(0.2)
         self.data = np.array(unpack('%sB' % len(data), data))
 
 
@@ -115,12 +124,18 @@ class TektronixCommunicator:
 
         while(True):
             try:
+                print("Status byte: ", self.scope.query('*STB?'))
                 self.acquireCurves()
                 self.processCurves()
                 break
             except Exception as ex:
-                print("\nTektronixCommunicator encountered an exception, will try again!!!!\n")
-                #traceback.print_exc() Doesn't work with Visa IO error
+                print("\nTektronixCommunicator encountered an exception, will try again!!!!")
+                print(ex)
+                print("\n")
+                time.sleep(1)
+                self.scope.write('CLEAR ALL')
+                self.scope.write('*CLS')
+                #traceback.print_exc() #Doesn't work with Visa IO error
 
         if deallocate_necessary:
             self.deallocate_scope()
