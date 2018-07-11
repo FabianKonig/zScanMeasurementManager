@@ -5,9 +5,9 @@ import pylab
 
 rm = visa.ResourceManager()
 scope = rm.open_resource('USB0::0x0699::0x0501::C012801::INSTR')
+#scope = rm.open_resource('USB0::0x0699::0x03A3::C011056::INSTR')
 
-
-scope.write('DATA:SOU CH1')
+scope.write('DATA:SOU CH4')
 scope.write('DATA:WIDTH 1')
 scope.write('DATA:ENC RPB')
 
