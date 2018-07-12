@@ -171,12 +171,12 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         alpha = self.data_processor.compute_alpha(transmission, refr_index_sample,
             refr_index_ambient, geom_sample_length)  # in 1/m
         self.doc.alpha = alpha
-        self.label_alphaValue.setText("{0:.3f}".format(alpha))  # in 1/m
+        self.label_alphaValue.setText("{0:.4f}".format(alpha))  # in 1/m
         
         eff_sample_length = self.data_processor.compute_effective_length(geom_sample_length,
             alpha)  # in m
         self.doc.eff_sample_length = eff_sample_length
-        self.label_effSampleLengthValue.setText("{0:.3f}".format(eff_sample_length * 1e3))  # in mm
+        self.label_effSampleLengthValue.setText("{0:.4f}".format(eff_sample_length * 1e3))  # in mm
 
 
     def onClick_calibratePhotodiodes(self):
