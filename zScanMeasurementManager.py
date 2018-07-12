@@ -227,13 +227,9 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         #        [self.doubleSpinBox_oa_pmt_exponent.value(), self.doubleSpinBox_ca_pmt_exponent.value()]
         #        )
 
-        print("get signal peaks in aperture measurement")
         signals = self.scope_control.getSignalPeaks(self.spinBox_iterations.value())
-        print("get signal peaks in aperture measurement succeeded")
-
-        print("process data in aperture measurement")
+                
         S = self.data_processor.extract_aperture_transmission(signals[0], signals[2])
-        print("Process data in aperture measurement succeeded")
         self.doc.S = S
         self.labelApertureTransmittanceValue.setText("{0:.3f} +- {1:.3f}".format(*list(S)))
 
@@ -276,24 +272,19 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         # Possibility two of two
         # Firstly, move the first stage, and only if necessary the second stage and so on:
         for position in np.linspace(self.stage_controller.total_travel_distance, 0, tot_num_of_pos):
-            print("Stage stage_controller move to position")
             self.stage_controller.move_to_position(position)
-            print("Stage stage_controller move to position succeeded")
             #signals = self.nidaq_reader.get_nidaq_measurement_max_values(
             #    self.spinBox_iterations.value(), 
             #    [self.doubleSpinBox_oa_pmt_exponent.value(), self.doubleSpinBox_ca_pmt_exponent.value()]
             #    )
 
-            print("get Signal Peaks")
             signals = self.scope_control.getSignalPeaks(self.spinBox_iterations.value())
-            print("get Signal poeaks succeeded")
 
             position_wrt_beam = self.stage_controller.total_travel_distance - \
                                     self.stage_controller.combined_position
-            print("data processing")
+
             self.data_processor.extract_oa_ca_transmissions(position_wrt_beam, *signals,
                 tot_num_of_pos)
-            print("Data processing succeeded\n")
 
 
         storage_directory, folder_num = self.doc.get_new_directory_for_storage()

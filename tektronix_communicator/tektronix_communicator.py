@@ -27,9 +27,9 @@ class TektronixCommunicator:
 
     def allocate_scope(self):
         rm = visa.ResourceManager()
-        with warnings.catch_warnings(): # Ignore the visa io warning
-            warnings.simplefilter("ignore")
-            self.scope = rm.open_resource('USB0::0x0699::0x0501::C012801::INSTR')
+        #with warnings.catch_warnings(): # Ignore the visa io warning
+        #    warnings.simplefilter("ignore")
+        self.scope = rm.open_resource('TCPIP0::DPO5054-C012801::inst0::INSTR')
 
     def deallocate_scope(self):
         self.scope.close()
@@ -41,7 +41,6 @@ class TektronixCommunicator:
         #with warnings.catch_warnings(): # Ignore the visa io warning
         #    warnings.simplefilter("ignore")
         #    scope = rm.open_resource('USB0::0x0699::0x0501::C012801::INSTR')
-        print("write 1")
         self.scope.write('DATA:ENC RPB') # encoding
         self.scope.write('DATA:WIDTH 1')
         self.scope.write('Data:Stop 1e20') # read the entire time axis.
@@ -49,7 +48,6 @@ class TektronixCommunicator:
         # get the y-axis settings of each channel
         i = 0
         for channel in self.channels:
-            print("write 2")
             self.scope.write("SELect:" + channel + " ON") #activate channel on oscilloscope, otherwise error
             self.scope.write("DATA:SOU " + channel)
             self.channelSettings[i,0] = float(self.scope.query('WFMPRE:YMULT?'))
@@ -67,21 +65,15 @@ class TektronixCommunicator:
             else:
                 channelsString += ", " + channel
         
-        print("write 3")
         self.scope.write("DATA:SOU " + channelsString)
 
         # get the x-axis settings
-        print("x axis settings query")
         self.xincr = float(self.scope.query('WFMPRE:XINCR?'))
         self.acqlen = int(self.scope.query("HORizontal:ACQLENGTH?")) # length of a dataset
 
         # Acquire the curves
-        print("wirte curvenext")
         self.scope.write('CURVENext?')
-        time.sleep(0.2)
-        print("read raw")
         data = self.scope.read_raw()
-        time.sleep(0.2)
         self.data = np.array(unpack('%sB' % len(data), data))
 
 
@@ -124,7 +116,6 @@ class TektronixCommunicator:
 
         while(True):
             try:
-                print("Status byte: ", self.scope.query('*STB?'))
                 self.acquireCurves()
                 self.processCurves()
                 break
@@ -132,9 +123,9 @@ class TektronixCommunicator:
                 print("\nTektronixCommunicator encountered an exception, will try again!!!!")
                 print(ex)
                 print("\n")
-                time.sleep(1)
-                self.scope.write('CLEAR ALL')
-                self.scope.write('*CLS')
+                #time.sleep(1)
+                #self.scope.write('CLEAR ALL')
+                #self.scope.write('*CLS')
                 #traceback.print_exc() #Doesn't work with Visa IO error
 
         if deallocate_necessary:
@@ -205,13 +196,8 @@ if __name__ == '__main__':
 
     scopeCommunicator = TektronixCommunicator()
     sc = scopeCommunicator
-    data = sc.getSignalPeaks(5)
-
-    #print("{0:.5f}    {1:.5f}".format(data[0].mean(), data[0].std(ddof=1)))
-
     
     max_signals = sc.getOsciValues()
-
     plt.axhline(max_signals[0], marker="o", color=colors[0])
     plt.axhline(max_signals[1], marker="o", color=colors[1])
     plt.axhline(max_signals[2], marker="o", color=colors[2])
@@ -223,8 +209,6 @@ if __name__ == '__main__':
     plt.show()
 
     data = sc.getSignalPeaks(5)
-    data[1] = data[1] / data[0]
-    data[2] = data[2] / data[0]
     print("Ref: ", data[0].mean(), data[0].std(ddof=1)/data[0].mean())
     print("OA:  ", data[1].mean(), data[1].std(ddof=1)/data[1].mean())
     print("CA:  ", data[2].mean(), data[2].std(ddof=1)/data[2].mean())
