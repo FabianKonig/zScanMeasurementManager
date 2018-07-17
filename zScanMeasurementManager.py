@@ -272,6 +272,8 @@ class Window(QtWidgets.QMainWindow, gui_design.Ui_MainWindow):
         # Possibility two of two
         # Firstly, move the first stage, and only if necessary the second stage and so on:
         for position in np.linspace(self.stage_controller.total_travel_distance, 0, tot_num_of_pos):
+        #for position in np.linspace(0, self.stage_controller.total_travel_distance, tot_num_of_pos):
+
             self.stage_controller.move_to_position(position)
             #signals = self.nidaq_reader.get_nidaq_measurement_max_values(
             #    self.spinBox_iterations.value(), 
